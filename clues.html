@@ -112,6 +112,7 @@
       border-radius: 6px;
       font-size: 1.6rem;
       font-weight: 700;
+      transition: color 0.2s ease, background 0.2s ease;
     }
 
     #writer {
@@ -240,7 +241,7 @@
       const clue = clues[current];
       card.innerHTML = `
         <p>${clue.Clue}</p>
-        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p><strong>Answer:</strong> <span id="answer" data-revealed="false" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
