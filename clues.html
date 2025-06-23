@@ -25,7 +25,7 @@
     #sheetUrl {
       width: 90%;
       max-width: 500px;
-      font-size: 1.2rem;
+      font-size: 16px; /* prevent mobile zoom */
       padding: 0.5rem;
       margin-bottom: 1rem;
     }
@@ -162,7 +162,13 @@
   <h1>Clue Reviewer</h1>
   <div id="flashMessage"></div>
 
-  <input type="text" id="sheetUrl" placeholder="Paste Google Sheet CSV URL" />
+  <input
+    type="text"
+    id="sheetUrl"
+    placeholder="Paste Google Sheet CSV URL"
+    autocomplete="off"
+    inputmode="text"
+  />
   <button onclick="loadSheet()">Load Clues</button>
   <div id="card" style="display:none;"></div>
   <div id="buttons" style="display:none;">
