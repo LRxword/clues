@@ -76,30 +76,28 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
-
-      /* Tinder-style animation */
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      transform: translateX(100%);
       opacity: 0;
-      transform: translateX(100%) scale(0.85);
     }
 
-    #card.enter {
+    #card.show {
+      transform: translateX(0);
       opacity: 1;
-      transform: translateX(0) scale(1);
     }
 
     #card.swipe-left {
-      transform: translateX(-150%) rotate(-20deg);
+      transform: translateX(-120%) rotate(-15deg);
       opacity: 0;
     }
 
     #card.swipe-right {
-      transform: translateX(150%) rotate(20deg);
+      transform: translateX(120%) rotate(15deg);
       opacity: 0;
     }
 
     #card.swipe-down {
-      transform: translateY(150%) rotate(15deg);
+      transform: translateY(120%) rotate(10deg);
       opacity: 0;
     }
 
@@ -233,6 +231,8 @@
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
+        card.classList.remove("swipe-left", "swipe-right", "swipe-down");
+        card.classList.add("show");
         document.getElementById("buttons").style.display = "none";
         progressBar.style.width = "100%";
         return;
@@ -244,12 +244,11 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
-
-      // Reset classes and force reflow to restart animation
-      card.className = '';
-      void card.offsetWidth;
-
-      card.classList.add('enter');
+      card.style.opacity = 0;
+      card.style.transform = "translateX(100%)";
+      requestAnimationFrame(() => {
+        card.classList.add("show");
+      });
       updateProgress();
     }
 
@@ -268,16 +267,14 @@
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 500);
+      setTimeout(() => flash.classList.remove("show"), 800);
     }
 
     function animateSwipe(direction, callback) {
+      card.classList.remove("show");
       card.classList.add(`swipe-${direction}`);
-      flashMessage(
-        direction === "right" ? "✅" :
-        direction === "left" ? "❌" :
-        "🔧"
-      );
+      const emoji = direction === "right" ? "✅" : direction === "left" ? "❌" : "🔧";
+      flashMessage(emoji);
       setTimeout(() => {
         card.classList.remove(`swipe-${direction}`);
         callback();
@@ -290,14 +287,12 @@
       history.push(current);
       current++;
       showNext();
-      updateProgress();
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
       showNext();
-      updateProgress();
     }
 
     function exportCSV() {
@@ -309,7 +304,6 @@
       link.click();
     }
 
-    // Swipe detection
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
