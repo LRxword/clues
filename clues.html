@@ -76,31 +76,27 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+    }
 
-      /* Tinder-style animation */
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    #card.swipe-left {
+      transform: translateX(-120%) rotate(-15deg);
       opacity: 0;
-      transform: translateX(100%) scale(0.85);
+    }
+
+    #card.swipe-right {
+      transform: translateX(120%) rotate(15deg);
+      opacity: 0;
+    }
+
+    #card.swipe-down {
+      transform: translateY(120%) rotate(10deg);
+      opacity: 0;
     }
 
     #card.enter {
       opacity: 1;
       transform: translateX(0) scale(1);
-    }
-
-    #card.swipe-left {
-      transform: translateX(-150%) rotate(-20deg);
-      opacity: 0;
-    }
-
-    #card.swipe-right {
-      transform: translateX(150%) rotate(20deg);
-      opacity: 0;
-    }
-
-    #card.swipe-down {
-      transform: translateY(150%) rotate(15deg);
-      opacity: 0;
     }
 
     #answer {
@@ -112,7 +108,6 @@
       border-radius: 6px;
       font-size: 1.6rem;
       font-weight: 700;
-      transition: color 0.2s ease, background 0.2s ease;
     }
 
     #writer {
@@ -241,7 +236,7 @@
       const clue = clues[current];
       card.innerHTML = `
         <p>${clue.Clue}</p>
-        <p><strong>Answer:</strong> <span id="answer" data-revealed="false" onclick="toggleAnswer(this)">████████</span></p>
+        <p><strong>Answer:</strong> <span id="answer" data-answer="${clue.Answer}" data-revealed="false" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
@@ -255,15 +250,16 @@
     }
 
     function toggleAnswer(el) {
-      if (el.dataset.revealed === "true") {
+      const revealed = el.dataset.revealed === "true";
+      if (revealed) {
+        el.textContent = "████████";
         el.style.color = "black";
         el.style.background = "black";
-        el.textContent = "████████";
         el.dataset.revealed = "false";
       } else {
+        el.textContent = el.dataset.answer;
         el.style.color = "white";
         el.style.background = "none";
-        el.textContent = clues[current].Answer;
         el.dataset.revealed = "true";
       }
     }
