@@ -54,6 +54,7 @@
       font-size: 1.4rem;
       display: inline-block;
       min-width: 6ch;
+      transition: color 0.3s, background 0.3s;
     }
     #buttons {
       width: 90vw;
@@ -99,10 +100,33 @@
       background-color: #19692c;
       outline: none;
     }
+
+    /* Flash confirmation message */
+    #flashMessage {
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      font-size: 3rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 1000;
+      user-select: none;
+    }
+    #flashMessage.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <h1>Clue Reviewer</h1>
+  <div id="flashMessage"></div>
+
   <input type="text" id="sheetUrl" placeholder="Paste Google Sheet CSV URL" />
   <button onclick="loadSheet()">Load Clues</button>
   <div id="card" style="display:none;"></div>
@@ -157,19 +181,31 @@
     }
 
     function toggleAnswer(el) {
-      if (el.style.color === "black") {
-        el.style.color = "white";
+      if (el.style.background === "black") {
+        // Reveal answer
         el.style.background = "none";
+        el.style.color = "black";
         el.textContent = clues[current].Answer;
       } else {
-        el.style.color = "black";
+        // Hide answer
         el.style.background = "black";
+        el.style.color = "black";
         el.textContent = "████████";
       }
     }
 
+    function flashMessage(text) {
+      const flash = document.getElementById("flashMessage");
+      flash.textContent = text;
+      flash.classList.add("show");
+      setTimeout(() => {
+        flash.classList.remove("show");
+      }, 1000);
+    }
+
     function recordAssessment(value) {
       clues[current].Assessment = value;
+      flashMessage(value.toUpperCase());
       current++;
       showNext();
     }
