@@ -209,19 +209,40 @@
     const progressBar = document.getElementById("progressBar");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
+    // Dummy fallback clue to test UI when CSV loading fails or is empty
+    const fallbackClue = {
+      Clue: "Example clue: 'Not quite clear definition'",
+      Answer: "VAGUE",
+      Writer: "Test Writer"
+    };
+
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
+      console.log("Loading clues from CSV...");
       Papa.parse(proxy + sheetUrl, {
         download: true,
         header: true,
         complete: results => {
+          console.log("Raw data rows:", results.data.length);
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+          console.log("Filtered clues count:", clues.length);
+          if (clues.length === 0) {
+            console.warn("No clues loaded - using fallback clue.");
+            clues = [fallbackClue];
+          }
           current = 0;
           history.length = 0;
           updateProgress();
           showNext();
         },
-        error: err => alert("Error loading sheet: " + err.message)
+        error: err => {
+          console.error("Error loading sheet:", err);
+          clues = [fallbackClue];
+          current = 0;
+          history.length = 0;
+          updateProgress();
+          showNext();
+        }
       });
     }
 
@@ -231,6 +252,7 @@
     }
 
     function showNext() {
+      console.log("Current index:", current, "Clues length:", clues.length);
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
@@ -239,13 +261,14 @@
         return;
       }
       const clue = clues[current];
+      console.log("Showing clue:", clue);
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
 
-      card.style.display = "block"; // Show first
+      card.style.display = "block";
 
       card.className = '';
       card.style.transition = 'none';
