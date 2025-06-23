@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <title>ClueMatch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-
   <style>
     body {
       margin: 0;
@@ -79,6 +77,11 @@
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
+    #card.enter {
+      transform: translateX(0) scale(1);
+      opacity: 1;
+    }
+
     #card.swipe-left {
       transform: translateX(-150%) rotate(-20deg);
       opacity: 0;
@@ -103,11 +106,6 @@
       border-radius: 6px;
       font-size: 1.6rem;
       font-weight: 700;
-    }
-
-    #answer.revealed {
-      color: white !important;
-      background: none !important;
     }
 
     #writer {
@@ -188,10 +186,10 @@
 
   <div id="card" style="display:none;"></div>
   <div id="buttons">
-    <button id="btnYes" onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
-    <button id="btnNo" onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button id="btnMaybe" onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
-    <button id="btnUndo" onclick="undoAssessment()">Undo</button>
+    <button onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
+    <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
+    <button onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
+    <button onclick="undoAssessment()">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
@@ -233,40 +231,55 @@
         progressBar.style.width = "100%";
         return;
       }
+
       const clue = clues[current];
-      card.className = 'enter';
       card.innerHTML = `
         <p>${clue.Clue}</p>
-        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer()">████████</span></p>
+        <p><strong>Answer:</strong>
+          <span id="answer"
+                data-answer="${clue.Answer}"
+                data-revealed="false"
+                onclick="toggleAnswer(this)">
+            ████████
+          </span>
+        </p>
         <p id="writer">${clue.Writer}</p>
       `;
+
       card.style.display = "block";
+      card.className = '';
+      void card.offsetWidth;
+      card.classList.add('enter');
       updateProgress();
     }
 
-    function toggleAnswer() {
-      const answerSpan = document.getElementById("answer");
-      const isRevealed = answerSpan.classList.toggle("revealed");
-      answerSpan.textContent = isRevealed ? clues[current].Answer : "████████";
+    function toggleAnswer(el) {
+      const revealed = el.getAttribute("data-revealed") === "true";
+      if (revealed) {
+        el.textContent = "████████";
+        el.style.color = "black";
+        el.style.background = "black";
+        el.setAttribute("data-revealed", "false");
+      } else {
+        el.textContent = el.getAttribute("data-answer");
+        el.style.color = "white";
+        el.style.background = "none";
+        el.setAttribute("data-revealed", "true");
+      }
     }
 
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 500);
+      setTimeout(() => flash.classList.remove("show"), 600);
     }
 
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
-      flashMessage(
-        direction === "right" ? "✅" :
-        direction === "left" ? "❌" :
-        "🔧"
-      );
+      flashMessage(direction === "right" ? "✅" : direction === "left" ? "❌" : "🔧");
       setTimeout(() => {
+        card.className = ''; // Reset before next card
         callback();
-        card.className = '';
-        void card.offsetWidth;
       }, 400);
     }
 
@@ -276,14 +289,12 @@
       history.push(current);
       current++;
       showNext();
-      updateProgress();
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
       showNext();
-      updateProgress();
     }
 
     function exportCSV() {
