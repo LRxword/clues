@@ -22,7 +22,15 @@
     }
     h1 {
       font-size: 2rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    #instructions {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+      max-width: 500px;
+      text-align: center;
+      user-select: none;
     }
     #card {
       width: 90vw;
@@ -67,7 +75,7 @@
       flex-direction: row;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 0.25rem;
+      margin-bottom: 1rem;
     }
     button {
       padding: 1rem 2rem;
@@ -86,14 +94,6 @@
     button:hover, button:focus {
       background-color: #0056b3;
       outline: none;
-    }
-    #instructions {
-      font-size: 0.85rem;
-      color: #666;
-      margin-bottom: 1rem;
-      max-width: 500px;
-      text-align: center;
-      user-select: none;
     }
     #exportBtn {
       position: fixed;
@@ -141,6 +141,7 @@
 </head>
 <body>
   <h1>Clue Reviewer</h1>
+  <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
@@ -149,9 +150,6 @@
     <button onclick="recordAssessment('No')">No</button>
     <button onclick="recordAssessment('Maybe')">Maybe</button>
   </div>
-  <div id="instructions" style="display:none;">
-    Swipe right for YES, left for NO, down for MAYBE
-  </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
   <script>
@@ -159,7 +157,6 @@
     let current = 0;
     const card = document.getElementById("card");
     const buttons = document.getElementById("buttons");
-    const instructions = document.getElementById("instructions");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
@@ -177,7 +174,6 @@
           document.getElementById("exportBtn").style.display = "block";
           showNext();
           buttons.style.display = "flex";
-          instructions.style.display = "block";
         },
         error: function(err) {
           alert("Error loading sheet: " + err.message);
@@ -189,13 +185,12 @@
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         buttons.style.display = "none";
-        instructions.style.display = "none";
         return;
       }
       const clue = clues[current];
       card.innerHTML = `
         <p>${clue.Clue}</p>
-        <p><span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
@@ -238,14 +233,12 @@
       link.click();
     }
 
-    // Swipe detection
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => recordAssessment("No"));
     mc.on("swiperight", () => recordAssessment("Yes"));
     mc.on("swipedown", () => recordAssessment("Maybe"));
 
-    // Load clues automatically on page load
     window.onload = loadSheet;
   </script>
 </body>
