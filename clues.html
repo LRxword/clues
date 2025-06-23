@@ -27,6 +27,22 @@
       font-size: 16px;
     }
 
+    #loadButton {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #loadButton:hover {
+      background: #218838;
+    }
+
     #clueBox {
       max-width: 200px;
       background: white;
@@ -34,6 +50,7 @@
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       text-align: center;
+      display: none;
     }
 
     #clue {
@@ -75,10 +92,11 @@
 
   <div id="urlContainer">
     <input type="text" id="urlInput" placeholder="Paste URL here" />
+    <button id="loadButton">Load</button>
   </div>
 
   <div id="clueBox">
-    <div id="clue">Example clue goes here</div>
+    <div id="clue">Clue will appear here</div>
     <div id="answer">Answer</div>
     <div id="writer">Writer</div>
     <div id="buttons">
@@ -89,11 +107,29 @@
   </div>
 
   <script>
-    window.addEventListener('load', () => {
-      const urlContainer = document.getElementById('urlContainer');
-      if (urlContainer) {
-        urlContainer.style.display = 'none';
-      }
+    document.getElementById('loadButton').addEventListener('click', () => {
+      const url = document.getElementById('urlInput').value;
+      if (!url) return alert('Please paste a URL.');
+
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok.');
+          return response.text();
+        })
+        .then(data => {
+          // Assume CSV format: clue,answer,writer
+          const lines = data.trim().split('\n');
+          const [clue, answer, writer] = lines[0].split(',');
+
+          document.getElementById('clue').textContent = clue || '—';
+          document.getElementById('answer').textContent = answer || '—';
+          document.getElementById('writer').textContent = writer || '—';
+
+          document.getElementById('clueBox').style.display = 'block';
+        })
+        .catch(err => {
+          alert('Failed to load clues: ' + err.message);
+        });
     });
   </script>
 
