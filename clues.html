@@ -254,7 +254,8 @@
     }
 
     function toggleAnswer(el) {
-      if (el.style.color === "black") {
+      const style = window.getComputedStyle(el);
+      if (style.color === "rgb(0, 0, 0)" && style.backgroundColor === "rgb(0, 0, 0)") {
         el.style.color = "white";
         el.style.background = "none";
         el.textContent = clues[current].Answer;
