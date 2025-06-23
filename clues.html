@@ -74,22 +74,23 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
+      position: relative;
       transform: translateX(0);
-      transition: transform 0.4s ease, opacity 0.4s ease;
+      transition: transform 0.5s ease, opacity 0.5s ease;
     }
 
-    .exit-left {
-      transform: translateX(-120%) rotate(-15deg);
+    .swipe-left {
+      transform: translateX(-150%) rotate(-25deg);
       opacity: 0;
     }
 
-    .exit-right {
-      transform: translateX(120%) rotate(15deg);
+    .swipe-right {
+      transform: translateX(150%) rotate(25deg);
       opacity: 0;
     }
 
-    .exit-down {
-      transform: translateY(120%) rotate(10deg);
+    .swipe-down {
+      transform: translateY(150%) rotate(15deg);
       opacity: 0;
     }
 
@@ -101,7 +102,6 @@
     .enter-active {
       transform: translateX(0);
       opacity: 1;
-      transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
     #answer {
@@ -190,36 +190,27 @@
   <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
-
   <div id="card" style="display:none;"></div>
-
   <div id="buttons">
     <button id="btnYes" onclick="handleAction('Yes')">Yes</button>
     <button id="btnNo" onclick="handleAction('No')">No</button>
     <button id="btnMaybe" onclick="handleAction('Maybe')">Maybe</button>
     <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
-
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-
   <script>
-    let clues = [];
-    let current = 0;
-    const history = [];
-    const card = document.getElementById("card");
-    const flash = document.getElementById("flashMessage");
-    const progressBar = document.getElementById("progressBar");
+    let clues = [], current = 0, history = [];
+    const card = document.getElementById("card"), flash = document.getElementById("flashMessage"), progressBar = document.getElementById("progressBar");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
-      const proxy = "https://corsproxy.io/?";
-      Papa.parse(proxy + sheetUrl, {
+      Papa.parse("https://corsproxy.io/?" + sheetUrl, {
         download: true,
         header: true,
         complete: results => {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
           current = 0;
-          history.length = 0;
+          history = [];
           updateProgress();
           showNext();
         },
@@ -228,8 +219,7 @@
     }
 
     function updateProgress() {
-      const percent = (current / clues.length) * 100;
-      progressBar.style.width = percent + "%";
+      progressBar.style.width = ((current / clues.length) * 100) + "%";
     }
 
     function showNext() {
@@ -237,42 +227,37 @@
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
-        progressBar.style.width = "100%";
         return;
       }
-
       const clue = clues[current];
+      card.className = 'enter';
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
-      card.className = 'enter';
       card.style.display = "block";
-      requestAnimationFrame(() => {
-        card.classList.add('enter-active');
-      });
-
+      requestAnimationFrame(() => card.classList.add('enter-active'));
       updateProgress();
     }
 
     function handleAction(value) {
       const direction = value === 'Yes' ? 'right' : value === 'No' ? 'left' : 'down';
-      animateSwipe(direction, () => {
-        recordAssessment(value);
-      });
+      flashMessage(value === 'Yes' ? '✅' : value === 'No' ? '❌' : '🔧');
+      card.className = `swipe-${direction}`;
+      setTimeout(() => {
+        clues[current].Assessment = value;
+        history.push(current);
+        current++;
+        card.className = '';
+        showNext();
+      }, 500);
     }
 
     function toggleAnswer(el) {
-      if (el.style.color === "black") {
-        el.style.color = "white";
-        el.style.background = "none";
-        el.textContent = clues[current].Answer;
-      } else {
-        el.style.color = "black";
-        el.style.background = "black";
-        el.textContent = "████████";
-      }
+      el.style.color = el.style.color === "black" ? "white" : "black";
+      el.style.background = el.style.background === "black" ? "none" : "black";
+      el.textContent = el.textContent === "████████" ? clues[current].Answer : "████████";
     }
 
     function flashMessage(emoji) {
@@ -281,29 +266,8 @@
       setTimeout(() => flash.classList.remove("show"), 500);
     }
 
-    function animateSwipe(direction, callback) {
-      const exitClass = direction === 'right' ? 'exit-right' :
-                        direction === 'left' ? 'exit-left' :
-                        'exit-down';
-      card.className = exitClass;
-      flashMessage(
-        direction === "right" ? "✅" :
-        direction === "left" ? "❌" :
-        "🔧"
-      );
-      setTimeout(callback, 400); // Wait for swipe-out before loading new card
-    }
-
-    function recordAssessment(value) {
-      if (current >= clues.length) return;
-      clues[current].Assessment = value;
-      history.push(current);
-      current++;
-      showNext();
-    }
-
     function undoAssessment() {
-      if (history.length === 0) return;
+      if (!history.length) return;
       current = history.pop();
       showNext();
     }
