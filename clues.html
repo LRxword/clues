@@ -60,15 +60,7 @@
       transition: width 0.3s ease;
     }
 
-    #card-container {
-      position: relative;
-      width: 90vw;
-      max-width: 480px;
-      height: 320px;
-      margin-bottom: 2rem;
-    }
-
-    .card {
+    #card {
       background: white;
       color: #222;
       border-radius: 24px;
@@ -81,24 +73,23 @@
       word-wrap: break-word;
       overflow-wrap: break-word;
       word-break: break-word;
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      overflow-y: auto;
+      width: 90vw;
+      max-width: 480px;
+      margin-bottom: 2rem;
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
-    .card.swipe-left {
+    #card.swipe-left {
       transform: translateX(-120%) rotate(-15deg);
       opacity: 0;
     }
 
-    .card.swipe-right {
+    #card.swipe-right {
       transform: translateX(120%) rotate(15deg);
       opacity: 0;
     }
 
-    .card.swipe-down {
+    #card.swipe-down {
       transform: translateY(120%) rotate(10deg);
       opacity: 0;
     }
@@ -190,7 +181,7 @@
   <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
 
-  <div id="card-container"></div>
+  <div id="card" style="display:none;"></div>
   <div id="buttons">
     <button id="btnYes" onclick="recordAssessment('Yes')">Yes</button>
     <button id="btnNo" onclick="recordAssessment('No')">No</button>
@@ -203,7 +194,7 @@
     let clues = [];
     let current = 0;
     const history = [];
-    const container = document.getElementById("card-container");
+    const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
@@ -218,7 +209,7 @@
           current = 0;
           history.length = 0;
           updateProgress();
-          renderNextCard();
+          showNext();
         },
         error: err => alert("Error loading sheet: " + err.message)
       });
@@ -229,24 +220,23 @@
       progressBar.style.width = percent + "%";
     }
 
-    function renderNextCard() {
-      container.innerHTML = "";
+    function showNext() {
+      card.className = ''; // reset any animation
       if (current >= clues.length) {
-        const done = document.createElement("div");
-        done.className = "card";
-        done.innerHTML = "<strong>All done!</strong>";
-        container.appendChild(done);
+        card.innerHTML = "<strong>All done!</strong>";
+        card.style.display = "block";
+        document.getElementById("buttons").style.display = "none";
+        progressBar.style.width = "100%";
         return;
       }
       const clue = clues[current];
-      const card = document.createElement("div");
-      card.className = "card";
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
       `;
-      container.appendChild(card);
+      card.style.display = "block";
+      updateProgress();
     }
 
     function toggleAnswer(el) {
@@ -267,32 +257,28 @@
       setTimeout(() => flash.classList.remove("show"), 800);
     }
 
-    function animateAndNext(direction, assessment) {
-      const card = container.querySelector(".card");
-      if (!card) return;
+    function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
-      flashMessage(
-        assessment === "Yes" ? "✅" :
-        assessment === "No" ? "❌" : "🔧"
-      );
       setTimeout(() => {
-        clues[current].Assessment = assessment;
-        history.push(current);
-        current++;
-        updateProgress();
-        renderNextCard();
+        card.classList.remove(`swipe-${direction}`);
+        callback();
       }, 400);
     }
 
-    function recordAssessment(val) {
-      animateAndNext(val.toLowerCase(), val);
+    function recordAssessment(value) {
+      if (current >= clues.length) return;
+      clues[current].Assessment = value;
+      history.push(current);
+      const emoji = value === "Yes" ? "✅" : value === "No" ? "❌" : "🔧";
+      flashMessage(emoji);
+      current++;
+      showNext();
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
-      updateProgress();
-      renderNextCard();
+      showNext();
     }
 
     function exportCSV() {
@@ -304,11 +290,12 @@
       link.click();
     }
 
+    // Swipe detection
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateAndNext("left", "No"));
-    mc.on("swiperight", () => animateAndNext("right", "Yes"));
-    mc.on("swipedown", () => animateAndNext("down", "Maybe"));
+    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
+    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("Yes")));
+    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Maybe")));
 
     window.onload = loadSheet;
   </script>
