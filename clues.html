@@ -245,18 +245,15 @@
         <p id="writer">${clue.Writer}</p>
       `;
 
-      card.style.display = "block"; // SHOW FIRST
+      card.style.display = "block"; // Show first
 
-      // Reset styles and prepare for animation from right
       card.className = '';
       card.style.transition = 'none';
       card.style.transform = 'translateX(100%) scale(0.85)';
       card.style.opacity = '0';
 
-      // Force reflow so the browser registers the reset
-      void card.offsetWidth;
+      void card.offsetWidth; // force reflow
 
-      // Add enter class to animate to center
       card.classList.add('enter');
 
       updateProgress();
