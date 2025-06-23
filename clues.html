@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clue Reviewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    #card {
+      width: 90vw;
+      max-width: 500px;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+      text-align: center;
+      transition: transform 0.2s;
+      user-select: none;
+    }
+    button {
+      margin: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+    }
+    #exportBtn {
+      display: none;
+    }
+    #answer {
+      background: black;
+      color: black;
+      cursor: pointer;
+      user-select: none;
+      padding: 0 0.25em;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Clue Reviewer</h1>
+  <input type="text" id="sheetUrl" placeholder="Paste Google Sheet CSV URL" style="width:90%; max-width:500px;" />
+  <button onclick="loadSheet()">Load Clues</button>
+  <div id="card" style="display:none;"></div>
+  <div id="buttons" style="display:none;">
+    <button onclick="recordAssessment('Yes')">Yes</button>
+    <button onclick="recordAssessment('No')">No</button>
+    <button onclick="recordAssessment('Maybe')">Maybe</button>
+  </div>
+  <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
+
+  <script>
+    let clues = [];
+    let current = 0;
+    const card = document.getElementById("card");
+
+    function loadSheet() {
+      let url = document.getElementById("sheetUrl").value.trim();
+      const proxyUrl = "https://corsproxy.io/?";
+      if (!url.startsWith(proxyUrl)) {
+        url = proxyUrl + url;
+      }
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+          current = 0;
+          document.getElementById("exportBtn").style.display = "none";
+          showNext();
+        },
+        error: function(err) {
+          alert("Error loading sheet: " + err.message);
+        }
+      });
+    }
+
+    function showNext() {
+      if (current >= clues.length) {
+        card.innerHTML = "<strong>All done!</strong>";
+        document.getElementById("buttons").style.display = "none";
+        document.getElementById("exportBtn").style.display = "inline-block";
+        return;
+      }
+      const clue = clues[current];
+      card.innerHTML = `
+        <p><strong>Clue:</strong> ${clue.Clue}</p>
+        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p><strong>Writer:</strong> ${clue.Writer}</p>
+      `;
+      card.style.display = "block";
+      document.getElementById("buttons").style.display = "block";
+    }
+
+    function toggleAnswer(el) {
+      if (el.style.color === "black") {
+        el.style.color = "white";
+        el.style.background = "none";
+        el.textContent = clues[current].Answer;
+      } else {
+        el.style.color = "black";
+        el.style.background = "black";
+        el.textContent = "████████";
+      }
+    }
+
+    function recordAssessment(value) {
+      clues[current].Assessment = value;
+      current++;
+      showNext();
+    }
+
+    function exportCSV() {
+      const csv = Papa.unparse(clues);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "reviewed_clues.csv";
+      link.click();
+    }
+
+    // Swipe detection
+    const mc = new Hammer(document.body);
+    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+    mc.on("swipeleft", () => recordAssessment("No"));
+    mc.on("swiperight", () => recordAssessment("Yes"));
+    mc.on("swipedown", () => recordAssessment("Maybe"));
+  </script>
+</body>
+</html>
