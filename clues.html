@@ -76,14 +76,14 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
-      transition: transform 0.4s ease, opacity 0.4s ease;
-      transform: translateX(100%);
       opacity: 0;
+      transform: translateX(100%) scale(0.95);
+      transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
-    #card.show {
-      transform: translateX(0);
+    #card.enter {
       opacity: 1;
+      transform: translateX(0) scale(1);
     }
 
     #card.swipe-left {
@@ -190,9 +190,9 @@
 
   <div id="card" style="display:none;"></div>
   <div id="buttons">
-    <button id="btnYes" onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
-    <button id="btnNo" onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button id="btnMaybe" onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
+    <button id="btnYes" onclick="triggerAssessment('Yes', 'right')">Yes</button>
+    <button id="btnNo" onclick="triggerAssessment('No', 'left')">No</button>
+    <button id="btnMaybe" onclick="triggerAssessment('Maybe', 'down')">Maybe</button>
     <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
@@ -231,8 +231,6 @@
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
-        card.classList.remove("swipe-left", "swipe-right", "swipe-down");
-        card.classList.add("show");
         document.getElementById("buttons").style.display = "none";
         progressBar.style.width = "100%";
         return;
@@ -244,10 +242,13 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
+      card.className = ''; // remove swipe class
       card.style.opacity = 0;
-      card.style.transform = "translateX(100%)";
+      card.style.transform = 'translateX(100%) scale(0.95)';
+
+      // ensure reflow
       requestAnimationFrame(() => {
-        card.classList.add("show");
+        card.classList.add('enter');
       });
       updateProgress();
     }
@@ -270,13 +271,21 @@
       setTimeout(() => flash.classList.remove("show"), 800);
     }
 
+    function triggerAssessment(value, direction) {
+      animateSwipe(direction, () => recordAssessment(value));
+    }
+
     function animateSwipe(direction, callback) {
-      card.classList.remove("show");
+      card.classList.remove('enter');
       card.classList.add(`swipe-${direction}`);
-      const emoji = direction === "right" ? "✅" : direction === "left" ? "❌" : "🔧";
-      flashMessage(emoji);
+      flashMessage(
+        direction === "right" ? "✅" :
+        direction === "left" ? "❌" :
+        "🔧"
+      );
       setTimeout(() => {
-        card.classList.remove(`swipe-${direction}`);
+        card.className = '';
+        showNext();
         callback();
       }, 400);
     }
@@ -286,7 +295,6 @@
       clues[current].Assessment = value;
       history.push(current);
       current++;
-      showNext();
     }
 
     function undoAssessment() {
@@ -306,9 +314,9 @@
 
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("Yes")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Maybe")));
+    mc.on("swipeleft", () => triggerAssessment("No", "left"));
+    mc.on("swiperight", () => triggerAssessment("Yes", "right"));
+    mc.on("swipedown", () => triggerAssessment("Maybe", "down"));
 
     window.onload = loadSheet;
   </script>
