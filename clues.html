@@ -4,109 +4,203 @@
   <meta charset="UTF-8" />
   <title>ClueMatch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- Google Font Montserrat -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
+
   <style>
+    /* Background gradient + subtle animated bokeh */
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 2rem 1rem 6rem;
-      background: linear-gradient(135deg, #ff5f6d, #ffc371);
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #fd3a69, #ff6a88);
+      height: 100vh;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-      overflow-x: hidden;
-    }
-    h1 {
-      font-size: 2.5rem;
+      padding: 2rem 1rem 6rem;
+      position: relative;
       color: white;
+      user-select: none;
+    }
+
+    /* Bokeh circles */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0, transparent 40%);
+      animation: bokehMove 30s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes bokehMove {
+      0% {transform: translate(0, 0);}
+      50% {transform: translate(30px, 20px);}
+      100% {transform: translate(0, 0);}
+    }
+
+    h1 {
+      font-size: 2.8rem;
       margin-bottom: 0.3rem;
-      text-shadow: 1px 1px 2px #0005;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      user-select: none;
+      gap: 0.6rem;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+      z-index: 2;
     }
     #title-flame {
-      font-size: 2.8rem;
+      font-size: 3rem;
       line-height: 1;
     }
+
     #instructions {
-      font-size: 1.1rem;
-      color: #fefefe;
-      margin-bottom: 2rem;
-      text-align: center;
-      text-shadow: 1px 1px 2px #0004;
-      user-select: none;
-    }
-    #progress {
       font-size: 1.2rem;
-      color: white;
-      margin-bottom: 1rem;
-      text-shadow: 1px 1px 2px #0006;
-      user-select: none;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+      margin-bottom: 1.8rem;
+      z-index: 2;
     }
-    #card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+
+    #progress {
       width: 90vw;
       max-width: 500px;
-      padding: 2rem;
-      text-align: center;
-      font-size: 2.2rem;
-      line-height: 1.4;
-      transition: transform 0.2s;
+      height: 6px;
+      background: rgba(255 255 255 / 0.3);
+      border-radius: 3px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 0 8px rgba(0,0,0,0.15) inset;
+      z-index: 2;
       user-select: none;
-      margin-bottom: 1rem;
     }
+    #progressBar {
+      height: 100%;
+      width: 0%;
+      background: #ffe6e6;
+      box-shadow: 0 0 10px #ff9aa2;
+      transition: width 0.3s ease;
+    }
+
+    #card {
+      position: relative;
+      background: white;
+      color: #222;
+      border-radius: 24px;
+      width: 90vw;
+      max-width: 500px;
+      padding: 2.2rem 2rem;
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.3;
+      box-shadow:
+        0 20px 40px rgba(253, 58, 105, 0.4),
+        0 8px 16px rgba(253, 106, 136, 0.4);
+      text-align: center;
+      user-select: none;
+      overflow-wrap: break-word;
+      z-index: 3;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      will-change: transform, opacity;
+      cursor: grab;
+    }
+    #card.panning {
+      cursor: grabbing;
+      transition: none;
+    }
+
     #card p {
       margin: 1rem 0;
     }
+
     #answer {
       background: black;
       color: black;
       cursor: pointer;
       user-select: none;
-      padding: 0 0.3em;
-      border-radius: 3px;
-      font-weight: bold;
-      font-size: 1.5rem;
+      padding: 0 0.4em;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 1.6rem;
       display: inline-block;
       min-width: 6ch;
       transition: color 0.3s, background 0.3s;
     }
+
     #writer {
-      font-size: 1.2rem;
-      color: #333;
+      font-size: 1.3rem;
+      color: #555;
+      font-weight: 500;
+      margin-top: 1rem;
     }
+
     #buttons {
       display: flex;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 2rem;
       flex-wrap: wrap;
+      width: 90vw;
+      max-width: 500px;
+      margin-bottom: 2rem;
+      z-index: 2;
+      user-select: none;
     }
+
     button {
       flex: 1 1 auto;
-      min-width: 70px;
+      min-width: 80px;
       max-width: 120px;
-      padding: 1rem;
-      font-size: 1.1rem;
+      padding: 1rem 1.5rem;
+      font-size: 1.15rem;
+      font-weight: 700;
       border: none;
-      border-radius: 10px;
-      background: #444;
-      color: white;
+      border-radius: 40px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      transition: background 0.2s ease;
+      box-shadow: 0 5px 15px rgba(253, 58, 105, 0.5);
+      color: white;
+      text-transform: uppercase;
+      transition: filter 0.2s ease;
       user-select: none;
     }
     button:hover {
-      background: #222;
+      filter: brightness(1.1);
     }
+    button:active {
+      filter: brightness(0.9);
+    }
+    button:focus {
+      outline: 3px solid #ff9aa2;
+      outline-offset: 2px;
+    }
+
+    /* Specific button colors */
+    #btnYes {
+      background: linear-gradient(45deg, #ff758c, #ff7eb3);
+      box-shadow: 0 5px 15px #ff7eb3aa;
+    }
+    #btnNo {
+      background: linear-gradient(45deg, #555555, #222222);
+      box-shadow: 0 5px 15px #222222cc;
+    }
+    #btnMaybe {
+      background: linear-gradient(45deg, #ffa726, #ffca28);
+      color: #222;
+      box-shadow: 0 5px 15px #ffca2888;
+    }
+    #btnUndo {
+      background: linear-gradient(45deg, #b33, #d44);
+      box-shadow: 0 5px 15px #d44a4aaa;
+    }
+
     #exportBtn {
       position: fixed;
       bottom: 0;
@@ -124,40 +218,44 @@
       cursor: pointer;
       z-index: 10;
       user-select: none;
+      transition: background-color 0.3s ease;
     }
     #exportBtn:hover {
       background: #333;
     }
+
+    /* Swipe flash overlay */
     #flashMessage {
       position: fixed;
-      top: 35%;
+      top: 40%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 5rem;
+      transform: translate(-50%, -50%) scale(0.8) rotate(0deg);
+      font-size: 6rem;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease, transform 0.4s ease;
       pointer-events: none;
       z-index: 999;
       user-select: none;
-      text-shadow: 1px 1px 10px #000a;
+      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
     }
     #flashMessage.show {
       opacity: 1;
+      transform: translate(-50%, -50%) scale(1.3) rotate(15deg);
     }
   </style>
 </head>
 <body>
-  <h1><span id="title-flame">🔥</span> ClueMatch</h1>
+  <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
   <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
-  <div id="progress"></div>
+  <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
   <div id="buttons" style="display:none;">
-    <button onclick="recordAssessment('Yes')">Yes</button>
-    <button onclick="recordAssessment('No')">No</button>
-    <button onclick="recordAssessment('Maybe')">Maybe</button>
-    <button onclick="undoAssessment()" style="background:#b33;">Undo</button>
+    <button id="btnYes" onclick="recordAssessment('Yes')">Yes</button>
+    <button id="btnNo" onclick="recordAssessment('No')">No</button>
+    <button id="btnMaybe" onclick="recordAssessment('Maybe')">Maybe</button>
+    <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
@@ -167,9 +265,10 @@
     const history = [];
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
-    const progressEl = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
+    // Load clues on page load
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
       const url = proxy + sheetUrl;
@@ -181,7 +280,7 @@
           current = 0;
           history.length = 0;
           updateProgress();
-          showNext();
+          showNext(true);
           document.getElementById("buttons").style.display = "flex";
           document.getElementById("exportBtn").style.display = "block";
         },
@@ -190,23 +289,39 @@
     }
 
     function updateProgress() {
-      progressEl.textContent = `Clue ${Math.min(current + 1, clues.length)} of ${clues.length}`;
+      const percent = (current / clues.length) * 100;
+      progressBar.style.width = percent + "%";
     }
 
-    function showNext() {
+    function showNext(skipAnimation = false) {
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
-        progressEl.textContent = "All clues reviewed";
+        progressBar.style.width = "100%";
         return;
       }
       const clue = clues[current];
-      card.innerHTML = `
-        <p>${clue.Clue}</p>
-        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
-        <p id="writer">${clue.Writer}</p>
-      `;
+      // Animate fade in with scale
+      if (!skipAnimation) {
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.85)";
+        setTimeout(() => {
+          card.innerHTML = `
+            <p>${clue.Clue}</p>
+            <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+            <p id="writer">${clue.Writer}</p>
+          `;
+          card.style.opacity = "1";
+          card.style.transform = "scale(1)";
+        }, 200);
+      } else {
+        card.innerHTML = `
+          <p>${clue.Clue}</p>
+          <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+          <p id="writer">${clue.Writer}</p>
+        `;
+      }
       card.style.display = "block";
       updateProgress();
     }
@@ -229,7 +344,27 @@
       setTimeout(() => flash.classList.remove("show"), 800);
     }
 
-    function recordAssessment(value) {
+    function animateCardSwipe(direction) {
+      let x = 0, y = 0, rotate = 0;
+      const distance = 300;
+      switch (direction) {
+        case "right": x = distance; rotate = 20; break;
+        case "left": x = -distance; rotate = -20; break;
+        case "down": y = distance; rotate = 10; break;
+      }
+      card.style.transition = "transform 0.5s ease, opacity 0.5s ease";
+      card.style.transform = `translate(${x}px, ${y}px) rotate(${rotate}deg)`;
+      card.style.opacity = "0";
+    }
+
+    function resetCardPosition() {
+      card.style.transition = "none";
+      card.style.transform = "translate(0, 0) rotate(0deg)";
+      card.style.opacity = "1";
+    }
+
+    function recordAssessment(value, fromSwipe) {
+      if (current >= clues.length) return;
       clues[current].Assessment = value;
       history.push(current);
       flashMessage(
@@ -237,14 +372,24 @@
         value === "No" ? "❌" :
         "🤔"
       );
-      current++;
-      showNext();
+      if (fromSwipe) {
+        animateCardSwipe(value === "Yes" ? "right" : value === "No" ? "left" : "down");
+        setTimeout(() => {
+          current++;
+          resetCardPosition();
+          showNext();
+        }, 500);
+      } else {
+        current++;
+        showNext();
+      }
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
-      showNext();
+      resetCardPosition();
+      showNext(true);
     }
 
     function exportCSV() {
@@ -259,9 +404,9 @@
     // Swipe support
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => recordAssessment("No"));
-    mc.on("swiperight", () => recordAssessment("Yes"));
-    mc.on("swipedown", () => recordAssessment("Maybe"));
+    mc.on("swipeleft", () => recordAssessment("No", true));
+    mc.on("swiperight", () => recordAssessment("Yes", true));
+    mc.on("swipedown", () => recordAssessment("Maybe", true));
 
     window.onload = loadSheet;
   </script>
