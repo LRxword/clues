@@ -2,98 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Clue Reviewer</title>
+  <title>Cryptinder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 2rem 1rem 6rem;
+      background: linear-gradient(135deg, #ff5f6d, #ffc371);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem 5rem;
-      margin: 0;
       min-height: 100vh;
       box-sizing: border-box;
-      position: relative;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
+      overflow-x: hidden;
     }
     h1 {
-      font-size: 2rem;
+      font-size: 2.5rem;
+      color: white;
       margin-bottom: 0.5rem;
+      text-shadow: 1px 1px 2px #0005;
     }
     #instructions {
-      font-size: 1rem;
-      color: #555;
-      margin-bottom: 1.5rem;
-      max-width: 500px;
+      font-size: 1.1rem;
+      color: #fefefe;
+      margin-bottom: 2rem;
       text-align: center;
-      user-select: none;
+      text-shadow: 1px 1px 2px #0004;
     }
     #card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       width: 90vw;
       max-width: 500px;
       padding: 2rem;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin-bottom: 1rem;
       text-align: center;
+      font-size: 2.2rem;
+      line-height: 1.4;
       transition: transform 0.2s;
       user-select: none;
-      font-size: 2.8rem;
-      line-height: 1.5;
-      word-wrap: break-word;
     }
     #card p {
-      margin: 0.5rem 0;
+      margin: 1rem 0;
     }
     #answer {
       background: black;
       color: black;
       cursor: pointer;
       user-select: none;
-      padding: 0 0.25em;
+      padding: 0 0.3em;
       border-radius: 3px;
       font-weight: bold;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       display: inline-block;
       min-width: 6ch;
       transition: color 0.3s, background 0.3s;
     }
     #writer {
-      font-size: 1.4rem;
-      margin-top: 0.25em;
+      font-size: 1.2rem;
       color: #333;
     }
     #buttons {
-      width: 90vw;
-      max-width: 500px;
       display: flex;
-      flex-direction: row;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin: 2rem 0 0.5rem;
+      flex-wrap: wrap;
     }
     button {
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 8px;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      user-select: none;
-      box-shadow: 0 2px 6px rgba(0,123,255,0.4);
-      transition: background-color 0.2s ease;
       flex: 1 1 auto;
       min-width: 80px;
+      max-width: 140px;
+      padding: 1rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 10px;
+      background: #444;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.2s ease;
     }
-    button:hover, button:focus {
-      background-color: #0056b3;
-      outline: none;
+    button:hover {
+      background: #222;
     }
     #exportBtn {
       position: fixed;
@@ -103,36 +97,30 @@
       max-width: 500px;
       margin: 0 auto;
       padding: 1rem;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       border-radius: 0;
-      background-color: #666;
-      box-shadow: none;
+      background-color: #555;
       color: white;
-      cursor: pointer;
-      user-select: none;
-      border: none;
       text-align: center;
-      z-index: 1000;
+      border: none;
+      cursor: pointer;
+      z-index: 10;
     }
-    #exportBtn:hover, #exportBtn:focus {
-      background-color: #444;
-      outline: none;
+    #exportBtn:hover {
+      background: #333;
     }
     #flashMessage {
       position: fixed;
-      top: 40%;
+      top: 35%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.75);
-      color: white;
-      font-size: 3rem;
-      padding: 1rem 2rem;
-      border-radius: 12px;
+      font-size: 5rem;
       opacity: 0;
+      transition: opacity 0.3s ease;
       pointer-events: none;
-      transition: opacity 0.5s ease;
-      z-index: 1000;
+      z-index: 999;
       user-select: none;
+      text-shadow: 1px 1px 10px #000a;
     }
     #flashMessage.show {
       opacity: 1;
@@ -140,8 +128,8 @@
   </style>
 </head>
 <body>
-  <h1>Clue Reviewer</h1>
-  <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
+  <h1>Cryptinder</h1>
+  <div id="instructions">Swipe right for ✅ YES, left for ❌ NO, down for 🤔 MAYBE</div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
@@ -156,35 +144,31 @@
     let clues = [];
     let current = 0;
     const card = document.getElementById("card");
-    const buttons = document.getElementById("buttons");
+    const flash = document.getElementById("flashMessage");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
-      const proxyUrl = "https://corsproxy.io/?";
-      let url = sheetUrl;
-      if (!url.startsWith(proxyUrl)) {
-        url = proxyUrl + url;
-      }
+      const proxy = "https://corsproxy.io/?";
+      const url = proxy + sheetUrl;
       Papa.parse(url, {
         download: true,
         header: true,
         complete: function(results) {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
           current = 0;
-          document.getElementById("exportBtn").style.display = "block";
           showNext();
-          buttons.style.display = "flex";
+          document.getElementById("buttons").style.display = "flex";
+          document.getElementById("exportBtn").style.display = "block";
         },
-        error: function(err) {
-          alert("Error loading sheet: " + err.message);
-        }
+        error: err => alert("Error loading sheet: " + err.message)
       });
     }
 
     function showNext() {
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
-        buttons.style.display = "none";
+        card.style.display = "block";
+        document.getElementById("buttons").style.display = "none";
         return;
       }
       const clue = clues[current];
@@ -208,18 +192,19 @@
       }
     }
 
-    function flashMessage(text) {
-      const flash = document.getElementById("flashMessage");
-      flash.textContent = text;
+    function flashMessage(emoji) {
+      flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => {
-        flash.classList.remove("show");
-      }, 1000);
+      setTimeout(() => flash.classList.remove("show"), 800);
     }
 
     function recordAssessment(value) {
       clues[current].Assessment = value;
-      flashMessage(value.toUpperCase());
+      flashMessage(
+        value === "Yes" ? "✅" :
+        value === "No" ? "❌" :
+        "🤔"
+      );
       current++;
       showNext();
     }
@@ -233,6 +218,7 @@
       link.click();
     }
 
+    // Swipe support
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => recordAssessment("No"));
