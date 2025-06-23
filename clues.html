@@ -2,136 +2,193 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Clue Reviewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mobile Clue Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
-      margin: 0;
-      background: #f8f8f8;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 2rem 1rem;
+      margin: 0;
     }
-
-    #urlContainer {
-      margin-bottom: 20px;
-      width: 100%;
-      max-width: 300px;
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
     }
-
-    #urlInput {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
+    #sheetUrl {
+      width: 90%;
+      max-width: 500px;
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
     }
-
-    #loadButton {
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    #loadButton:hover {
-      background: #218838;
-    }
-
-    #clueBox {
-      max-width: 200px;
-      background: white;
-      padding: 20px;
+    #card {
+      width: 90vw;
+      max-width: 500px;
+      padding: 2rem;
+      border: 1px solid #ccc;
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
       text-align: center;
-      display: none;
+      transition: transform 0.2s;
+      user-select: none;
+      font-size: 1.4rem; /* larger clue text */
+      line-height: 1.5;
     }
-
-    #clue {
-      font-size: 24px;
-      font-weight: bold;
-      word-wrap: break-word;
-      margin-bottom: 12px;
+    #card p {
+      margin: 0.5rem 0;
     }
-
-    #answer, #writer {
-      font-size: 14px;
-      color: #555;
-      margin: 4px 0;
-    }
-
-    #buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    #buttons button {
-      padding: 12px;
-      font-size: 16px;
-      border: none;
-      background: #007BFF;
-      color: white;
-      border-radius: 6px;
+    #answer {
+      background: black;
+      color: black;
       cursor: pointer;
+      user-select: none;
+      padding: 0 0.25em;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 1.4rem;
+      display: inline-block;
+      min-width: 6ch;
     }
-
-    #buttons button:hover {
-      background: #0056b3;
+    #buttons {
+      width: 90vw;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column; /* vertical stack */
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 1rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      width: 100%; /* full width buttons */
+      box-shadow: 0 2px 6px rgba(0,123,255,0.4);
+      transition: background-color 0.2s ease;
+    }
+    button:hover, button:focus {
+      background-color: #0056b3;
+      outline: none;
+    }
+    #exportBtn {
+      display: none;
+      max-width: 500px;
+      width: 90vw;
+      padding: 1rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      background-color: #28a745;
+      box-shadow: 0 2px 6px rgba(40,167,69,0.4);
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      border: none;
+      margin-bottom: 2rem;
+    }
+    #exportBtn:hover, #exportBtn:focus {
+      background-color: #19692c;
+      outline: none;
     }
   </style>
 </head>
 <body>
-
-  <div id="urlContainer">
-    <input type="text" id="urlInput" placeholder="Paste URL here" />
-    <button id="loadButton">Load</button>
+  <h1>Clue Reviewer</h1>
+  <input type="text" id="sheetUrl" placeholder="Paste Google Sheet CSV URL" />
+  <button onclick="loadSheet()">Load Clues</button>
+  <div id="card" style="display:none;"></div>
+  <div id="buttons" style="display:none;">
+    <button onclick="recordAssessment('Yes')">Yes</button>
+    <button onclick="recordAssessment('No')">No</button>
+    <button onclick="recordAssessment('Maybe')">Maybe</button>
   </div>
-
-  <div id="clueBox">
-    <div id="clue">Clue will appear here</div>
-    <div id="answer">Answer</div>
-    <div id="writer">Writer</div>
-    <div id="buttons">
-      <button>Yes</button>
-      <button>No</button>
-      <button>Maybe</button>
-    </div>
-  </div>
+  <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
   <script>
-    document.getElementById('loadButton').addEventListener('click', () => {
-      const url = document.getElementById('urlInput').value;
-      if (!url) return alert('Please paste a URL.');
+    let clues = [];
+    let current = 0;
+    const card = document.getElementById("card");
 
-      fetch(url)
-        .then(response => {
-          if (!response.ok) throw new Error('Network response was not ok.');
-          return response.text();
-        })
-        .then(data => {
-          // Assume CSV format: clue,answer,writer
-          const lines = data.trim().split('\n');
-          const [clue, answer, writer] = lines[0].split(',');
+    function loadSheet() {
+      let url = document.getElementById("sheetUrl").value.trim();
+      const proxyUrl = "https://corsproxy.io/?";
+      if (!url.startsWith(proxyUrl)) {
+        url = proxyUrl + url;
+      }
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+          current = 0;
+          document.getElementById("exportBtn").style.display = "none";
+          showNext();
+        },
+        error: function(err) {
+          alert("Error loading sheet: " + err.message);
+        }
+      });
+    }
 
-          document.getElementById('clue').textContent = clue || '—';
-          document.getElementById('answer').textContent = answer || '—';
-          document.getElementById('writer').textContent = writer || '—';
+    function showNext() {
+      if (current >= clues.length) {
+        card.innerHTML = "<strong>All done!</strong>";
+        document.getElementById("buttons").style.display = "none";
+        document.getElementById("exportBtn").style.display = "inline-block";
+        return;
+      }
+      const clue = clues[current];
+      card.innerHTML = `
+        <p><strong>Clue:</strong> ${clue.Clue}</p>
+        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p><strong>Writer:</strong> ${clue.Writer}</p>
+      `;
+      card.style.display = "block";
+      document.getElementById("buttons").style.display = "flex";
+    }
 
-          document.getElementById('clueBox').style.display = 'block';
-        })
-        .catch(err => {
-          alert('Failed to load clues: ' + err.message);
-        });
-    });
+    function toggleAnswer(el) {
+      if (el.style.color === "black") {
+        el.style.color = "white";
+        el.style.background = "none";
+        el.textContent = clues[current].Answer;
+      } else {
+        el.style.color = "black";
+        el.style.background = "black";
+        el.textContent = "████████";
+      }
+    }
+
+    function recordAssessment(value) {
+      clues[current].Assessment = value;
+      current++;
+      showNext();
+    }
+
+    function exportCSV() {
+      const csv = Papa.unparse(clues);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "reviewed_clues.csv";
+      link.click();
+    }
+
+    // Swipe detection
+    const mc = new Hammer(document.body);
+    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+    mc.on("swipeleft", () => recordAssessment("No"));
+    mc.on("swiperight", () => recordAssessment("Yes"));
+    mc.on("swipedown", () => recordAssessment("Maybe"));
   </script>
-
 </body>
 </html>
