@@ -29,6 +29,26 @@
       padding: 0.5rem;
       margin-bottom: 1rem;
     }
+    /* Fix Load Clues button size */
+    button[onclick="loadSheet()"] {
+      width: auto;
+      padding: 0.5rem 1.5rem;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      flex: none;
+      align-self: center;
+      box-shadow: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button[onclick="loadSheet()"]:hover,
+    button[onclick="loadSheet()"]:focus {
+      background-color: #0056b3;
+      outline: none;
+    }
     #card {
       width: 90vw;
       max-width: 500px;
@@ -110,7 +130,6 @@
       border: none;
       text-align: center;
       z-index: 1000;
-      /* override previous styles */
     }
     #exportBtn:hover, #exportBtn:focus {
       background-color: #444;
