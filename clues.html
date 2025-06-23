@@ -12,8 +12,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 5rem; /* bottom padding for fixed button */
       margin: 0;
+      min-height: 100vh;
+      box-sizing: border-box;
+      position: relative;
     }
     h1 {
       font-size: 2rem;
@@ -37,8 +40,9 @@
       text-align: center;
       transition: transform 0.2s;
       user-select: none;
-      font-size: 1.4rem; /* larger clue text */
+      font-size: 2.8rem; /* doubled clue font size */
       line-height: 1.5;
+      word-wrap: break-word;
     }
     #card p {
       margin: 0.5rem 0;
@@ -51,21 +55,27 @@
       padding: 0 0.25em;
       border-radius: 3px;
       font-weight: bold;
-      font-size: 1.4rem;
+      font-size: 1.4rem; /* answer font size unchanged */
       display: inline-block;
       min-width: 6ch;
       transition: color 0.3s, background 0.3s;
+    }
+    #writer {
+      font-size: 1.4rem; /* writer font size unchanged */
+      margin-top: 0.25em;
+      color: #333;
     }
     #buttons {
       width: 90vw;
       max-width: 500px;
       display: flex;
-      flex-direction: column; /* vertical stack */
+      flex-direction: row; /* horizontal */
+      justify-content: center;
       gap: 1rem;
       margin-bottom: 1rem;
     }
     button {
-      padding: 1rem;
+      padding: 1rem 2rem;
       font-size: 1.2rem;
       border: none;
       border-radius: 8px;
@@ -73,31 +83,37 @@
       color: white;
       cursor: pointer;
       user-select: none;
-      width: 100%; /* full width buttons */
       box-shadow: 0 2px 6px rgba(0,123,255,0.4);
       transition: background-color 0.2s ease;
+      flex: 1 1 auto;
+      min-width: 80px;
     }
     button:hover, button:focus {
       background-color: #0056b3;
       outline: none;
     }
     #exportBtn {
-      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
       max-width: 500px;
-      width: 90vw;
+      margin: 0 auto;
       padding: 1rem;
       font-size: 1.2rem;
-      border-radius: 8px;
-      background-color: #28a745;
-      box-shadow: 0 2px 6px rgba(40,167,69,0.4);
+      border-radius: 0;
+      background-color: #666;
+      box-shadow: none;
       color: white;
       cursor: pointer;
       user-select: none;
       border: none;
-      margin-bottom: 2rem;
+      text-align: center;
+      z-index: 1000;
+      /* override previous styles */
     }
     #exportBtn:hover, #exportBtn:focus {
-      background-color: #19692c;
+      background-color: #444;
       outline: none;
     }
 
@@ -154,7 +170,7 @@
         complete: function(results) {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
           current = 0;
-          document.getElementById("exportBtn").style.display = "none";
+          document.getElementById("exportBtn").style.display = "block";
           showNext();
         },
         error: function(err) {
@@ -167,14 +183,13 @@
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         document.getElementById("buttons").style.display = "none";
-        document.getElementById("exportBtn").style.display = "inline-block";
         return;
       }
       const clue = clues[current];
       card.innerHTML = `
-        <p><strong>Clue:</strong> ${clue.Clue}</p>
-        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
-        <p><strong>Writer:</strong> ${clue.Writer}</p>
+        <p>${clue.Clue}</p>
+        <p><span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
       document.getElementById("buttons").style.display = "flex";
