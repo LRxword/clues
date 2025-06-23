@@ -12,17 +12,17 @@
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
   <style>
-    /* Background gradient + subtle animated bokeh */
     body {
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #fd3a69, #ff6a88);
+      /* Softer, toned down pink gradient */
+      background: linear-gradient(135deg, #e88ca0, #f3b3b9);
       height: 100vh;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem 6rem;
+      padding: 2rem 1rem 7rem;
       position: relative;
       color: white;
       user-select: none;
@@ -97,7 +97,7 @@
       color: #222;
       border-radius: 24px;
       width: 90vw;
-      max-width: 500px;
+      max-width: 480px; /* reduced width */
       padding: 2.2rem 2rem;
       font-size: 2.4rem;
       font-weight: 700;
@@ -112,6 +112,7 @@
       transition: transform 0.3s ease, opacity 0.3s ease;
       will-change: transform, opacity;
       cursor: grab;
+      margin-bottom: 2.4rem; /* added margin to separate from buttons */
     }
     #card.panning {
       cursor: grabbing;
@@ -150,7 +151,7 @@
       flex-wrap: wrap;
       width: 90vw;
       max-width: 500px;
-      margin-bottom: 2rem;
+      margin-bottom: 3rem; /* more bottom space */
       z-index: 2;
       user-select: none;
     }
@@ -165,7 +166,7 @@
       border: none;
       border-radius: 40px;
       cursor: pointer;
-      box-shadow: 0 5px 15px rgba(253, 58, 105, 0.5);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
       color: white;
       text-transform: uppercase;
       transition: filter 0.2s ease;
@@ -182,7 +183,7 @@
       outline-offset: 2px;
     }
 
-    /* Specific button colors */
+    /* Restore original button colors */
     #btnYes {
       background: linear-gradient(45deg, #ff758c, #ff7eb3);
       box-shadow: 0 5px 15px #ff7eb3aa;
@@ -224,7 +225,6 @@
       background: #333;
     }
 
-    /* Swipe flash overlay */
     #flashMessage {
       position: fixed;
       top: 40%;
@@ -302,7 +302,6 @@
         return;
       }
       const clue = clues[current];
-      // Animate fade in with scale
       if (!skipAnimation) {
         card.style.opacity = "0";
         card.style.transform = "scale(0.85)";
@@ -313,102 +312,3 @@
             <p id="writer">${clue.Writer}</p>
           `;
           card.style.opacity = "1";
-          card.style.transform = "scale(1)";
-        }, 200);
-      } else {
-        card.innerHTML = `
-          <p>${clue.Clue}</p>
-          <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
-          <p id="writer">${clue.Writer}</p>
-        `;
-      }
-      card.style.display = "block";
-      updateProgress();
-    }
-
-    function toggleAnswer(el) {
-      if (el.style.background === "black") {
-        el.style.background = "none";
-        el.style.color = "black";
-        el.textContent = clues[current].Answer;
-      } else {
-        el.style.background = "black";
-        el.style.color = "black";
-        el.textContent = "████████";
-      }
-    }
-
-    function flashMessage(emoji) {
-      flash.textContent = emoji;
-      flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 800);
-    }
-
-    function animateCardSwipe(direction) {
-      let x = 0, y = 0, rotate = 0;
-      const distance = 300;
-      switch (direction) {
-        case "right": x = distance; rotate = 20; break;
-        case "left": x = -distance; rotate = -20; break;
-        case "down": y = distance; rotate = 10; break;
-      }
-      card.style.transition = "transform 0.5s ease, opacity 0.5s ease";
-      card.style.transform = `translate(${x}px, ${y}px) rotate(${rotate}deg)`;
-      card.style.opacity = "0";
-    }
-
-    function resetCardPosition() {
-      card.style.transition = "none";
-      card.style.transform = "translate(0, 0) rotate(0deg)";
-      card.style.opacity = "1";
-    }
-
-    function recordAssessment(value, fromSwipe) {
-      if (current >= clues.length) return;
-      clues[current].Assessment = value;
-      history.push(current);
-      flashMessage(
-        value === "Yes" ? "✅" :
-        value === "No" ? "❌" :
-        "🤔"
-      );
-      if (fromSwipe) {
-        animateCardSwipe(value === "Yes" ? "right" : value === "No" ? "left" : "down");
-        setTimeout(() => {
-          current++;
-          resetCardPosition();
-          showNext();
-        }, 500);
-      } else {
-        current++;
-        showNext();
-      }
-    }
-
-    function undoAssessment() {
-      if (history.length === 0) return;
-      current = history.pop();
-      resetCardPosition();
-      showNext(true);
-    }
-
-    function exportCSV() {
-      const csv = Papa.unparse(clues);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "reviewed_clues.csv";
-      link.click();
-    }
-
-    // Swipe support
-    const mc = new Hammer(document.body);
-    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => recordAssessment("No", true));
-    mc.on("swiperight", () => recordAssessment("Yes", true));
-    mc.on("swipedown", () => recordAssessment("Maybe", true));
-
-    window.onload = loadSheet;
-  </script>
-</body>
-</html>
