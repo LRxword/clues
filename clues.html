@@ -17,26 +17,12 @@
       min-height: 100vh;
       box-sizing: border-box;
       position: relative;
-      -webkit-text-size-adjust: 100%; /* prevent iOS text scaling */
+      -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
     h1 {
       font-size: 2rem;
       margin-bottom: 1rem;
-    }
-    #sheetUrl {
-      width: 90%;
-      max-width: 500px;
-      font-size: 16px !important; /* prevent zoom */
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      -webkit-text-size-adjust: 100%;
-      touch-action: manipulation;
-    }
-    /* Ensure font size stays on focus */
-    #sheetUrl:focus {
-      font-size: 16px !important;
-      outline: none;
     }
     /* Fix Load Clues button size */
     button[onclick="loadSheet()"] {
@@ -69,7 +55,7 @@
       text-align: center;
       transition: transform 0.2s;
       user-select: none;
-      font-size: 2.8rem; /* doubled clue font size */
+      font-size: 2.8rem;
       line-height: 1.5;
       word-wrap: break-word;
     }
@@ -84,13 +70,13 @@
       padding: 0 0.25em;
       border-radius: 3px;
       font-weight: bold;
-      font-size: 1.4rem; /* answer font size unchanged */
+      font-size: 1.4rem;
       display: inline-block;
       min-width: 6ch;
       transition: color 0.3s, background 0.3s;
     }
     #writer {
-      font-size: 1.4rem; /* writer font size unchanged */
+      font-size: 1.4rem;
       margin-top: 0.25em;
       color: #333;
     }
@@ -98,7 +84,7 @@
       width: 90vw;
       max-width: 500px;
       display: flex;
-      flex-direction: row; /* horizontal */
+      flex-direction: row;
       justify-content: center;
       gap: 1rem;
       margin-bottom: 1rem;
@@ -144,8 +130,6 @@
       background-color: #444;
       outline: none;
     }
-
-    /* Flash confirmation message */
     #flashMessage {
       position: fixed;
       top: 40%;
@@ -171,13 +155,6 @@
   <h1>Clue Reviewer</h1>
   <div id="flashMessage"></div>
 
-  <input
-    type="text"
-    id="sheetUrl"
-    placeholder="Paste Google Sheet CSV URL"
-    autocomplete="off"
-    inputmode="text"
-  />
   <button onclick="loadSheet()">Load Clues</button>
   <div id="card" style="display:none;"></div>
   <div id="buttons" style="display:none;">
@@ -191,10 +168,11 @@
     let clues = [];
     let current = 0;
     const card = document.getElementById("card");
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
-      let url = document.getElementById("sheetUrl").value.trim();
       const proxyUrl = "https://corsproxy.io/?";
+      let url = sheetUrl;
       if (!url.startsWith(proxyUrl)) {
         url = proxyUrl + url;
       }
@@ -231,12 +209,10 @@
 
     function toggleAnswer(el) {
       if (el.style.background === "black") {
-        // Reveal answer
         el.style.background = "none";
         el.style.color = "black";
         el.textContent = clues[current].Answer;
       } else {
-        // Hide answer
         el.style.background = "black";
         el.style.color = "black";
         el.textContent = "████████";
