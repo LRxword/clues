@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <title>ClueMatch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-
   <style>
     body {
       margin: 0;
@@ -76,22 +74,34 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
+      transform: translateX(0);
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
-    #card.swipe-left {
+    .exit-left {
       transform: translateX(-120%) rotate(-15deg);
       opacity: 0;
     }
 
-    #card.swipe-right {
+    .exit-right {
       transform: translateX(120%) rotate(15deg);
       opacity: 0;
     }
 
-    #card.swipe-down {
+    .exit-down {
       transform: translateY(120%) rotate(10deg);
       opacity: 0;
+    }
+
+    .enter {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    .enter-active {
+      transform: translateX(0);
+      opacity: 1;
+      transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
     #answer {
@@ -182,12 +192,14 @@
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
+
   <div id="buttons">
-    <button id="btnYes" onclick="recordAssessment('Yes')">Yes</button>
-    <button id="btnNo" onclick="recordAssessment('No')">No</button>
-    <button id="btnMaybe" onclick="recordAssessment('Maybe')">Maybe</button>
+    <button id="btnYes" onclick="handleAction('Yes')">Yes</button>
+    <button id="btnNo" onclick="handleAction('No')">No</button>
+    <button id="btnMaybe" onclick="handleAction('Maybe')">Maybe</button>
     <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
+
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
   <script>
@@ -230,22 +242,24 @@
       }
 
       const clue = clues[current];
-      card.style.opacity = 0;
-      card.style.transform = 'translateX(100%)';
-
+      card.innerHTML = `
+        <p>${clue.Clue}</p>
+        <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
+        <p id="writer">${clue.Writer}</p>
+      `;
+      card.className = 'enter';
+      card.style.display = "block";
       requestAnimationFrame(() => {
-        card.innerHTML = `
-          <p>${clue.Clue}</p>
-          <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
-          <p id="writer">${clue.Writer}</p>
-        `;
-        card.style.display = "block";
-        updateProgress();
+        card.classList.add('enter-active');
+      });
 
-        requestAnimationFrame(() => {
-          card.style.opacity = 1;
-          card.style.transform = 'translateX(0)';
-        });
+      updateProgress();
+    }
+
+    function handleAction(value) {
+      const direction = value === 'Yes' ? 'right' : value === 'No' ? 'left' : 'down';
+      animateSwipe(direction, () => {
+        recordAssessment(value);
       });
     }
 
@@ -264,23 +278,26 @@
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 800);
+      setTimeout(() => flash.classList.remove("show"), 500);
     }
 
     function animateSwipe(direction, callback) {
-      card.classList.add(`swipe-${direction}`);
-      setTimeout(() => {
-        card.classList.remove(`swipe-${direction}`);
-        callback();
-      }, 400);
+      const exitClass = direction === 'right' ? 'exit-right' :
+                        direction === 'left' ? 'exit-left' :
+                        'exit-down';
+      card.className = exitClass;
+      flashMessage(
+        direction === "right" ? "✅" :
+        direction === "left" ? "❌" :
+        "🔧"
+      );
+      setTimeout(callback, 400); // Wait for swipe-out before loading new card
     }
 
     function recordAssessment(value) {
       if (current >= clues.length) return;
       clues[current].Assessment = value;
       history.push(current);
-      const emoji = value === "Yes" ? "✅" : value === "No" ? "❌" : "🔧";
-      flashMessage(emoji);
       current++;
       showNext();
     }
@@ -302,9 +319,9 @@
 
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("Yes")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Maybe")));
+    mc.on("swipeleft", () => handleAction("No"));
+    mc.on("swiperight", () => handleAction("Yes"));
+    mc.on("swipedown", () => handleAction("Maybe"));
 
     window.onload = loadSheet;
   </script>
