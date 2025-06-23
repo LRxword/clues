@@ -78,15 +78,14 @@
       margin-bottom: 2rem;
 
       /* Tinder-style animation */
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       opacity: 0;
       transform: translateX(100%) scale(0.85);
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     #card.enter {
       opacity: 1;
       transform: translateX(0) scale(1);
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     #card.swipe-left {
@@ -164,7 +163,6 @@
       text-align: center;
       border: none;
       cursor: pointer;
-      user-select: none;
     }
 
     #flashMessage {
@@ -178,7 +176,6 @@
       pointer-events: none;
       z-index: 999;
       text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
-      user-select: none;
     }
 
     #flashMessage.show {
@@ -211,13 +208,6 @@
     const progressBar = document.getElementById("progressBar");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
-    // Dummy fallback clue to test UI when CSV loading fails or is empty
-    const fallbackClue = {
-      Clue: "Example clue: 'Not quite clear definition'",
-      Answer: "VAGUE",
-      Writer: "Test Writer"
-    };
-
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
       Papa.parse(proxy + sheetUrl, {
@@ -225,19 +215,12 @@
         header: true,
         complete: results => {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
-          if (clues.length === 0) clues = [fallbackClue];
           current = 0;
           history.length = 0;
           updateProgress();
           showNext();
         },
-        error: () => {
-          clues = [fallbackClue];
-          current = 0;
-          history.length = 0;
-          updateProgress();
-          showNext();
-        }
+        error: err => alert("Error loading sheet: " + err.message)
       });
     }
 
@@ -261,11 +244,11 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
+
+      // Reset classes and force reflow to restart animation
       card.className = '';
-      card.style.transition = 'none';
-      card.style.transform = 'translateX(100%) scale(0.85)';
-      card.style.opacity = '0';
-      void card.offsetWidth; // force reflow
+      void card.offsetWidth;
+
       card.classList.add('enter');
       updateProgress();
     }
@@ -297,13 +280,6 @@
       );
       setTimeout(() => {
         card.classList.remove(`swipe-${direction}`);
-        // Always reset card position from right for next card
-        card.style.transition = 'none';
-        card.style.transform = 'translateX(100%) scale(0.85)';
-        card.style.opacity = '0';
-        void card.offsetWidth; // force reflow
-        card.classList.add('enter');
-
         callback();
       }, 400);
     }
@@ -322,7 +298,6 @@
       current = history.pop();
       showNext();
       updateProgress();
-      document.getElementById("buttons").style.display = "flex";
     }
 
     function exportCSV() {
