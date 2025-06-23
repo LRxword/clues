@@ -24,26 +24,6 @@
       font-size: 2rem;
       margin-bottom: 1rem;
     }
-    /* Fix Load Clues button size */
-    button[onclick="loadSheet()"] {
-      width: auto;
-      padding: 0.5rem 1.5rem;
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
-      flex: none;
-      align-self: center;
-      box-shadow: none;
-      background-color: #007bff;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    button[onclick="loadSheet()"]:hover,
-    button[onclick="loadSheet()"]:focus {
-      background-color: #0056b3;
-      outline: none;
-    }
     #card {
       width: 90vw;
       max-width: 500px;
@@ -87,7 +67,7 @@
       flex-direction: row;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.25rem;
     }
     button {
       padding: 1rem 2rem;
@@ -106,6 +86,14 @@
     button:hover, button:focus {
       background-color: #0056b3;
       outline: none;
+    }
+    #instructions {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 1rem;
+      max-width: 500px;
+      text-align: center;
+      user-select: none;
     }
     #exportBtn {
       position: fixed;
@@ -155,12 +143,14 @@
   <h1>Clue Reviewer</h1>
   <div id="flashMessage"></div>
 
-  <button onclick="loadSheet()">Load Clues</button>
   <div id="card" style="display:none;"></div>
   <div id="buttons" style="display:none;">
     <button onclick="recordAssessment('Yes')">Yes</button>
     <button onclick="recordAssessment('No')">No</button>
     <button onclick="recordAssessment('Maybe')">Maybe</button>
+  </div>
+  <div id="instructions" style="display:none;">
+    Swipe right for YES, left for NO, down for MAYBE
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
@@ -168,6 +158,8 @@
     let clues = [];
     let current = 0;
     const card = document.getElementById("card");
+    const buttons = document.getElementById("buttons");
+    const instructions = document.getElementById("instructions");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
@@ -184,6 +176,8 @@
           current = 0;
           document.getElementById("exportBtn").style.display = "block";
           showNext();
+          buttons.style.display = "flex";
+          instructions.style.display = "block";
         },
         error: function(err) {
           alert("Error loading sheet: " + err.message);
@@ -194,7 +188,8 @@
     function showNext() {
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
-        document.getElementById("buttons").style.display = "none";
+        buttons.style.display = "none";
+        instructions.style.display = "none";
         return;
       }
       const clue = clues[current];
@@ -204,7 +199,6 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
-      document.getElementById("buttons").style.display = "flex";
     }
 
     function toggleAnswer(el) {
@@ -250,6 +244,9 @@
     mc.on("swipeleft", () => recordAssessment("No"));
     mc.on("swiperight", () => recordAssessment("Yes"));
     mc.on("swipedown", () => recordAssessment("Maybe"));
+
+    // Load clues automatically on page load
+    window.onload = loadSheet;
   </script>
 </body>
 </html>
