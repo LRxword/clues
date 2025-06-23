@@ -77,6 +77,7 @@
       max-width: 480px;
       margin-bottom: 2rem;
       transition: transform 0.4s ease, opacity 0.4s ease;
+      transform: translateX(100%);
     }
 
     #card.swipe-left {
@@ -176,16 +177,16 @@
   </style>
 </head>
 <body>
-  <h1><span id="title-flame">💖‍🔥</span> ClueMatch</h1>
+  <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
   <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
   <div id="buttons">
-    <button id="btnYes" onclick="recordAssessment('Yes')">Yes</button>
-    <button id="btnNo" onclick="recordAssessment('No')">No</button>
-    <button id="btnMaybe" onclick="recordAssessment('Maybe')">Maybe</button>
+    <button id="btnYes" onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
+    <button id="btnNo" onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
+    <button id="btnMaybe" onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
     <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
@@ -221,7 +222,9 @@
     }
 
     function showNext() {
-      card.className = ''; // reset any animation
+      card.className = ''; // reset animation classes
+      card.style.transition = 'none';
+      card.style.transform = 'translateX(100%)'; // start off right
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
@@ -236,6 +239,11 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
+      // Animate card sliding in from right
+      setTimeout(() => {
+        card.style.transition = "transform 0.4s ease";
+        card.style.transform = "translateX(0)";
+      }, 10);
       updateProgress();
     }
 
@@ -254,31 +262,38 @@
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 800);
+      setTimeout(() => flash.classList.remove("show"), 500); // shorter flash
     }
 
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
+      flashMessage(
+        direction === "right" ? "✅" :
+        direction === "left" ? "❌" :
+        "🔧"
+      );
       setTimeout(() => {
         card.classList.remove(`swipe-${direction}`);
+      }, 300);
+      setTimeout(() => {
         callback();
-      }, 400);
+      }, 350);
     }
 
     function recordAssessment(value) {
       if (current >= clues.length) return;
       clues[current].Assessment = value;
       history.push(current);
-      const emoji = value === "Yes" ? "✅" : value === "No" ? "❌" : "🔧";
-      flashMessage(emoji);
       current++;
       showNext();
+      updateProgress();
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
       showNext();
+      updateProgress();
     }
 
     function exportCSV() {
