@@ -76,22 +76,30 @@
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
-      transition: transform 0.4s ease, opacity 0.4s ease;
-      transform: translateX(100%);
+
+      /* Tinder-style animation */
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      transform: translateX(100%) scale(0.85);
+    }
+
+    #card.enter {
+      opacity: 1;
+      transform: translateX(0) scale(1);
     }
 
     #card.swipe-left {
-      transform: translateX(-120%) rotate(-15deg);
+      transform: translateX(-150%) rotate(-20deg);
       opacity: 0;
     }
 
     #card.swipe-right {
-      transform: translateX(120%) rotate(15deg);
+      transform: translateX(150%) rotate(20deg);
       opacity: 0;
     }
 
     #card.swipe-down {
-      transform: translateY(120%) rotate(10deg);
+      transform: translateY(150%) rotate(15deg);
       opacity: 0;
     }
 
@@ -222,9 +230,6 @@
     }
 
     function showNext() {
-      card.className = ''; // reset animation classes
-      card.style.transition = 'none';
-      card.style.transform = 'translateX(100%)'; // start off right
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
@@ -239,11 +244,12 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
-      // Animate card sliding in from right
-      setTimeout(() => {
-        card.style.transition = "transform 0.4s ease";
-        card.style.transform = "translateX(0)";
-      }, 10);
+
+      // Reset classes and force reflow to restart animation
+      card.className = '';
+      void card.offsetWidth;
+
+      card.classList.add('enter');
       updateProgress();
     }
 
@@ -262,7 +268,7 @@
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 500); // shorter flash
+      setTimeout(() => flash.classList.remove("show"), 500);
     }
 
     function animateSwipe(direction, callback) {
@@ -274,10 +280,8 @@
       );
       setTimeout(() => {
         card.classList.remove(`swipe-${direction}`);
-      }, 300);
-      setTimeout(() => {
         callback();
-      }, 350);
+      }, 400);
     }
 
     function recordAssessment(value) {
