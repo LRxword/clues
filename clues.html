@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cryptinder</title>
+  <title>ClueMatch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
@@ -22,8 +22,16 @@
     h1 {
       font-size: 2.5rem;
       color: white;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.3rem;
       text-shadow: 1px 1px 2px #0005;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    #title-flame {
+      font-size: 2.8rem;
+      line-height: 1;
     }
     #instructions {
       font-size: 1.1rem;
@@ -31,6 +39,14 @@
       margin-bottom: 2rem;
       text-align: center;
       text-shadow: 1px 1px 2px #0004;
+      user-select: none;
+    }
+    #progress {
+      font-size: 1.2rem;
+      color: white;
+      margin-bottom: 1rem;
+      text-shadow: 1px 1px 2px #0006;
+      user-select: none;
     }
     #card {
       background: white;
@@ -44,6 +60,7 @@
       line-height: 1.4;
       transition: transform 0.2s;
       user-select: none;
+      margin-bottom: 1rem;
     }
     #card p {
       margin: 1rem 0;
@@ -69,13 +86,13 @@
       display: flex;
       justify-content: center;
       gap: 1rem;
-      margin: 2rem 0 0.5rem;
+      margin-bottom: 2rem;
       flex-wrap: wrap;
     }
     button {
       flex: 1 1 auto;
-      min-width: 80px;
-      max-width: 140px;
+      min-width: 70px;
+      max-width: 120px;
       padding: 1rem;
       font-size: 1.1rem;
       border: none;
@@ -85,6 +102,7 @@
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       transition: background 0.2s ease;
+      user-select: none;
     }
     button:hover {
       background: #222;
@@ -105,6 +123,7 @@
       border: none;
       cursor: pointer;
       z-index: 10;
+      user-select: none;
     }
     #exportBtn:hover {
       background: #333;
@@ -128,8 +147,9 @@
   </style>
 </head>
 <body>
-  <h1>Cryptinder</h1>
-  <div id="instructions">Swipe right for ✅ YES, left for ❌ NO, down for 🤔 MAYBE</div>
+  <h1><span id="title-flame">🔥</span> ClueMatch</h1>
+  <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
+  <div id="progress"></div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
@@ -137,14 +157,17 @@
     <button onclick="recordAssessment('Yes')">Yes</button>
     <button onclick="recordAssessment('No')">No</button>
     <button onclick="recordAssessment('Maybe')">Maybe</button>
+    <button onclick="undoAssessment()" style="background:#b33;">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
   <script>
     let clues = [];
     let current = 0;
+    const history = [];
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
+    const progressEl = document.getElementById("progress");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
@@ -156,6 +179,8 @@
         complete: function(results) {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
           current = 0;
+          history.length = 0;
+          updateProgress();
           showNext();
           document.getElementById("buttons").style.display = "flex";
           document.getElementById("exportBtn").style.display = "block";
@@ -164,11 +189,16 @@
       });
     }
 
+    function updateProgress() {
+      progressEl.textContent = `Clue ${Math.min(current + 1, clues.length)} of ${clues.length}`;
+    }
+
     function showNext() {
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
+        progressEl.textContent = "All clues reviewed";
         return;
       }
       const clue = clues[current];
@@ -178,6 +208,7 @@
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
+      updateProgress();
     }
 
     function toggleAnswer(el) {
@@ -200,12 +231,19 @@
 
     function recordAssessment(value) {
       clues[current].Assessment = value;
+      history.push(current);
       flashMessage(
         value === "Yes" ? "✅" :
         value === "No" ? "❌" :
         "🤔"
       );
       current++;
+      showNext();
+    }
+
+    function undoAssessment() {
+      if (history.length === 0) return;
+      current = history.pop();
       showNext();
     }
 
