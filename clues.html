@@ -78,14 +78,15 @@
       margin-bottom: 2rem;
 
       /* Tinder-style animation */
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       opacity: 0;
       transform: translateX(100%) scale(0.85);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     #card.enter {
       opacity: 1;
       transform: translateX(0) scale(1);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     #card.swipe-left {
@@ -245,11 +246,18 @@
       `;
       card.style.display = "block";
 
-      // Reset classes and force reflow to restart animation
+      // Reset styles and prepare for animation from right
       card.className = '';
+      card.style.transition = 'none';
+      card.style.transform = 'translateX(100%) scale(0.85)';
+      card.style.opacity = '0';
+
+      // Force reflow so the browser registers the reset
       void card.offsetWidth;
 
+      // Add enter class to animate to center
       card.classList.add('enter');
+
       updateProgress();
     }
 
@@ -298,6 +306,7 @@
       current = history.pop();
       showNext();
       updateProgress();
+      document.getElementById("buttons").style.display = "flex";
     }
 
     function exportCSV() {
