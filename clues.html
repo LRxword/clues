@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <title>ClueMatch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+  
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
@@ -14,12 +15,13 @@
       margin: 0;
       font-family: 'Montserrat', sans-serif;
       background: linear-gradient(135deg, #ffb07c, #ffcba4);
-      min-height: 100vh;
+      height: 100vh;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 2rem 1rem 7rem;
+      position: relative;
       color: white;
       user-select: none;
     }
@@ -39,7 +41,7 @@
 
     #instructions {
       font-size: 1.2rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.8rem;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
 
@@ -64,43 +66,20 @@
       background: white;
       color: #222;
       border-radius: 24px;
+      width: 90vw;
+      max-width: 480px;
       padding: 2rem 1.5rem;
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       line-height: 1.4;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       text-align: center;
       user-select: none;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      width: 90vw;
-      max-width: 480px;
       margin-bottom: 2rem;
-
-      /* Tinder-style animation */
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 0;
-      transform: translateX(100%) scale(0.85);
     }
 
-    #card.enter {
-      opacity: 1;
-      transform: translateX(0) scale(1);
-    }
-
-    #card.swipe-left {
-      transform: translateX(-150%) rotate(-20deg);
-      opacity: 0;
-    }
-
-    #card.swipe-right {
-      transform: translateX(150%) rotate(20deg);
-      opacity: 0;
-    }
-
-    #card.swipe-down {
-      transform: translateY(150%) rotate(15deg);
-      opacity: 0;
+    #card p {
+      margin: 1rem 0;
+      font-weight: normal;
     }
 
     #answer {
@@ -135,17 +114,15 @@
       padding: 0.6rem 0.8rem;
       font-size: 1rem;
       font-weight: 600;
-      border-radius: 8px;
+      border-radius: 6px;
       border: 2px solid black;
       background: white;
       color: black;
       cursor: pointer;
-      box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
-      transition: background 0.3s;
     }
 
     #btnUndo {
-      background: #ddd;
+      background: #ccc;
     }
 
     #exportBtn {
@@ -191,10 +168,10 @@
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
-  <div id="buttons">
-    <button id="btnYes" onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
-    <button id="btnNo" onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button id="btnMaybe" onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
+  <div id="buttons" style="display:none;">
+    <button id="btnYes" onclick="recordAssessment('Yes')">Yes</button>
+    <button id="btnNo" onclick="recordAssessment('No')">No</button>
+    <button id="btnMaybe" onclick="recordAssessment('Maybe')">Maybe</button>
     <button id="btnUndo" onclick="undoAssessment()">Undo</button>
   </div>
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
@@ -210,15 +187,18 @@
 
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
-      Papa.parse(proxy + sheetUrl, {
+      const url = proxy + sheetUrl;
+      Papa.parse(url, {
         download: true,
         header: true,
-        complete: results => {
+        complete: function(results) {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
           current = 0;
           history.length = 0;
           updateProgress();
-          showNext();
+          showNext(true);
+          document.getElementById("buttons").style.display = "flex";
+          document.getElementById("exportBtn").style.display = "block";
         },
         error: err => alert("Error loading sheet: " + err.message)
       });
@@ -229,7 +209,7 @@
       progressBar.style.width = percent + "%";
     }
 
-    function showNext() {
+    function showNext(skipAnimation = false) {
       if (current >= clues.length) {
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
@@ -238,18 +218,12 @@
         return;
       }
       const clue = clues[current];
-      card.innerHTML = 
+      card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> <span id="answer" onclick="toggleAnswer(this)">████████</span></p>
         <p id="writer">${clue.Writer}</p>
-      ;
+      `;
       card.style.display = "block";
-
-      // Reset classes and force reflow to restart animation
-      card.className = '';
-      void card.offsetWidth;
-
-      card.classList.add('enter');
       updateProgress();
     }
 
@@ -268,36 +242,22 @@
     function flashMessage(emoji) {
       flash.textContent = emoji;
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 500);
+      setTimeout(() => flash.classList.remove("show"), 800);
     }
 
-    function animateSwipe(direction, callback) {
-      card.classList.add(swipe-${direction});
-      flashMessage(
-        direction === "right" ? "✅" :
-        direction === "left" ? "❌" :
-        "🔧"
-      );
-      setTimeout(() => {
-        card.classList.remove(swipe-${direction});
-        callback();
-      }, 400);
-    }
-
-    function recordAssessment(value) {
+    function recordAssessment(value, fromSwipe = false) {
       if (current >= clues.length) return;
       clues[current].Assessment = value;
       history.push(current);
+      flashMessage(value === "Yes" ? "✅" : value === "No" ? "❌" : "🔧");
       current++;
       showNext();
-      updateProgress();
     }
 
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
-      showNext();
-      updateProgress();
+      showNext(true);
     }
 
     function exportCSV() {
@@ -312,9 +272,9 @@
     // Swipe detection
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("Yes")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Maybe")));
+    mc.on("swipeleft", () => recordAssessment("No", true));
+    mc.on("swiperight", () => recordAssessment("Yes", true));
+    mc.on("swipedown", () => recordAssessment("Maybe", true));
 
     window.onload = loadSheet;
   </script>
