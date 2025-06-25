@@ -36,6 +36,7 @@
       font-size: 1.2rem;
       margin-bottom: 1.5rem;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+      text-align: center;
     }
     #progress {
       width: 90vw;
@@ -86,6 +87,10 @@
       transform: translateY(150%) rotate(15deg);
       opacity: 0;
     }
+    #card.swipe-up {
+      transform: translateY(-150%) rotate(-15deg);
+      opacity: 0;
+    }
 
     #answer {
       cursor: pointer;
@@ -95,13 +100,11 @@
       font-size: 1.6rem;
       font-weight: 700;
       display: inline-block;
-      /* default hidden style */
       background: black;
       color: black;
       letter-spacing: 0.2em;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
-
     #answer.revealed {
       background: none;
       color: #222;
@@ -113,15 +116,17 @@
       color: #555;
       margin-top: 1rem;
     }
+
     #buttons {
       display: flex;
       justify-content: space-between;
       gap: 0.5rem;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       width: 90vw;
       max-width: 500px;
       margin-bottom: 2rem;
     }
+
     button {
       flex: 1;
       padding: 0.6rem 0.8rem;
@@ -135,9 +140,11 @@
       box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
       transition: background 0.3s;
     }
+
     #btnUndo {
       background: #ddd;
     }
+
     #exportBtn {
       position: fixed;
       bottom: 0;
@@ -154,6 +161,14 @@
       border: none;
       cursor: pointer;
     }
+
+    @media (min-width: 600px) {
+      #exportBtn {
+        font-size: 0.9rem;
+        padding: 0.7rem;
+      }
+    }
+
     #flashMessage {
       position: fixed;
       top: 40%;
@@ -166,6 +181,7 @@
       z-index: 999;
       text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
     }
+
     #flashMessage.show {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1.2);
@@ -174,17 +190,20 @@
 </head>
 <body>
   <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
-  <div id="instructions">Swipe right for YES, left for NO, down for MAYBE</div>
+  <div id="instructions">Swipe right for OK 👍, left for NO ❌, up for GREAT ⭐, down for WORKSHOP 🔧</div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
 
   <div id="card" style="display:none;"></div>
+
   <div id="buttons">
-    <button onclick="animateSwipe('right', () => recordAssessment('Yes'))">Yes</button>
     <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button onclick="animateSwipe('down', () => recordAssessment('Maybe'))">Maybe</button>
+    <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
+    <button onclick="animateSwipe('up', () => recordAssessment('Great'))">Great</button>
+    <button onclick="animateSwipe('down', () => recordAssessment('Workshop'))">Workshop</button>
     <button onclick="undoAssessment()">Undo</button>
   </div>
+
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 
   <script>
@@ -237,34 +256,38 @@
       `;
       card.style.display = "block";
       card.className = '';
-      void card.offsetWidth; // trigger reflow for animation restart
+      void card.offsetWidth; // reflow
       card.classList.add('enter');
       updateProgress();
     }
 
     function toggleAnswer(el) {
       if (el.classList.contains('revealed')) {
-        // Hide answer
         el.classList.remove('revealed');
         el.textContent = "████████";
       } else {
-        // Show answer
         el.classList.add('revealed');
         el.textContent = el.getAttribute('data-answer');
       }
     }
 
-    function flashMessage(emoji) {
-      flash.textContent = emoji;
+    function flashMessage(direction) {
+      const emojiMap = {
+        right: "👍",
+        left: "❌",
+        up: "⭐",
+        down: "🔧"
+      };
+      flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
       setTimeout(() => flash.classList.remove("show"), 600);
     }
 
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
-      flashMessage(direction === "right" ? "✅" : direction === "left" ? "❌" : "🔧");
+      flashMessage(direction);
       setTimeout(() => {
-        card.className = ''; // reset classes for next card
+        card.className = '';
         callback();
       }, 400);
     }
@@ -295,8 +318,9 @@
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("Yes")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Maybe")));
+    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
+    mc.on("swipeup", () => animateSwipe("up", () => recordAssessment("Great")));
+    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Workshop")));
 
     window.onload = loadSheet;
   </script>
