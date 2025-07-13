@@ -38,11 +38,6 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
       text-align: center;
     }
-    #progressText {
-      font-weight: bold;
-      margin-bottom: 0.3rem;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
     #progress {
       width: 90vw;
       max-width: 500px;
@@ -150,12 +145,13 @@
       background: #ddd;
     }
 
-    #exportBtn, #resetBtn {
+    #exportBtn {
       position: fixed;
       bottom: 0;
       left: 0;
-      width: 50%;
-      max-width: 250px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
       padding: 1rem;
       font-size: 1.1rem;
       border-radius: 0;
@@ -166,13 +162,8 @@
       cursor: pointer;
     }
 
-    #resetBtn {
-      left: 50%;
-      background-color: #bb4444;
-    }
-
     @media (min-width: 600px) {
-      #exportBtn, #resetBtn {
+      #exportBtn {
         font-size: 0.9rem;
         padding: 0.7rem;
       }
@@ -200,7 +191,6 @@
 <body>
   <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
   <div id="instructions">Swipe right for OK, left for NO, up for GREAT, down for WORKSHOP</div>
-  <div id="progressText"></div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="flashMessage"></div>
 
@@ -215,7 +205,6 @@
   </div>
 
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-  <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
   <script>
     let clues = [];
@@ -224,7 +213,6 @@
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
-    const progressText = document.getElementById("progressText");
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
@@ -233,20 +221,8 @@
         download: true,
         header: true,
         complete: results => {
-          const saved = JSON.parse(localStorage.getItem('cluematch-progress'));
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
-
-          if (saved && saved.clues && saved.clues.length === clues.length) {
-            current = saved.current || 0;
-            for (let i = 0; i < clues.length; i++) {
-              if (saved.clues[i].Assessment) {
-                clues[i].Assessment = saved.clues[i].Assessment;
-              }
-            }
-          } else {
-            current = 0;
-          }
-
+          current = 0;
           history.length = 0;
           updateProgress();
           showNext();
@@ -258,7 +234,6 @@
     function updateProgress() {
       const percent = (current / clues.length) * 100;
       progressBar.style.width = percent + "%";
-      progressText.textContent = `${Math.min(current + 1, clues.length)} / ${clues.length}`;
     }
 
     function showNext() {
@@ -267,7 +242,6 @@
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
         progressBar.style.width = "100%";
-        progressText.textContent = `${clues.length} / ${clues.length}`;
         return;
       }
       const clue = clues[current];
@@ -323,7 +297,6 @@
       clues[current].Assessment = value;
       history.push(current);
       current++;
-      saveProgress();
       showNext();
     }
 
@@ -331,18 +304,6 @@
       if (history.length === 0) return;
       current = history.pop();
       showNext();
-    }
-
-    function saveProgress() {
-      localStorage.setItem('cluematch-progress', JSON.stringify({
-        current,
-        clues
-      }));
-    }
-
-    function resetProgress() {
-      localStorage.removeItem('cluematch-progress');
-      location.reload();
     }
 
     function exportCSV() {
