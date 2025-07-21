@@ -38,21 +38,32 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
       text-align: center;
     }
+
     #progress {
       width: 90vw;
       max-width: 500px;
       height: 6px;
       background: rgba(255,255,255,0.3);
       border-radius: 3px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.3rem;
       overflow: hidden;
     }
+
     #progressBar {
       height: 100%;
       width: 0%;
       background: #ffe6e6;
       transition: width 0.3s ease;
     }
+
+    #progressCount {
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    }
+
     #card {
       background: white;
       color: #222;
@@ -145,13 +156,12 @@
       background: #ddd;
     }
 
-    #exportBtn {
+    #exportBtn, #resetBtn {
       position: fixed;
       bottom: 0;
       left: 0;
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
+      width: 50%;
+      max-width: 250px;
       padding: 1rem;
       font-size: 1.1rem;
       border-radius: 0;
@@ -162,8 +172,13 @@
       cursor: pointer;
     }
 
+    #resetBtn {
+      left: 50%;
+      background-color: #bb0000;
+    }
+
     @media (min-width: 600px) {
-      #exportBtn {
+      #exportBtn, #resetBtn {
         font-size: 0.9rem;
         padding: 0.7rem;
       }
@@ -192,8 +207,8 @@
   <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
   <div id="instructions">Swipe right for OK, left for NO, up for GREAT, down for WORKSHOP</div>
   <div id="progress"><div id="progressBar"></div></div>
+  <div id="progressCount"></div>
   <div id="flashMessage"></div>
-
   <div id="card" style="display:none;"></div>
 
   <div id="buttons">
@@ -201,10 +216,11 @@
     <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
     <button onclick="animateSwipe('up', () => recordAssessment('Great'))">Great</button>
     <button onclick="animateSwipe('down', () => recordAssessment('Workshop'))">Workshop</button>
-    <button onclick="undoAssessment()">Undo</button>
+    <button onclick="undoAssessment()" id="btnUndo">Undo</button>
   </div>
 
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
+  <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
   <script>
     let clues = [];
@@ -213,6 +229,8 @@
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
+    const progressCount = document.getElementById("progressCount");
+
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
     function loadSheet() {
@@ -222,7 +240,22 @@
         header: true,
         complete: results => {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
-          current = 0;
+
+          const saved = localStorage.getItem("clueMatchProgress");
+          if (saved) {
+            try {
+              const savedData = JSON.parse(saved);
+              if (savedData.clues && Array.isArray(savedData.clues)) {
+                clues = savedData.clues;
+                current = savedData.current || 0;
+              }
+            } catch (e) {
+              console.warn("Failed to load saved progress.");
+            }
+          } else {
+            current = 0;
+          }
+
           history.length = 0;
           updateProgress();
           showNext();
@@ -234,6 +267,7 @@
     function updateProgress() {
       const percent = (current / clues.length) * 100;
       progressBar.style.width = percent + "%";
+      progressCount.textContent = `${current + 1}/${clues.length}`;
     }
 
     function showNext() {
@@ -242,6 +276,7 @@
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
         progressBar.style.width = "100%";
+        progressCount.textContent = `${clues.length}/${clues.length}`;
         return;
       }
       const clue = clues[current];
@@ -256,7 +291,7 @@
       `;
       card.style.display = "block";
       card.className = '';
-      void card.offsetWidth; // reflow
+      void card.offsetWidth;
       card.classList.add('enter');
       updateProgress();
     }
@@ -295,6 +330,7 @@
     function recordAssessment(value) {
       if (current >= clues.length) return;
       clues[current].Assessment = value;
+      saveProgress();
       history.push(current);
       current++;
       showNext();
@@ -303,6 +339,7 @@
     function undoAssessment() {
       if (history.length === 0) return;
       current = history.pop();
+      saveProgress();
       showNext();
     }
 
@@ -313,6 +350,21 @@
       link.href = URL.createObjectURL(blob);
       link.download = "reviewed_clues.csv";
       link.click();
+    }
+
+    function saveProgress() {
+      const savedData = {
+        current,
+        clues
+      };
+      localStorage.setItem("clueMatchProgress", JSON.stringify(savedData));
+    }
+
+    function resetProgress() {
+      if (confirm("Are you sure you want to reset all progress?")) {
+        localStorage.removeItem("clueMatchProgress");
+        location.reload();
+      }
     }
 
     const mc = new Hammer(document.body);
