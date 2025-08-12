@@ -38,7 +38,6 @@
       text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
       text-align: center;
     }
-
     #progress {
       width: 90vw;
       max-width: 500px;
@@ -48,14 +47,12 @@
       margin-bottom: 0.3rem;
       overflow: hidden;
     }
-
     #progressBar {
       height: 100%;
       width: 0%;
       background: #ffe6e6;
       transition: width 0.3s ease;
     }
-
     #progressCount {
       font-size: 0.9rem;
       margin-bottom: 1.5rem;
@@ -63,7 +60,6 @@
       color: white;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
-
     #card {
       background: white;
       color: #222;
@@ -82,26 +78,11 @@
       margin-bottom: 2rem;
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
-    #card.enter {
-      transform: translateX(0) scale(1);
-      opacity: 1;
-    }
-    #card.swipe-left {
-      transform: translateX(-150%) rotate(-20deg);
-      opacity: 0;
-    }
-    #card.swipe-right {
-      transform: translateX(150%) rotate(20deg);
-      opacity: 0;
-    }
-    #card.swipe-down {
-      transform: translateY(150%) rotate(15deg);
-      opacity: 0;
-    }
-    #card.swipe-up {
-      transform: translateY(-150%) rotate(-15deg);
-      opacity: 0;
-    }
+    #card.enter { transform: translateX(0) scale(1); opacity: 1; }
+    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+    #card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
 
     #answer {
       cursor: pointer;
@@ -116,16 +97,17 @@
       letter-spacing: 0.2em;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
-    #answer.revealed {
-      background: none;
-      color: #222;
-      letter-spacing: normal;
-    }
+    #answer.revealed { background: none; color: #222; letter-spacing: normal; }
+    #writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
 
-    #writer {
-      font-size: 1.3rem;
-      color: #555;
-      margin-top: 1rem;
+    #noteInput {
+      width: 90vw;
+      max-width: 500px;
+      margin-bottom: 1rem;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
 
     #buttons {
@@ -137,7 +119,6 @@
       max-width: 500px;
       margin-bottom: 2rem;
     }
-
     button {
       flex: 1;
       padding: 0.6rem 0.8rem;
@@ -151,10 +132,7 @@
       box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
       transition: background 0.3s;
     }
-
-    #btnUndo {
-      background: #ddd;
-    }
+    #btnUndo { background: #ddd; }
 
     #exportBtn, #resetBtn {
       position: fixed;
@@ -171,18 +149,7 @@
       border: none;
       cursor: pointer;
     }
-
-    #resetBtn {
-      left: 50%;
-      background-color: #bb0000;
-    }
-
-    @media (min-width: 600px) {
-      #exportBtn, #resetBtn {
-        font-size: 0.9rem;
-        padding: 0.7rem;
-      }
-    }
+    #resetBtn { left: 50%; background-color: #bb0000; }
 
     #flashMessage {
       position: fixed;
@@ -196,11 +163,7 @@
       z-index: 999;
       text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
     }
-
-    #flashMessage.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1.2);
-    }
+    #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
   </style>
 </head>
 <body>
@@ -210,6 +173,8 @@
   <div id="progressCount"></div>
   <div id="flashMessage"></div>
   <div id="card" style="display:none;"></div>
+
+  <input id="noteInput" type="text" placeholder="Optional note...">
 
   <div id="buttons">
     <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
@@ -231,7 +196,7 @@
     const progressBar = document.getElementById("progressBar");
     const progressCount = document.getElementById("progressCount");
 
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+    const sheetUrl = "YOUR_SHEET_URL_HERE";
 
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
@@ -283,12 +248,11 @@
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> 
-          <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">
-            ████████
-          </span>
+          <span id="answer" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
         </p>
         <p id="writer">${clue.Writer}</p>
       `;
+      document.getElementById("noteInput").value = clue.Note || "";
       card.style.display = "block";
       card.className = '';
       void card.offsetWidth;
@@ -307,12 +271,7 @@
     }
 
     function flashMessage(direction) {
-      const emojiMap = {
-        right: "👍",
-        left: "❌",
-        up: "⭐",
-        down: "🔧"
-      };
+      const emojiMap = { right: "👍", left: "❌", up: "⭐", down: "🔧" };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
       setTimeout(() => flash.classList.remove("show"), 600);
@@ -321,15 +280,14 @@
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
       flashMessage(direction);
-      setTimeout(() => {
-        card.className = '';
-        callback();
-      }, 400);
+      setTimeout(() => { card.className = ''; callback(); }, 400);
     }
 
     function recordAssessment(value) {
       if (current >= clues.length) return;
+      const note = document.getElementById("noteInput").value.trim();
       clues[current].Assessment = value;
+      clues[current].Note = note || "";
       saveProgress();
       history.push(current);
       current++;
@@ -344,7 +302,15 @@
     }
 
     function exportCSV() {
-      const csv = Papa.unparse(clues);
+      const reviewed = clues.filter(row => row.Assessment);
+      const trimmed = reviewed.map(row => ({
+        Clue: row.Clue,
+        Answer: row.Answer,
+        Writer: row.Writer,
+        Assessment: row.Assessment,
+        Note: row.Note || ""
+      }));
+      const csv = Papa.unparse(trimmed);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -353,10 +319,7 @@
     }
 
     function saveProgress() {
-      const savedData = {
-        current,
-        clues
-      };
+      const savedData = { current, clues };
       localStorage.setItem("clueMatchProgress", JSON.stringify(savedData));
     }
 
