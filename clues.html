@@ -92,11 +92,6 @@
       max-width: 480px;
       margin-bottom: 2rem;
       transition: transform 0.4s ease, opacity 0.4s ease;
-      animation: floatCard 6s ease-in-out infinite;
-    }
-    @keyframes floatCard {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
     }
     #card.enter {
       transform: translateX(0) scale(1);
@@ -108,6 +103,10 @@
     }
     #card.swipe-right {
       transform: translateX(150%) rotate(20deg);
+      opacity: 0;
+    }
+    #card.swipe-down {
+      transform: translateY(150%) rotate(15deg);
       opacity: 0;
     }
     #card.swipe-up {
@@ -219,7 +218,7 @@
 
     #notePanel {
       position: fixed;
-      top: 50%;
+      top: 15vh;
       left: 50%;
       width: 45vw;
       max-width: 240px;
@@ -235,7 +234,7 @@
       word-wrap: break-word;
       overflow-wrap: break-word;
       word-break: break-word;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, 0);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
@@ -280,8 +279,8 @@
   </style>
 </head>
 <body>
-  <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
-  <div id="instructions">Swipe right for OK, left for NO, up for GREAT</div>
+  <h1 id="header"><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
+  <div id="instructions">Swipe right for OK, left for NO, down for GREAT</div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="progressCount"></div>
   <div id="flashMessage"></div>
@@ -291,7 +290,7 @@
   <div id="buttons">
     <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
     <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
-    <button onclick="animateSwipe('up', () => recordAssessment('Great'))">Great</button>
+    <button onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
     <button id="noteBtn">Note</button>
     <button onclick="undoAssessment()" id="btnUndo">Undo</button>
   </div>
@@ -316,6 +315,7 @@
     const noteTextarea = document.getElementById("noteTextarea");
     const noteBtn = document.getElementById("noteBtn");
     const noteSaveBtn = document.getElementById("noteSaveBtn");
+    const header = document.getElementById("header");
 
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
@@ -365,6 +365,7 @@
         hideNotePanel();
         progressBar.style.width = "100%";
         progressCount.textContent = `${clues.length}/${clues.length}`;
+        header.style.display = "flex"; // ensure header stays visible
         return;
       }
       card.classList.remove("all-done");
@@ -384,6 +385,7 @@
       card.classList.add('enter');
       updateProgress();
       hideNotePanel();
+      header.style.display = "flex"; // make sure header is visible when showing clue
     }
 
     function toggleAnswer(el) {
@@ -400,7 +402,7 @@
       const emojiMap = {
         right: "👍",
         left: "❌",
-        up: "⭐"
+        down: "⭐"
       };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
@@ -486,13 +488,14 @@
         saveProgress();
       }
       hideNotePanel();
+      header.style.display = "flex"; // restore header visibility
     });
 
     const mc = new Hammer(document.body);
-    mc.get("swipe").set({ direction: Hammer.DIRECTION_HORIZONTAL | Hammer.DIRECTION_VERTICAL });
+    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
     mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
-    mc.on("swipeup", () => animateSwipe("up", () => recordAssessment("Great")));
+    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Great")));
 
     window.onload = loadSheet;
   </script>
