@@ -60,7 +60,7 @@
       color: white;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
-    #card {
+    #card, #notePanel {
       background: white;
       color: #222;
       border-radius: 24px;
@@ -75,14 +75,56 @@
       word-break: break-word;
       width: 90vw;
       max-width: 480px;
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
+      position: relative;
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
-    #card.enter { transform: translateX(0) scale(1); opacity: 1; }
-    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-    #card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
+    #card.enter, #notePanel.enter {
+      transform: translateX(0) scale(1);
+      opacity: 1;
+    }
+    #card.swipe-left {
+      transform: translateX(-150%) rotate(-20deg);
+      opacity: 0;
+    }
+    #card.swipe-right {
+      transform: translateX(150%) rotate(20deg);
+      opacity: 0;
+    }
+    #card.swipe-up {
+      transform: translateY(-150%) rotate(-15deg);
+      opacity: 0;
+    }
+    /* Note panel initial offscreen right */
+    #notePanel {
+      position: fixed;
+      top: 10%;
+      right: 10%;
+      transform: translateX(110%);
+      opacity: 0;
+      z-index: 1000;
+      max-width: 480px;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #notePanel.enter {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    #noteTextarea {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.2rem;
+      line-height: 1.4;
+      padding: 1rem;
+      border-radius: 18px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      min-height: 140px;
+      margin-bottom: 1rem;
+      color: #222;
+      outline: none;
+    }
 
     #answer {
       cursor: pointer;
@@ -97,9 +139,16 @@
       letter-spacing: 0.2em;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
-    #answer.revealed { background: none; color: #222; letter-spacing: normal; }
-    #writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
-
+    #answer.revealed {
+      background: none;
+      color: #222;
+      letter-spacing: normal;
+    }
+    #writer {
+      font-size: 1.3rem;
+      color: #555;
+      margin-top: 1rem;
+    }
     #buttons {
       display: flex;
       justify-content: space-between;
@@ -121,9 +170,11 @@
       cursor: pointer;
       box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
       transition: background 0.3s;
+      user-select: none;
     }
-    #btnUndo { background: #ddd; }
-
+    #btnUndo {
+      background: #ddd;
+    }
     #exportBtn, #resetBtn {
       position: fixed;
       bottom: 0;
@@ -138,9 +189,12 @@
       text-align: center;
       border: none;
       cursor: pointer;
+      user-select: none;
     }
-    #resetBtn { left: 50%; background-color: #bb0000; }
-
+    #resetBtn {
+      left: 50%;
+      background-color: #bb0000;
+    }
     #flashMessage {
       position: fixed;
       top: 40%;
@@ -153,79 +207,35 @@
       z-index: 999;
       text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
     }
-    #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-
-    /* Modal styles */
-    #noteModal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.4);
-    }
-    #noteModalContent {
-      background: white;
-      color: black;
-      margin: 20% auto;
-      padding: 1.5rem;
-      border-radius: 12px;
-      max-width: 400px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-      font-size: 1.2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    #noteModal textarea {
-      width: 100%;
-      height: 100px;
-      font-size: 1rem;
-      padding: 0.5rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      resize: vertical;
-      font-family: 'Montserrat', sans-serif;
-    }
-    #noteModal button {
-      align-self: flex-end;
-      padding: 0.6rem 1.2rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      background: #444;
-      color: white;
-      cursor: pointer;
+    #flashMessage.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2);
     }
   </style>
 </head>
 <body>
   <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
-  <div id="instructions">Swipe right for OK, left for NO, up for GREAT, down for WORKSHOP</div>
+  <div id="instructions">Swipe right for OK, left for NO, up for GREAT</div>
   <div id="progress"><div id="progressBar"></div></div>
   <div id="progressCount"></div>
   <div id="flashMessage"></div>
-  <div id="card" style="display:none;"></div>
 
-  <button id="noteButton" style="margin-bottom: 1rem; max-width: 500px; width: 90vw;">Add/Edit Note</button>
+  <div id="card" style="display:none;"></div>
 
   <div id="buttons">
     <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
     <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
     <button onclick="animateSwipe('up', () => recordAssessment('Great'))">Great</button>
-    <button onclick="animateSwipe('down', () => recordAssessment('Workshop'))">Workshop</button>
+    <button id="noteBtn">Note</button>
     <button onclick="undoAssessment()" id="btnUndo">Undo</button>
   </div>
 
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
   <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
-  <div id="noteModal">
-    <div id="noteModalContent">
-      <textarea id="noteTextarea" placeholder="Write your note here..."></textarea>
-      <button onclick="closeNoteModal()">Save Note</button>
-    </div>
+  <div id="notePanel">
+    <textarea id="noteTextarea" placeholder="Write your note here..."></textarea>
+    <button id="noteSaveBtn">OK</button>
   </div>
 
   <script>
@@ -236,9 +246,10 @@
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
     const progressCount = document.getElementById("progressCount");
-    const noteButton = document.getElementById("noteButton");
-    const noteModal = document.getElementById("noteModal");
+    const notePanel = document.getElementById("notePanel");
     const noteTextarea = document.getElementById("noteTextarea");
+    const noteBtn = document.getElementById("noteBtn");
+    const noteSaveBtn = document.getElementById("noteSaveBtn");
 
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
@@ -284,7 +295,8 @@
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
-        noteButton.style.display = "none";
+        notePanel.style.transform = "translateX(110%)";
+        notePanel.style.opacity = "0";
         progressBar.style.width = "100%";
         progressCount.textContent = `${clues.length}/${clues.length}`;
         return;
@@ -304,7 +316,7 @@
       void card.offsetWidth;
       card.classList.add('enter');
       updateProgress();
-      updateNoteButton();
+      hideNotePanel();
     }
 
     function toggleAnswer(el) {
@@ -321,8 +333,7 @@
       const emojiMap = {
         right: "👍",
         left: "❌",
-        up: "⭐",
-        down: "🔧"
+        up: "⭐"
       };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
@@ -355,13 +366,11 @@
     }
 
     function exportCSV() {
-      // Only include clues that have an Assessment
       const filtered = clues.filter(c => c.Assessment);
       if(filtered.length === 0) {
         alert("No assessed clues to export.");
         return;
       }
-      // Export these columns only: Clue, Answer, Writer, Assessment, Note (if present)
       const exportData = filtered.map(c => ({
         Clue: c.Clue,
         Answer: c.Answer,
@@ -392,36 +401,31 @@
       }
     }
 
-    function updateNoteButton() {
-      if(current >= clues.length) {
-        noteButton.style.display = "none";
-        return;
-      }
-      noteButton.style.display = "block";
-      noteTextarea.value = clues[current].Note || "";
-    }
-
-    noteButton.addEventListener("click", () => {
+    function showNotePanel() {
       if(current >= clues.length) return;
       noteTextarea.value = clues[current].Note || "";
-      noteModal.style.display = "block";
+      notePanel.classList.add('enter');
       noteTextarea.focus();
-    });
+    }
+    function hideNotePanel() {
+      notePanel.classList.remove('enter');
+    }
 
-    function closeNoteModal() {
+    noteBtn.addEventListener("click", showNotePanel);
+
+    noteSaveBtn.addEventListener("click", () => {
       if(current < clues.length) {
         clues[current].Note = noteTextarea.value.trim();
         saveProgress();
       }
-      noteModal.style.display = "none";
-    }
+      hideNotePanel();
+    });
 
     const mc = new Hammer(document.body);
-    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+    mc.get("swipe").set({ direction: Hammer.DIRECTION_HORIZONTAL | Hammer.DIRECTION_VERTICAL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
     mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
     mc.on("swipeup", () => animateSwipe("up", () => recordAssessment("Great")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Workshop")));
 
     window.onload = loadSheet;
   </script>
