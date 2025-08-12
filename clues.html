@@ -1,343 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ClueMatch</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #ffb07c, #ffcba4);
-      min-height: 100vh;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem 7rem;
-      color: white;
-      user-select: none;
-    }
-    h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.3rem;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
-    }
-    #title-flame {
-      font-size: 3rem;
-    }
-    #instructions {
-      font-size: 1.2rem;
-      margin-bottom: 1.5rem;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-      text-align: center;
-    }
-    #progress {
-      width: 90vw;
-      max-width: 500px;
-      height: 6px;
-      background: rgba(255,255,255,0.3);
-      border-radius: 3px;
-      margin-bottom: 0.3rem;
-      overflow: hidden;
-    }
-    #progressBar {
-      height: 100%;
-      width: 0%;
-      background: #ffe6e6;
-      transition: width 0.3s ease;
-    }
-    #progressCount {
-      font-size: 0.9rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-      color: white;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-    }
-    #card {
-      background: white;
-      color: #222;
-      border-radius: 24px;
-      padding: 2rem 1.5rem;
-      font-size: 2.2rem;
-      line-height: 1.4;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      text-align: center;
-      user-select: none;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      width: 90vw;
-      max-width: 480px;
-      margin-bottom: 2rem;
-      transition: transform 0.4s ease, opacity 0.4s ease;
-    }
-    #card.enter { transform: translateX(0) scale(1); opacity: 1; }
-    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-    #card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
-
-    #answer {
-      cursor: pointer;
-      user-select: none;
-      padding: 0 0.4em;
-      border-radius: 6px;
-      font-size: 1.6rem;
-      font-weight: 700;
-      display: inline-block;
-      background: black;
-      color: black;
-      letter-spacing: 0.2em;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-    #answer.revealed { background: none; color: #222; letter-spacing: normal; }
-    #writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
-
-    #noteInput {
-      width: 90vw;
-      max-width: 500px;
-      margin-bottom: 1rem;
-      padding: 0.6rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    #buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      width: 90vw;
-      max-width: 500px;
-      margin-bottom: 2rem;
-    }
-    button {
-      flex: 1;
-      padding: 0.6rem 0.8rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 8px;
-      border: 2px solid black;
-      background: white;
-      color: black;
-      cursor: pointer;
-      box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
-      transition: background 0.3s;
-    }
-    #btnUndo { background: #ddd; }
-
-    #exportBtn, #resetBtn {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 50%;
-      max-width: 250px;
-      padding: 1rem;
-      font-size: 1.1rem;
-      border-radius: 0;
-      background-color: #444;
-      color: white;
-      text-align: center;
-      border: none;
-      cursor: pointer;
-    }
-    #resetBtn { left: 50%; background-color: #bb0000; }
-
-    #flashMessage {
-      position: fixed;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      font-size: 5rem;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      pointer-events: none;
-      z-index: 999;
-      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
-    }
-    #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Game with Notes</title>
+<style>
+  table {
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  td {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid #000;
+    cursor: pointer;
+    font-size: 18px;
+  }
+  .highlight {
+    background-color: yellow;
+  }
+  .incorrect {
+    background-color: pink;
+  }
+  button {
+    margin: 5px;
+    padding: 8px;
+  }
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+  }
+  .modal-content {
+    background-color: #fff;
+    margin: 20% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  textarea {
+    width: 100%;
+    height: 100px;
+    font-size: 16px;
+  }
+</style>
 </head>
 <body>
-  <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
-  <div id="instructions">Swipe right for OK, left for NO, up for GREAT, down for WORKSHOP</div>
-  <div id="progress"><div id="progressBar"></div></div>
-  <div id="progressCount"></div>
-  <div id="flashMessage"></div>
-  <div id="card" style="display:none;"></div>
 
-  <input id="noteInput" type="text" placeholder="Optional note...">
+<h2>Word Game</h2>
+<table id="grid"></table>
+<button id="noteBtn">Add/Edit Note</button>
+<button onclick="exportCSV()">Export CSV</button>
 
-  <div id="buttons">
-    <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
-    <button onclick="animateSwipe('up', () => recordAssessment('Great'))">Great</button>
-    <button onclick="animateSwipe('down', () => recordAssessment('Workshop'))">Workshop</button>
-    <button onclick="undoAssessment()" id="btnUndo">Undo</button>
+<!-- Modal for Note -->
+<div id="noteModal" class="modal">
+  <div class="modal-content">
+    <h3>Your Note</h3>
+    <textarea id="noteInput"></textarea>
+    <br><br>
+    <button onclick="saveNote()">Save</button>
+    <button onclick="closeModal()">Close</button>
   </div>
+</div>
 
-  <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-  <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+<script>
+const gridData = [
+  ['A','B','C','D','E'],
+  ['F','G','H','I','J'],
+  ['K','L','M','N','O'],
+  ['P','Q','R','S','T'],
+  ['U','V','W','X','Y']
+];
 
-  <script>
-    let clues = [];
-    let current = 0;
-    const history = [];
-    const card = document.getElementById("card");
-    const flash = document.getElementById("flashMessage");
-    const progressBar = document.getElementById("progressBar");
-    const progressCount = document.getElementById("progressCount");
+let highlighted = [];
+let note = '';
 
-    const sheetUrl = "YOUR_SHEET_URL_HERE";
+function createGrid() {
+  const table = document.getElementById('grid');
+  table.innerHTML = '';
+  gridData.forEach((row, r) => {
+    const tr = document.createElement('tr');
+    row.forEach((letter, c) => {
+      const td = document.createElement('td');
+      td.textContent = letter;
+      td.addEventListener('click', () => toggleHighlight(r, c, td));
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
 
-    function loadSheet() {
-      const proxy = "https://corsproxy.io/?";
-      Papa.parse(proxy + sheetUrl, {
-        download: true,
-        header: true,
-        complete: results => {
-          clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+function toggleHighlight(row, col, cell) {
+  const index = highlighted.findIndex(h => h.row === row && h.col === col);
+  if (index > -1) {
+    highlighted.splice(index, 1);
+    cell.classList.remove('highlight');
+  } else {
+    highlighted.push({row, col});
+    cell.classList.add('highlight');
+  }
 
-          const saved = localStorage.getItem("clueMatchProgress");
-          if (saved) {
-            try {
-              const savedData = JSON.parse(saved);
-              if (savedData.clues && Array.isArray(savedData.clues)) {
-                clues = savedData.clues;
-                current = savedData.current || 0;
-              }
-            } catch (e) {
-              console.warn("Failed to load saved progress.");
-            }
-          } else {
-            current = 0;
-          }
-
-          history.length = 0;
-          updateProgress();
-          showNext();
-        },
-        error: err => alert("Error loading sheet: " + err.message)
+  if (highlighted.length === 5) {
+    if (!checkWord()) {
+      document.querySelectorAll('.highlight').forEach(cell => {
+        cell.classList.add('incorrect');
       });
+      setTimeout(() => {
+        document.querySelectorAll('.incorrect').forEach(cell => {
+          cell.classList.remove('incorrect');
+          cell.classList.remove('highlight');
+        });
+        highlighted = [];
+      }, 1000);
+    } else {
+      highlighted = [];
     }
+  }
+}
 
-    function updateProgress() {
-      const percent = (current / clues.length) * 100;
-      progressBar.style.width = percent + "%";
-      progressCount.textContent = `${current + 1}/${clues.length}`;
-    }
+function checkWord() {
+  // Dummy check: just returns false for now
+  return false;
+}
 
-    function showNext() {
-      if (current >= clues.length) {
-        card.innerHTML = "<strong>All done!</strong>";
-        card.style.display = "block";
-        document.getElementById("buttons").style.display = "none";
-        progressBar.style.width = "100%";
-        progressCount.textContent = `${clues.length}/${clues.length}`;
-        return;
-      }
-      const clue = clues[current];
-      card.innerHTML = `
-        <p>${clue.Clue}</p>
-        <p><strong>Answer:</strong> 
-          <span id="answer" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
-        </p>
-        <p id="writer">${clue.Writer}</p>
-      `;
-      document.getElementById("noteInput").value = clue.Note || "";
-      card.style.display = "block";
-      card.className = '';
-      void card.offsetWidth;
-      card.classList.add('enter');
-      updateProgress();
-    }
+function exportCSV() {
+  let csv = 'Row,Col,Letter\n';
+  highlighted.forEach(h => {
+    csv += `${h.row},${h.col},${gridData[h.row][h.col]}\n`;
+  });
+  csv += `\nNote,"${note.replace(/"/g, '""')}"\n`;
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'game_export.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-    function toggleAnswer(el) {
-      if (el.classList.contains('revealed')) {
-        el.classList.remove('revealed');
-        el.textContent = "████████";
-      } else {
-        el.classList.add('revealed');
-        el.textContent = el.getAttribute('data-answer');
-      }
-    }
+// Note modal functions
+document.getElementById('noteBtn').onclick = () => {
+  document.getElementById('noteInput').value = note;
+  document.getElementById('noteModal').style.display = 'block';
+};
 
-    function flashMessage(direction) {
-      const emojiMap = { right: "👍", left: "❌", up: "⭐", down: "🔧" };
-      flash.textContent = emojiMap[direction] || "";
-      flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 600);
-    }
+function saveNote() {
+  note = document.getElementById('noteInput').value;
+  closeModal();
+}
 
-    function animateSwipe(direction, callback) {
-      card.classList.add(`swipe-${direction}`);
-      flashMessage(direction);
-      setTimeout(() => { card.className = ''; callback(); }, 400);
-    }
+function closeModal() {
+  document.getElementById('noteModal').style.display = 'none';
+}
 
-    function recordAssessment(value) {
-      if (current >= clues.length) return;
-      const note = document.getElementById("noteInput").value.trim();
-      clues[current].Assessment = value;
-      clues[current].Note = note || "";
-      saveProgress();
-      history.push(current);
-      current++;
-      showNext();
-    }
+// Close modal if clicking outside of it
+window.onclick = function(event) {
+  if (event.target === document.getElementById('noteModal')) {
+    closeModal();
+  }
+};
 
-    function undoAssessment() {
-      if (history.length === 0) return;
-      current = history.pop();
-      saveProgress();
-      showNext();
-    }
+createGrid();
+</script>
 
-    function exportCSV() {
-      const reviewed = clues.filter(row => row.Assessment);
-      const trimmed = reviewed.map(row => ({
-        Clue: row.Clue,
-        Answer: row.Answer,
-        Writer: row.Writer,
-        Assessment: row.Assessment,
-        Note: row.Note || ""
-      }));
-      const csv = Papa.unparse(trimmed);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "reviewed_clues.csv";
-      link.click();
-    }
-
-    function saveProgress() {
-      const savedData = { current, clues };
-      localStorage.setItem("clueMatchProgress", JSON.stringify(savedData));
-    }
-
-    function resetProgress() {
-      if (confirm("Are you sure you want to reset all progress?")) {
-        localStorage.removeItem("clueMatchProgress");
-        location.reload();
-      }
-    }
-
-    const mc = new Hammer(document.body);
-    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
-    mc.on("swipeup", () => animateSwipe("up", () => recordAssessment("Great")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Workshop")));
-
-    window.onload = loadSheet;
-  </script>
 </body>
 </html>
