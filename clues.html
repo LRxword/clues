@@ -168,6 +168,7 @@
   <div id="sourceTabs">
     <div class="tab active" id="tabMembers" onclick="switchSource('Members')">Members</div>
     <div class="tab" id="tabSetters" onclick="switchSource('Setters')">Setters</div>
+    <div class="tab" id="tabBook" onclick="switchSource('Book')">Book</div>
   </div>
 
   <div id="progress"><div id="progressBar"></div></div>
@@ -194,19 +195,18 @@
   <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
   <script>
-    let clues = [];
-    let current = 0;
+    let clues = [], current = 0, currentSource = 'Members';
     const history = [];
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
     const progressCount = document.getElementById("progressCount");
     const assessmentCountsEl = document.getElementById("assessmentCounts");
-    let currentSource = 'Members';
 
     const sheetUrls = {
       Members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-      Setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv"
+      Setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
+      Book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
     };
 
     function loadSheet() {
@@ -352,6 +352,7 @@
       currentSource = source;
       document.getElementById("tabMembers").classList.toggle("active", source==='Members');
       document.getElementById("tabSetters").classList.toggle("active", source==='Setters');
+      document.getElementById("tabBook").classList.toggle("active", source==='Book');
       current = 0;
       history.length = 0;
       clues = [];
