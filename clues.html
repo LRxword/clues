@@ -138,7 +138,7 @@
     #resetBtn { left: 50%; background-color: #bb0000; }
     #noteOverlay {
       position: fixed;
-      top: 15%;
+      top: 10%;
       left: 50%;
       transform: translateX(-50%);
       width: 50vw;
@@ -209,13 +209,6 @@
       Setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv"
     };
 
-    function switchSource(source) {
-      currentSource = source;
-      document.getElementById("tabMembers").classList.toggle("active", source==='Members');
-      document.getElementById("tabSetters").classList.toggle("active", source==='Setters');
-      loadSheet();
-    }
-
     function loadSheet() {
       const proxy = "https://corsproxy.io/?";
       Papa.parse(proxy + sheetUrls[currentSource], {
@@ -223,6 +216,7 @@
         header: true,
         complete: results => {
           clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+
           const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
           if (saved) {
             try {
@@ -236,7 +230,6 @@
 
           history.length = 0;
           updateProgress();
-          updateAssessmentCounts();
           showNext();
         },
         error: err => alert("Error loading sheet: " + err.message)
@@ -247,16 +240,9 @@
       const percent = (current / clues.length) * 100;
       progressBar.style.width = percent + "%";
       progressCount.textContent = `${current + 1}/${clues.length}`;
-    }
 
-    function getAssessmentCounts() {
-      const counts = { No:0, OK:0, Great:0 };
+      const counts = {No:0, OK:0, Great:0};
       clues.forEach(c => { if(c.Assessment) counts[c.Assessment]++; });
-      return counts;
-    }
-
-    function updateAssessmentCounts() {
-      const counts = getAssessmentCounts();
       assessmentCountsEl.textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
     }
 
@@ -267,16 +253,13 @@
         document.getElementById("buttons").style.display = "none";
         progressBar.style.width = "100%";
         progressCount.textContent = `${clues.length}/${clues.length}`;
-        updateAssessmentCounts();
         return;
       }
       const clue = clues[current];
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> 
-          <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">
-            ████████
-          </span>
+          <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
         </p>
         <p id="writer">${clue.Writer}</p>
       `;
@@ -285,12 +268,10 @@
       void card.offsetWidth;
       card.classList.add('enter');
       updateProgress();
-      updateAssessmentCounts();
-      document.getElementById("buttons").style.display = "flex";
     }
 
     function toggleAnswer(el) {
-      if(el.classList.contains('revealed')) {
+      if (el.classList.contains('revealed')) {
         el.classList.remove('revealed');
         el.textContent = "████████";
       } else {
@@ -300,7 +281,7 @@
     }
 
     function flashMessage(direction) {
-      const emojiMap = { right:"👍", left:"❌", up:"⭐", down:"⭐" };
+      const emojiMap = { right:"👍", left:"❌", down:"⭐" };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
       setTimeout(() => flash.classList.remove("show"), 600);
@@ -309,14 +290,11 @@
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
       flashMessage(direction);
-      setTimeout(() => {
-        card.className = '';
-        callback();
-      }, 400);
+      setTimeout(() => { card.className = ''; callback(); }, 400);
     }
 
     function recordAssessment(value) {
-      if(current >= clues.length) return;
+      if (current >= clues.length) return;
       clues[current].Assessment = value;
       saveProgress();
       history.push(current);
@@ -325,50 +303,66 @@
     }
 
     function undoAssessment() {
-      if(history.length===0) return;
+      if (history.length === 0) return;
       current = history.pop();
       saveProgress();
       showNext();
     }
 
-    function openNote() {
-      document.getElementById("noteOverlay").style.display = "block";
-      document.getElementById("noteText").value = clues[current].Note || '';
-    }
-
-    function saveNote() {
-      clues[current].Note = document.getElementById("noteText").value;
-      document.getElementById("noteOverlay").style.display = "none";
-      current++;
-      showNext();
-    }
-
     function exportCSV() {
-      const filtered = clues.filter(c => c.Assessment);
-      const csv = Papa.unparse(filtered, { columns: ['Clue','Answer','Writer','Assessment','Note'] });
+      const data = clues.filter(c=>c.Assessment).map(c=>({
+        Clue:c.Clue, Answer:c.Answer, Writer:c.Writer, Assessment:c.Assessment, Note:c.Note||""
+      }));
+      const csv = Papa.unparse(data);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "reviewed_clues_" + currentSource.toLowerCase() + ".csv";
+      link.download = "reviewed_clues.csv";
       link.click();
     }
 
     function saveProgress() {
-      localStorage.setItem("clueMatchProgress_" + currentSource, JSON.stringify({ current, clues }));
+      localStorage.setItem("clueMatchProgress_" + currentSource, JSON.stringify({current, clues}));
+      updateProgress();
     }
 
     function resetProgress() {
-      if(confirm("Are you sure you want to reset all progress?")) {
+      if (confirm("Are you sure you want to reset all progress?")) {
         localStorage.removeItem("clueMatchProgress_" + currentSource);
         location.reload();
       }
+    }
+
+    function openNote() {
+      document.getElementById("noteOverlay").style.display = "block";
+    }
+
+    function saveNote() {
+      const note = document.getElementById("noteText").value.trim();
+      if(note) clues[current].Note = note;
+      document.getElementById("noteText").value = "";
+      document.getElementById("noteOverlay").style.display = "none";
+      current++;
+      showNext();
+      saveProgress();
+    }
+
+    function switchSource(source) {
+      if (currentSource === source) return;
+      currentSource = source;
+      document.getElementById("tabMembers").classList.toggle("active", source==='Members');
+      document.getElementById("tabSetters").classList.toggle("active", source==='Setters');
+      current = 0;
+      history.length = 0;
+      clues = [];
+      document.getElementById("buttons").style.display = "flex";
+      loadSheet();
     }
 
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
     mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
-    mc.on("swipeup", () => animateSwipe("up", () => {})); // up swipe does nothing now
     mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Great")));
 
     window.onload = loadSheet;
