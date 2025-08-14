@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>ClueMatch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
@@ -20,10 +20,11 @@ body {
   padding: 2rem 1rem 7rem;
   color: white;
   user-select: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 h1 {
-  font-size: 3.5rem;
+  font-size: 3.8rem;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
 }
@@ -68,7 +69,7 @@ h1 {
 }
 
 #progressCount {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   margin-bottom: 1.5rem;
   text-align: center;
   color: white;
@@ -94,7 +95,7 @@ h1 {
   cursor: pointer;
   padding: 0 0.4em;
   border-radius: 6px;
-  font-size: 1.6rem;
+  font-size: 2.2rem;
   font-weight: 700;
   display: inline-block;
   background: black;
@@ -178,7 +179,7 @@ button {
 #noteOverlay {
   display: none;
   position: fixed;
-  top: 15%;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
   width: 80%;
@@ -193,16 +194,17 @@ button {
 
 #noteText {
   width: 100%;
-  height: 120px;
-  font-size: 1rem; /* 16px */
+  height: 140px;
+  font-size: 2.2rem; /* same as clue */
   padding: 1rem;
   border-radius: 12px;
   border: 2px solid #222;
   resize: none;
   background: white;
   color: #222;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
 }
-
 #noteOverlay button {
   margin-top: 1rem;
   padding: 0.6rem 1rem;
@@ -269,7 +271,18 @@ function loadSheet() {
     header: true,
     complete: results => {
       clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
-      current = 0;
+
+      const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
+      if (saved) {
+        try {
+          const savedData = JSON.parse(saved);
+          if (savedData.clues && Array.isArray(savedData.clues)) {
+            clues = savedData.clues;
+            current = savedData.current || 0;
+          }
+        } catch (e) { console.warn("Failed to load saved progress."); }
+      } else { current = 0; }
+
       history.length = 0;
       updateProgress();
       showNext();
@@ -328,10 +341,7 @@ function flashMessage(direction) {
 function animateSwipe(direction, callback) {
   card.classList.add(`swipe-${direction}`);
   flashMessage(direction);
-  setTimeout(() => {
-    card.className = '';
-    callback();
-  }, 400);
+  setTimeout(() => { card.className = ''; callback(); }, 400);
 }
 
 function recordAssessment(value) {
@@ -352,7 +362,13 @@ function undoAssessment() {
 
 function exportCSV() {
   const filtered = clues.filter(c => c.Assessment);
-  const csv = Papa.unparse(filtered, {columns:["Clue","Answer","Writer","Assessment","Note"]});
+  const csv = Papa.unparse(filtered.map(c => ({
+    Clue: c.Clue,
+    Answer: c.Answer,
+    Writer: c.Writer,
+    Assessment: c.Assessment,
+    Note: c.Note || ""
+  })));
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -361,13 +377,12 @@ function exportCSV() {
 }
 
 function saveProgress() {
-  const savedData = { current, clues };
-  localStorage.setItem("clueMatchProgress", JSON.stringify(savedData));
+  localStorage.setItem("clueMatchProgress_" + currentSource, JSON.stringify({ current, clues }));
 }
 
 function resetProgress() {
   if (confirm("Are you sure you want to reset all progress?")) {
-    localStorage.removeItem("clueMatchProgress");
+    localStorage.removeItem("clueMatchProgress_" + currentSource);
     location.reload();
   }
 }
@@ -381,8 +396,8 @@ function openNote() {
 }
 
 function saveNote() {
-  const noteText = document.getElementById("noteText").value.trim();
-  clues[current].Note = noteText || "";
+  const noteText = document.getElementById("noteText");
+  clues[current].Note = noteText.value;
   document.getElementById("noteOverlay").style.display = "none";
   saveProgress();
 }
@@ -391,8 +406,9 @@ document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     tab.classList.add("active");
-    currentSource = tab.getAttribute("data-source");
+    currentSource = tab.dataset.source;
     loadSheet();
+    document.getElementById("buttons").style.display = "flex";
   });
 });
 
@@ -406,3 +422,4 @@ window.onload = loadSheet;
 </script>
 </body>
 </html>
+
