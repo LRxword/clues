@@ -23,30 +23,29 @@
     }
     h1 {
       font-size: 3.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
       display: flex;
       align-items: center;
       gap: 0.6rem;
       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
     }
-    #sourceTabs {
+    #tabs {
       display: flex;
-      gap: 1rem;
+      gap: 0.5rem;
       margin-bottom: 1rem;
     }
     .tab {
       padding: 0.5rem 1rem;
-      font-size: 1.2rem;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.8);
-      color: black;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 600;
-      transition: background 0.3s;
+      font-weight: 700;
+      background: rgba(255,255,255,0.3);
+      color: white;
+      transition: background 0.3s, color 0.3s;
     }
     .tab.active {
-      background: #222;
-      color: white;
+      background: white;
+      color: black;
     }
     #progress {
       width: 90vw;
@@ -64,34 +63,16 @@
       transition: width 0.3s ease;
     }
     #progressCount {
-      font-size: 1.2rem;
-      margin-bottom: 0.3rem;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
       text-align: center;
       color: white;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
     #assessmentCounts {
       font-size: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       text-align: center;
-      color: white;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-    }
-    #flashMessage {
-      position: fixed;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      font-size: 5rem;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      pointer-events: none;
-      z-index: 999;
-      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
-    }
-    #flashMessage.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1.2);
     }
     #card {
       background: white;
@@ -102,20 +83,19 @@
       line-height: 1.4;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       text-align: center;
-      user-select: none;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-word;
       width: 90vw;
       max-width: 480px;
       margin-bottom: 2rem;
       transition: transform 0.4s ease, opacity 0.4s ease;
     }
-    #card.enter { transform: translateX(0) scale(1); opacity: 1; }
-    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-    #card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
-    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+    #card.enter {
+      transform: translateX(0) scale(1);
+      opacity: 1;
+    }
+    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity:0; }
+    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity:0; }
+    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity:0; }
+
     #answer {
       cursor: pointer;
       user-select: none;
@@ -132,40 +112,31 @@
     #answer.revealed { background: none; color: #222; letter-spacing: normal; }
     #writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
     #buttons { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; width: 90vw; max-width: 500px; margin-bottom: 2rem; }
-    button { flex: 1; padding: 0.5rem 0.6rem; font-size: 1rem; font-weight: 600; border-radius: 8px; border: 2px solid black; background: white; color: black; cursor: pointer; box-shadow: 1px 2px 4px rgba(0,0,0,0.1); transition: background 0.3s; }
+    button { flex: 1; padding: 0.6rem 0.8rem; font-size: 1rem; font-weight: 600; border-radius: 8px; border: 2px solid black; background: white; color: black; cursor: pointer; box-shadow: 1px 2px 4px rgba(0,0,0,0.1); transition: background 0.3s; }
     #btnUndo { background: #ddd; }
-    #exportBtn, #resetBtn { position: fixed; bottom: 0; left: 0; width: 50%; max-width: 250px; padding: 1rem; font-size: 1.1rem; border-radius: 0; background-color: #444; color: white; text-align: center; border: none; cursor: pointer; }
+    #exportBtn, #resetBtn {
+      position: fixed; bottom: 0; left: 0; width: 50%; max-width: 250px; padding: 1rem; font-size: 1.1rem; border-radius: 0; background-color: #444; color: white; text-align: center; border: none; cursor: pointer;
+    }
     #resetBtn { left: 50%; background-color: #bb0000; }
+
+    #flashMessage {
+      position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+      font-size: 5rem; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; z-index: 999;
+      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+    }
+    #flashMessage.show { opacity:1; transform:translate(-50%, -50%) scale(1.2); }
+
     #noteOverlay {
-      position: fixed;
-      top: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50vw;
-      max-width: 400px;
-      background: white;
-      color: #222;
-      border-radius: 24px;
-      padding: 2rem;
-      z-index: 1000;
-      display: none;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      display:none; position: fixed; top:15%; left:50%; transform:translateX(-50%); background:white; padding:2rem; border-radius:16px; width:50%; max-width:400px; z-index:1000; box-shadow:0 8px 20px rgba(0,0,0,0.3); text-align:center;
     }
-    #noteOverlay textarea {
-      width: 100%;
-      height: 150px;
-      font-size: 2rem;
-      border-radius: 12px;
-      padding: 0.5rem;
-      resize: none;
-    }
-    #noteOverlay button { margin-top: 1rem; }
+    #noteOverlay textarea { width:100%; height:120px; font-size:1.5rem; margin-bottom:1rem; }
+    #noteOverlay button { padding:0.5rem 1rem; font-size:1rem; }
   </style>
 </head>
 <body>
   <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
 
-  <div id="sourceTabs">
+  <div id="tabs">
     <div class="tab active" id="tabMembers" onclick="switchSource('Members')">Members</div>
     <div class="tab" id="tabSetters" onclick="switchSource('Setters')">Setters</div>
     <div class="tab" id="tabBook" onclick="switchSource('Book')">Book</div>
@@ -174,25 +145,24 @@
   <div id="progress"><div id="progressBar"></div></div>
   <div id="progressCount"></div>
   <div id="assessmentCounts"></div>
-
   <div id="flashMessage"></div>
   <div id="card" style="display:none;"></div>
 
   <div id="buttons">
-    <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
+    <button onclick="animateSwipe('left',()=>recordAssessment('No'))">No</button>
+    <button onclick="animateSwipe('right',()=>recordAssessment('OK'))">OK</button>
+    <button onclick="animateSwipe('down',()=>recordAssessment('Great'))">Great</button>
     <button onclick="openNote()">Note</button>
-    <button onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
     <button onclick="undoAssessment()" id="btnUndo">Undo</button>
-  </div>
-
-  <div id="noteOverlay">
-    <textarea id="noteText" placeholder="Write your note..."></textarea>
-    <button onclick="saveNote()">Save Note</button>
   </div>
 
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
   <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+
+  <div id="noteOverlay">
+    <textarea id="noteText" placeholder="Write your note here..."></textarea>
+    <br><button onclick="saveNote()">OK</button>
+  </div>
 
   <script>
     let clues = [], current = 0, currentSource = 'Members';
@@ -221,10 +191,7 @@
           if (saved) {
             try {
               const savedData = JSON.parse(saved);
-              if (savedData.clues && Array.isArray(savedData.clues)) {
-                clues = savedData.clues;
-                current = savedData.current || 0;
-              }
+              if (savedData.clues && Array.isArray(savedData.clues)) { clues = savedData.clues; current = savedData.current || 0; }
             } catch (e) { console.warn("Failed to load saved progress."); }
           } else { current = 0; }
 
@@ -271,39 +238,34 @@
     }
 
     function toggleAnswer(el) {
-      if (el.classList.contains('revealed')) {
-        el.classList.remove('revealed');
-        el.textContent = "████████";
-      } else {
-        el.classList.add('revealed');
-        el.textContent = el.getAttribute('data-answer');
-      }
+      if (el.classList.contains('revealed')) { el.classList.remove('revealed'); el.textContent = "████████"; }
+      else { el.classList.add('revealed'); el.textContent = el.getAttribute('data-answer'); }
     }
 
     function flashMessage(direction) {
       const emojiMap = { right:"👍", left:"❌", down:"⭐" };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
-      setTimeout(() => flash.classList.remove("show"), 600);
+      setTimeout(()=>flash.classList.remove("show"),600);
     }
 
     function animateSwipe(direction, callback) {
       card.classList.add(`swipe-${direction}`);
       flashMessage(direction);
-      setTimeout(() => { card.className = ''; callback(); }, 400);
+      setTimeout(()=>{ card.className=''; callback(); },400);
     }
 
     function recordAssessment(value) {
       if (current >= clues.length) return;
       clues[current].Assessment = value;
-      saveProgress();
       history.push(current);
       current++;
+      saveProgress();
       showNext();
     }
 
     function undoAssessment() {
-      if (history.length === 0) return;
+      if(history.length===0) return;
       current = history.pop();
       saveProgress();
       showNext();
@@ -327,7 +289,7 @@
     }
 
     function resetProgress() {
-      if (confirm("Are you sure you want to reset all progress?")) {
+      if(confirm("Are you sure you want to reset all progress?")){
         localStorage.removeItem("clueMatchProgress_" + currentSource);
         location.reload();
       }
@@ -335,36 +297,39 @@
 
     function openNote() {
       document.getElementById("noteOverlay").style.display = "block";
+      document.getElementById("noteText").focus();
     }
 
     function saveNote() {
       const note = document.getElementById("noteText").value.trim();
       if(note) clues[current].Note = note;
-      document.getElementById("noteText").value = "";
-      document.getElementById("noteOverlay").style.display = "none";
+      document.getElementById("noteText").value="";
+      document.getElementById("noteOverlay").style.display="none";
+
+      history.push(current);
       current++;
-      showNext();
       saveProgress();
+      showNext();
     }
 
     function switchSource(source) {
-      if (currentSource === source) return;
-      currentSource = source;
-      document.getElementById("tabMembers").classList.toggle("active", source==='Members');
-      document.getElementById("tabSetters").classList.toggle("active", source==='Setters');
-      document.getElementById("tabBook").classList.toggle("active", source==='Book');
-      current = 0;
-      history.length = 0;
-      clues = [];
-      document.getElementById("buttons").style.display = "flex";
+      if(currentSource===source) return;
+      currentSource=source;
+      document.getElementById("tabMembers").classList.toggle("active",source==='Members');
+      document.getElementById("tabSetters").classList.toggle("active",source==='Setters');
+      document.getElementById("tabBook").classList.toggle("active",source==='Book');
+      current=0;
+      history.length=0;
+      clues=[];
+      document.getElementById("buttons").style.display="flex";
       loadSheet();
     }
 
     const mc = new Hammer(document.body);
-    mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-    mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
-    mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
-    mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Great")));
+    mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
+    mc.on("swipeleft", ()=>animateSwipe("left",()=>recordAssessment("No")));
+    mc.on("swiperight", ()=>animateSwipe("right",()=>recordAssessment("OK")));
+    mc.on("swipedown", ()=>animateSwipe("down",()=>recordAssessment("Great")));
 
     window.onload = loadSheet;
   </script>
