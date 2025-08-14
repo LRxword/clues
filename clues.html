@@ -295,22 +295,25 @@
       }
     }
 
-    function openNote() {
-      document.getElementById("noteOverlay").style.display = "block";
-      document.getElementById("noteText").focus();
-    }
+ function openNote() {
+  const noteOverlay = document.getElementById("noteOverlay");
+  const noteText = document.getElementById("noteText");
+  const clue = clues[current];
+  noteText.value = clue.Note || ""; // prefill existing note
+  noteOverlay.style.display = "block";
 
-    function saveNote() {
-      const note = document.getElementById("noteText").value.trim();
-      if(note) clues[current].Note = note;
-      document.getElementById("noteText").value="";
-      document.getElementById("noteOverlay").style.display="none";
+  // Blur to avoid mobile zoom issues
+  setTimeout(() => noteText.blur(), 300);
+}
 
-      history.push(current);
-      current++;
-      saveProgress();
-      showNext();
-    }
+function saveNote() {
+  const noteText = document.getElementById("noteText").value.trim();
+  clues[current].Note = noteText || "";
+
+  document.getElementById("noteOverlay").style.display = "none";
+  document.getElementById("noteText").blur(); // remove focus to reset zoom
+  saveProgress();
+}
 
     function switchSource(source) {
       if(currentSource===source) return;
