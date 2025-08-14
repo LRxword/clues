@@ -8,17 +8,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
   <style>
-    :root{
-      --accent:#ff7a7a;
-      --bg1:#ffb07c;
-      --bg2:#ffcba4;
-      --tabActive:#fff;
-      --tabInactive:rgba(255,255,255,0.5);
-    }
     body {
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      background: linear-gradient(135deg, #ffb07c, #ffcba4);
       min-height: 100vh;
       overflow-x: hidden;
       display: flex;
@@ -28,88 +21,78 @@
       color: white;
       user-select: none;
     }
-
-    /* Header bigger */
-    h1#header {
-      font-size: 3.4rem; /* increased */
-      margin: 0 0 0.6rem 0;
+    h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       gap: 0.6rem;
       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
     }
-    #title-flame {
-      font-size: 3.2rem;
-      animation: flamePulse 3s infinite alternate;
-    }
-    @keyframes flamePulse {
-      0% { transform: scale(1); }
-      100% { transform: scale(1.2) rotate(5deg); }
-    }
-
-    /* Tabs */
-    .tabs {
-      width: 90vw;
-      max-width: 500px;
+    #sourceTabs {
       display: flex;
-      gap: 0.25rem;
-      margin-bottom: 0.6rem;
-      position: relative;
+      gap: 1rem;
+      margin-bottom: 1rem;
     }
     .tab {
-      flex: 1;
-      text-align: center;
-      padding: 0.6rem 0.8rem;
-      font-weight: 700;
-      border: 2px solid rgba(255,255,255,0.7);
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.8);
       color: black;
-      background: var(--tabInactive);
-      border-top-left-radius: 14px;
-      border-top-right-radius: 14px;
       cursor: pointer;
-      backdrop-filter: blur(2px);
-      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-      user-select: none;
+      font-weight: 600;
+      transition: background 0.3s;
     }
-    .tab:hover { transform: translateY(-2px); }
     .tab.active {
-      background: var(--tabActive);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      background: #222;
+      color: white;
     }
-
-    /* Progress */
     #progress {
       width: 90vw;
       max-width: 500px;
       height: 6px;
       background: rgba(255,255,255,0.3);
       border-radius: 3px;
-      margin: 0.3rem 0 0.2rem 0;
+      margin-bottom: 0.3rem;
       overflow: hidden;
-      animation: pulseProgress 3s infinite alternate;
-    }
-    @keyframes pulseProgress {
-      0% { background: rgba(255,255,255,0.3); }
-      100% { background: rgba(255,255,255,0.5); }
     }
     #progressBar {
       height: 100%;
       width: 0%;
       background: #ffe6e6;
       transition: width 0.3s ease;
-      border-radius: 3px;
     }
-
-    /* Slightly larger progress counter */
     #progressCount {
-      font-size: 1.05rem; /* increased */
-      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      margin-bottom: 0.3rem;
       text-align: center;
       color: white;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
-
-    /* Card */
+    #assessmentCounts {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    }
+    #flashMessage {
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      font-size: 5rem;
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+      z-index: 999;
+      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+    }
+    #flashMessage.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
     #card {
       background: white;
       color: #222;
@@ -131,9 +114,8 @@
     #card.enter { transform: translateX(0) scale(1); opacity: 1; }
     #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
     #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
     #card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
-
+    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
     #answer {
       cursor: pointer;
       user-select: none;
@@ -148,258 +130,134 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
     #answer.revealed { background: none; color: #222; letter-spacing: normal; }
-
-    #writer {
-      font-size: 1.3rem;
-      color: #555;
-      margin-top: 1rem;
-    }
-
-    /* Buttons row */
-    #buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      width: 90vw;
-      max-width: 500px;
-      margin-bottom: 2rem;
-    }
-    button {
-      flex: 1;
-      padding: 0.6rem 0.8rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 8px;
-      border: 2px solid black;
-      background: white;
-      color: black;
-      cursor: pointer;
-      box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
-      transition: background 0.3s, box-shadow 0.3s ease;
-    }
-    button:hover { box-shadow: 0 0 12px var(--accent); background: #fff0f0; }
+    #writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
+    #buttons { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; width: 90vw; max-width: 500px; margin-bottom: 2rem; }
+    button { flex: 1; padding: 0.5rem 0.6rem; font-size: 1rem; font-weight: 600; border-radius: 8px; border: 2px solid black; background: white; color: black; cursor: pointer; box-shadow: 1px 2px 4px rgba(0,0,0,0.1); transition: background 0.3s; }
     #btnUndo { background: #ddd; }
-
-    /* Fixed bottom actions */
-    #exportBtn, #resetBtn {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 50%;
-      max-width: 250px;
-      padding: 1rem;
-      font-size: 1.1rem;
-      border-radius: 0;
-      background-color: #444;
-      color: white;
-      text-align: center;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      z-index: 500;
-    }
-    #exportBtn:hover { background-color: #666; }
+    #exportBtn, #resetBtn { position: fixed; bottom: 0; left: 0; width: 50%; max-width: 250px; padding: 1rem; font-size: 1.1rem; border-radius: 0; background-color: #444; color: white; text-align: center; border: none; cursor: pointer; }
     #resetBtn { left: 50%; background-color: #bb0000; }
-    #resetBtn:hover { background-color: #d00000; }
-
-    /* Flash emoji */
-    #flashMessage {
+    #noteOverlay {
       position: fixed;
-      top: 40%;
+      top: 15%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      font-size: 5rem;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      pointer-events: none;
-      z-index: 999;
-      text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
-    }
-    #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-
-    /* Note popup (near top) */
-    #notePanel {
-      position: fixed;
-      top: 15vh;              /* toward the top */
-      left: 50%;
-      width: 45vw;
-      max-width: 260px;
+      transform: translateX(-50%);
+      width: 50vw;
+      max-width: 400px;
       background: white;
       color: #222;
       border-radius: 24px;
-      padding: 1.2rem 1rem;
-      font-size: 2.0rem;      /* slightly smaller to suit the smaller popup */
-      line-height: 1.35;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      text-align: center;
-      user-select: none;
-      transform: translate(-50%, 0);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
+      padding: 2rem;
       z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
-    #notePanel.show { opacity: 1; pointer-events: auto; }
-    #noteTextarea {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 2.0rem;
-      line-height: 1.35;
-      padding: 0.8rem;
-      border-radius: 16px;
-      border: 1px solid #ccc;
-      resize: vertical;
-      min-height: 110px;
-      color: #222;
-      outline: none;
-      background: linear-gradient(270deg, #ffe6e6, #fff0f0);
-      background-size: 400% 400%;
-      animation: gradientBG 8s ease infinite;
+    #noteOverlay textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 2rem;
+      border-radius: 12px;
+      padding: 0.5rem;
+      resize: none;
     }
-    @keyframes gradientBG {
-      0% {background-position: 0% 50%;}
-      50% {background-position: 100% 50%;}
-      100% {background-position: 0% 50%;}
-    }
-    #noteSaveBtn {
-      padding: 0.6rem 0.8rem;
-      font-size: 1rem;
-      font-weight: 700;
-      border-radius: 10px;
-      border: 2px solid #000;
-      cursor: pointer;
-    }
+    #noteOverlay button { margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <h1 id="header"><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
+  <h1><span id="title-flame">❤️‍🔥</span> ClueMatch</h1>
 
-  <!-- Tabs -->
-  <div class="tabs" id="tabs">
+  <div id="sourceTabs">
     <div class="tab active" id="tabMembers" onclick="switchSource('Members')">Members</div>
     <div class="tab" id="tabSetters" onclick="switchSource('Setters')">Setters</div>
   </div>
 
-  <!-- Progress -->
   <div id="progress"><div id="progressBar"></div></div>
   <div id="progressCount"></div>
+  <div id="assessmentCounts"></div>
 
   <div id="flashMessage"></div>
-
-  <!-- Card -->
   <div id="card" style="display:none;"></div>
 
-  <!-- Buttons -->
   <div id="buttons">
     <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
     <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
+    <button onclick="openNote()">Note</button>
     <button onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
-    <button id="noteBtn">Note</button>
     <button onclick="undoAssessment()" id="btnUndo">Undo</button>
   </div>
 
-  <!-- Fixed actions -->
+  <div id="noteOverlay">
+    <textarea id="noteText" placeholder="Write your note..."></textarea>
+    <button onclick="saveNote()">Save Note</button>
+  </div>
+
   <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
   <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
-  <!-- Note popup -->
-  <div id="notePanel">
-    <textarea id="noteTextarea" placeholder="Write your note here..."></textarea>
-    <button id="noteSaveBtn">OK</button>
-  </div>
-
   <script>
-    // --- Sources ---
-    const SHEETS = {
-      Members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-      Setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv"
-    };
-    let currentSource = localStorage.getItem("clueMatchCurrentSource") || "Members";
-
-    // --- State ---
     let clues = [];
     let current = 0;
     const history = [];
-
-    // --- DOM ---
     const card = document.getElementById("card");
     const flash = document.getElementById("flashMessage");
     const progressBar = document.getElementById("progressBar");
     const progressCount = document.getElementById("progressCount");
-    const notePanel = document.getElementById("notePanel");
-    const noteTextarea = document.getElementById("noteTextarea");
-    const noteBtn = document.getElementById("noteBtn");
-    const noteSaveBtn = document.getElementById("noteSaveBtn");
-    const header = document.getElementById("header");
-    const tabMembers = document.getElementById("tabMembers");
-    const tabSetters = document.getElementById("tabSetters");
+    const assessmentCountsEl = document.getElementById("assessmentCounts");
+    let currentSource = 'Members';
 
-    // --- Loaders / Storage keys ---
-    function storageKey(source){ return `clueMatchProgress:${source}`; }
+    const sheetUrls = {
+      Members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
+      Setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv"
+    };
 
-    function loadSheet(source = currentSource) {
-      setActiveTab(source);
+    function switchSource(source) {
+      currentSource = source;
+      document.getElementById("tabMembers").classList.toggle("active", source==='Members');
+      document.getElementById("tabSetters").classList.toggle("active", source==='Setters');
+      loadSheet();
+    }
+
+    function loadSheet() {
       const proxy = "https://corsproxy.io/?";
-      Papa.parse(proxy + SHEETS[source], {
+      Papa.parse(proxy + sheetUrls[currentSource], {
         download: true,
         header: true,
         complete: results => {
-          const rows = results.data.filter(row => row.Clue && row.Answer && row.Writer);
-          // Try to load saved progress for this source
-          const saved = localStorage.getItem(storageKey(source));
+          clues = results.data.filter(row => row.Clue && row.Answer && row.Writer);
+          const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
           if (saved) {
             try {
               const savedData = JSON.parse(saved);
               if (savedData.clues && Array.isArray(savedData.clues)) {
-                // Prefer saved clues (with notes/assessments). If lengths mismatch, just use saved.
                 clues = savedData.clues;
                 current = savedData.current || 0;
-              } else {
-                clues = rows;
-                current = 0;
               }
-            } catch {
-              clues = rows;
-              current = 0;
-            }
-          } else {
-            clues = rows;
-            current = 0;
-          }
+            } catch (e) { console.warn("Failed to load saved progress."); }
+          } else { current = 0; }
+
           history.length = 0;
           updateProgress();
+          updateAssessmentCounts();
           showNext();
         },
         error: err => alert("Error loading sheet: " + err.message)
       });
     }
 
-    function setActiveTab(source){
-      tabMembers.classList.toggle('active', source === 'Members');
-      tabSetters.classList.toggle('active', source === 'Setters');
-      localStorage.setItem("clueMatchCurrentSource", source);
-    }
-
-    function switchSource(source){
-      if (source === currentSource) return;
-      // Save current source progress first
-      saveProgress();
-      currentSource = source;
-      setActiveTab(source);
-      loadSheet(source);
-      // Ensure header remains visible after any overlay
-      header.style.display = "flex";
-    }
-
-    // --- UI updates ---
     function updateProgress() {
-      const total = clues.length || 1;
-      const percent = (current / total) * 100;
+      const percent = (current / clues.length) * 100;
       progressBar.style.width = percent + "%";
-      progressCount.textContent = `${Math.min(current + 1, total)}/${total} • ${currentSource}`;
+      progressCount.textContent = `${current + 1}/${clues.length}`;
+    }
+
+    function getAssessmentCounts() {
+      const counts = { No:0, OK:0, Great:0 };
+      clues.forEach(c => { if(c.Assessment) counts[c.Assessment]++; });
+      return counts;
+    }
+
+    function updateAssessmentCounts() {
+      const counts = getAssessmentCounts();
+      assessmentCountsEl.textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
     }
 
     function showNext() {
@@ -407,32 +265,32 @@
         card.innerHTML = "<strong>All done!</strong>";
         card.style.display = "block";
         document.getElementById("buttons").style.display = "none";
-        hideNotePanel();
         progressBar.style.width = "100%";
-        progressCount.textContent = `${clues.length}/${clues.length} • ${currentSource}`;
-        header.style.display = "flex";
+        progressCount.textContent = `${clues.length}/${clues.length}`;
+        updateAssessmentCounts();
         return;
       }
-      document.getElementById("buttons").style.display = "flex";
       const clue = clues[current];
       card.innerHTML = `
         <p>${clue.Clue}</p>
         <p><strong>Answer:</strong> 
-          <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
+          <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">
+            ████████
+          </span>
         </p>
         <p id="writer">${clue.Writer}</p>
       `;
       card.style.display = "block";
       card.className = '';
-      void card.offsetWidth; // reflow for animation
+      void card.offsetWidth;
       card.classList.add('enter');
       updateProgress();
-      hideNotePanel();
-      header.style.display = "flex";
+      updateAssessmentCounts();
+      document.getElementById("buttons").style.display = "flex";
     }
 
     function toggleAnswer(el) {
-      if (el.classList.contains('revealed')) {
+      if(el.classList.contains('revealed')) {
         el.classList.remove('revealed');
         el.textContent = "████████";
       } else {
@@ -441,9 +299,8 @@
       }
     }
 
-    // --- Animations & actions ---
     function flashMessage(direction) {
-      const emojiMap = { right: "👍", left: "❌", down: "⭐", up: "⭐" };
+      const emojiMap = { right:"👍", left:"❌", up:"⭐", down:"⭐" };
       flash.textContent = emojiMap[direction] || "";
       flash.classList.add("show");
       setTimeout(() => flash.classList.remove("show"), 600);
@@ -459,7 +316,7 @@
     }
 
     function recordAssessment(value) {
-      if (current >= clues.length) return;
+      if(current >= clues.length) return;
       clues[current].Assessment = value;
       saveProgress();
       history.push(current);
@@ -468,80 +325,53 @@
     }
 
     function undoAssessment() {
-      if (history.length === 0) return;
+      if(history.length===0) return;
       current = history.pop();
       saveProgress();
       showNext();
     }
 
-    // --- Export ---
+    function openNote() {
+      document.getElementById("noteOverlay").style.display = "block";
+      document.getElementById("noteText").value = clues[current].Note || '';
+    }
+
+    function saveNote() {
+      clues[current].Note = document.getElementById("noteText").value;
+      document.getElementById("noteOverlay").style.display = "none";
+      current++;
+      showNext();
+    }
+
     function exportCSV() {
       const filtered = clues.filter(c => c.Assessment);
-      if(filtered.length === 0) {
-        alert("No assessed clues to export.");
-        return;
-      }
-      const exportData = filtered.map(c => ({
-        Clue: c.Clue,
-        Answer: c.Answer,
-        Writer: c.Writer,
-        Assessment: c.Assessment,
-        Note: c.Note || ""
-      }));
-      const csv = Papa.unparse(exportData);
+      const csv = Papa.unparse(filtered, { columns: ['Clue','Answer','Writer','Assessment','Note'] });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `reviewed_clues_${currentSource.toLowerCase()}.csv`;
+      link.download = "reviewed_clues_" + currentSource.toLowerCase() + ".csv";
       link.click();
     }
 
-    // --- Persistence ---
     function saveProgress() {
-      const savedData = { current, clues };
-      localStorage.setItem(storageKey(currentSource), JSON.stringify(savedData));
+      localStorage.setItem("clueMatchProgress_" + currentSource, JSON.stringify({ current, clues }));
     }
 
     function resetProgress() {
-      if (confirm(`Reset progress for ${currentSource}?`)) {
-        localStorage.removeItem(storageKey(currentSource));
-        loadSheet(currentSource);
+      if(confirm("Are you sure you want to reset all progress?")) {
+        localStorage.removeItem("clueMatchProgress_" + currentSource);
+        location.reload();
       }
     }
 
-    // --- Notes ---
-    function showNotePanel() {
-      if(current >= clues.length) return;
-      noteTextarea.value = clues[current].Note || "";
-      notePanel.classList.add('show');
-      noteTextarea.focus();
-      // Keep header visible
-      header.style.display = "flex";
-    }
-    function hideNotePanel() { notePanel.classList.remove('show'); }
-
-    noteBtn.addEventListener("click", showNotePanel);
-    noteSaveBtn.addEventListener("click", () => {
-      if(current < clues.length) {
-        clues[current].Note = noteTextarea.value.trim();
-        saveProgress();
-      }
-      hideNotePanel();
-      header.style.display = "flex";
-    });
-
-    // --- Gestures ---
     const mc = new Hammer(document.body);
     mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
     mc.on("swipeleft", () => animateSwipe("left", () => recordAssessment("No")));
     mc.on("swiperight", () => animateSwipe("right", () => recordAssessment("OK")));
+    mc.on("swipeup", () => animateSwipe("up", () => {})); // up swipe does nothing now
     mc.on("swipedown", () => animateSwipe("down", () => recordAssessment("Great")));
 
-    // --- Init ---
-    window.onload = () => {
-      setActiveTab(currentSource);
-      loadSheet(currentSource);
-    };
+    window.onload = loadSheet;
   </script>
 </body>
 </html>
