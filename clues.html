@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>ClueMatch</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Sansita:wght@700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 <style>
@@ -18,12 +18,12 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 2rem 1rem 7rem;
-  color: white;
+  color: #222;
   user-select: none;
-  -webkit-text-size-adjust: 100%;
 }
 
 h1 {
+  font-family: 'Sansita', sans-serif;
   font-size: 4rem;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
@@ -33,16 +33,15 @@ h1 {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
-  flex-wrap: wrap;
 }
 
 .tab {
-  padding: 0.6rem 1.2rem;
+  padding: 0.8rem 1.4rem;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 12px;
+  border-radius: 20px;
   cursor: pointer;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.9);
   color: #222;
   transition: background 0.3s;
 }
@@ -55,7 +54,6 @@ h1 {
 #assessmentCounts {
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
-  color: #222;
 }
 
 #progress {
@@ -79,7 +77,6 @@ h1 {
   font-size: 1.4rem;
   margin-bottom: 1.5rem;
   text-align: center;
-  color: #222;
 }
 
 #card {
@@ -116,6 +113,7 @@ h1 {
 }
 
 #answer.revealed {
+  font-family: 'Sansita', sans-serif;
   background: none;
   color: #222;
   letter-spacing: normal;
@@ -131,17 +129,18 @@ h1 {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
   width: 90vw;
   max-width: 500px;
   margin-bottom: 2rem;
 }
 
-#buttons button {
-  flex: 1 1 auto;
-  padding: 0.6rem 0.8rem;
+button {
+  flex: 1;
+  padding: 0.8rem 1rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 20px;
   border: 2px solid black;
   background: white;
   color: black;
@@ -212,21 +211,17 @@ h1 {
   background: white;
   color: #222;
   line-height: 1.4;
-  -webkit-text-size-adjust: 100%;
 }
+
 #noteOverlay button {
   margin-top: 1rem;
   padding: 0.6rem 1rem;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: 12px;
   border: none;
   background: #222;
   color: white;
   cursor: pointer;
-}
-
-#noteOverlay, #noteText {
-  box-sizing: border-box;
 }
 </style>
 </head>
@@ -279,7 +274,7 @@ const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
   setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv" // you can use same as 'book' or another URL
+  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vClueSheetID/pub?output=csv" // replace with your actual clue CSV
 };
 
 function loadSheet() {
@@ -288,9 +283,13 @@ function loadSheet() {
     download: true,
     header: true,
     complete: results => {
-      clues = results.data.filter(r => r.Clue && r.Answer && r.Writer);
+      if(currentSource==="clue") {
+        clues = results.data.filter(r => r['Column A']);
+      } else {
+        clues = results.data.filter(r => r.Clue && r.Answer && r.Writer);
+      }
       const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
-      if (saved) {
+      if(saved) {
         try { const savedData = JSON.parse(saved); clues = savedData.clues; current = savedData.current||0; } 
         catch(e){ console.warn("Failed to load saved progress."); }
       } else { current = 0; }
@@ -325,26 +324,41 @@ function showNext() {
     return;
   }
   const clue = clues[current];
-  const answerText = (currentSource === "clue") ? clue.Answer : "████████";
-  const revealedClass = (currentSource === "clue") ? "revealed" : "";
-  card.innerHTML=`
-    <p>${clue.Clue}</p>
-    <p><strong>Answer:</strong> <span id="answer" class="${revealedClass}" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">${answerText}</span></p>
-    <p id="writer">${clue.Writer}</p>
-  `;
+  if(currentSource==="clue") {
+    card.innerHTML=`<p><strong>Clue:</strong> ${clue['Column A']}</p>`;
+  } else {
+    card.innerHTML=`
+      <p>${clue.Clue}</p>
+      <p><strong>Answer:</strong> <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span></p>
+      <p id="writer">${clue.Writer}</p>
+    `;
+  }
   card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
 }
 
-function toggleAnswer(el){ 
-  if(currentSource==="clue") return; // don't toggle in clue mode
-  if(el.classList.contains('revealed')){ el.classList.remove('revealed'); el.textContent="████████";} 
-  else{ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); } 
+function toggleAnswer(el){
+  if(el.classList.contains('revealed')){ 
+    el.classList.remove('revealed'); 
+    el.textContent="████████";
+  } else { 
+    el.classList.add('revealed'); 
+    el.textContent=el.getAttribute('data-answer'); 
+  } 
 }
 
-function flashMessage(direction){ const emojiMap={right:"👍",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
+function flashMessage(direction){ 
+  const emojiMap={right:"👍",left:"❌",down:"⭐"}; 
+  flash.textContent=emojiMap[direction]||""; 
+  flash.classList.add("show"); 
+  setTimeout(()=>flash.classList.remove("show"),600); 
+}
 
-function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
+function animateSwipe(direction,callback){ 
+  card.classList.add(`swipe-${direction}`); 
+  flashMessage(direction); 
+  setTimeout(()=>{ card.className=''; callback(); },400); 
+}
 
 function recordAssessment(value){
   if(current>=clues.length) return;
@@ -366,13 +380,22 @@ function undoAssessment(){
 
 function exportCSV(){
   const filtered = clues.filter(c=>c.Assessment);
-  const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue, Answer:c.Answer, Writer:c.Writer, Assessment:c.Assessment, Note:c.Note||"" })));
-  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); const link=document.createElement("a");
-  link.href=URL.createObjectURL(blob); link.download="reviewed_clues.csv"; link.click();
+  const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue||c['Column A'], Answer:c.Answer||"", Writer:c.Writer||"", Assessment:c.Assessment, Note:c.Note||"" })));
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); 
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob); 
+  link.download="reviewed_clues.csv"; 
+  link.click();
 }
 
 function saveProgress(){ localStorage.setItem("clueMatchProgress_"+currentSource,JSON.stringify({current,clues})); }
-function resetProgress(){ if(confirm("Are you sure you want to reset all progress?")){ localStorage.removeItem("clueMatchProgress_"+currentSource); location.reload(); } }
+
+function resetProgress(){ 
+  if(confirm("Are you sure you want to reset all progress?")){
+    localStorage.removeItem("clueMatchProgress_"+currentSource); 
+    location.reload(); 
+  } 
+}
 
 function openNote(){ 
   const noteOverlay=document.getElementById("noteOverlay"); 
