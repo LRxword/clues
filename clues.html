@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>ClueMatch</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Sansita:wght@700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Sansita:ital,wght@1,700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 <style>
@@ -24,8 +24,11 @@ body {
 
 h1 {
   font-family: 'Sansita', sans-serif;
+  font-style: italic;
+  font-weight: 700;
   font-size: 4rem;
   margin-bottom: 0.5rem;
+  color: black;
   text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
 }
 
@@ -33,6 +36,11 @@ h1 {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  border: 2px solid black;
+  border-radius: 16px;
+  padding: 0.3rem;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+  background: #fff;
 }
 
 .tab {
@@ -110,10 +118,10 @@ h1 {
   color: black;
   letter-spacing: 0.2em;
   transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
 }
 
 #answer.revealed {
-  font-family: 'Sansita', sans-serif;
   background: none;
   color: #222;
   letter-spacing: normal;
@@ -274,7 +282,7 @@ const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
   setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vClueSheetID/pub?output=csv" // replace with your actual clue CSV
+  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
 };
 
 function loadSheet() {
