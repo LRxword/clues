@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>cluematch</title>
+<title>cluesmash</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
 <link href="https://fonts.googleapis.com/css2?family=Sansita:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -37,24 +37,29 @@ h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 
 #writer{margin-top:1rem;font-size:1.05rem;color:#555;}
 #resetBtn {
   background: #ff4d4d; /* red background */
-  color: white;         /* text color */
-  border-radius: 6px;   /* optional, to make it look nicer */
+  color: white;
+  border-radius: 6px;
   padding: 0.4rem 0.6rem;
 }
-  #buttons {
+#buttons {
   display: flex;
-  gap: 0.4rem; /* reduce gap slightly */
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-wrap: nowrap; 
   width: 90vw;
   max-width: 520px;
   justify-content: space-between;
-  margin-bottom: 2rem; /* pull buttons slightly up to fit */
+  margin-bottom: 2rem;
 }
-  .btn {
-  flex: 1 1 90px; /* slightly narrower min-width */
-  padding: 0.5rem 0.6rem; /* slightly smaller padding */
+.btn {
+  flex: 1 1 18%; 
+  padding: 0.5rem 0.4rem;
+  min-width: 0;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-  .btn.ghost{background:#eee;}
+.btn.ghost {background:#eee;}
 #bottomBar{position:fixed;bottom:0;left:0;width:100%;display:flex;height:64px;background:#222;color:white;box-shadow:0 -6px 12px rgba(0,0,0,0.15);}
 #bottomBar button{flex:1;border:none;background:transparent;color:white;font-weight:700;font-size:1rem;cursor:pointer;}
 #bottomBar button:hover{background:rgba(255,255,255,0.04);}
@@ -67,7 +72,7 @@ h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 
 <body>
 <h1 style="display:flex;align-items:center;gap:0.6rem;">
   <img src="data:image/png;base64,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" alt="Logo" style="height:2.6rem;">
-  cluematch
+  cluesmash
 </h1>
 <div id="tabs">
 <div class="tab active" data-source="members">Members</div>
@@ -115,106 +120,94 @@ const noteOverlay=document.getElementById('noteOverlay'),noteText=document.getEl
 
 const sheetUrls={
 members:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-setters:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
-book:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-clues:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
+setters:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQFNiJjV5qz1n4aPnCE6t66rJ_6bqIgmw7jGxNwEBnPiMBH_9jq5aGGsHLkZ4sIh3K1lhHzyI2b-Dr/pub?output=csv",
+book:"https://docs.google.com/spreadsheets/d/e/2PACX-1vRTnL68Cav62wlXeHksupnL09nZzOkID35gILvF9s8lK1V7aRLMdMtU7aqNOBZB3S1jTds06z4lLgk/pub?output=csv",
+clues:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3UEWkHZIWvwIc4Qm6TTd8sM5vMLIOX3wC4kEUEzknJ1GwL0PrsRZLypx1kp-mcRzrz4u7msDwPCe7/pub?output=csv"
 };
 
-function setActiveTab(source){
-tabs.forEach(t=>t.classList.toggle('active',t.dataset.source===source));
-currentSource=source;
-document.getElementById('btnNo').style.display = source==='clues'?'none':'';
-document.getElementById('btnOK').style.display = source==='clues'?'none':'';
-document.getElementById('btnGreat').style.display = source==='clues'?'none':'';
-loadSheet();
-}
-
-tabs.forEach(t=>t.addEventListener('click',()=>setActiveTab(t.dataset.source)));
-
-function loadSheet(){
-cardEl.style.display='none';
-clueEl.textContent='Loading...';
-progressCount.textContent='…';
-progressBar.style.width='0%';
-const url=sheetUrls[currentSource];
-if(!url){clues=[];current=0;updateCounts();updateProgress();showNext();return;}
-Papa.parse('https://corsproxy.io/?'+url,{download:true,header:true,skipEmptyLines:true,
-complete: results=>{
-const rows=(results && results.data)?results.data.map(r=>({
-Clue:r.Clue||r.clue||'',
-Answer:r.Answer||r.answer||r.Word||r.word||'',
-Writer:r.Writer||r.writer||r.Author||r.author||'',
-Note:r.Note||r.note||'',
-Assessment:r.Assessment||r.assessment||''
-})):[];
-
-clues=rows;
-const saved=localStorage.getItem('clueMatchProgress_'+currentSource);
-if(saved){try{const sd=JSON.parse(saved);if(sd.clues && Array.isArray(sd.clues)){clues=sd.clues;current=sd.current||0;}else current=0;}catch(e){current=0;}}else current=0;
-history.length=0;
-updateCounts();updateProgress();showNext();
-},error: err=>{console.warn('CSV load failed:',err);clues=[];current=0;clueEl.textContent='Failed to load sheet — check URL.';cardEl.style.display='block';updateCounts();updateProgress();}
+tabs.forEach(tab=>{
+tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentSource=tab.dataset.source;loadSheet(sheetUrls[currentSource]);});
 });
-}
 
-function updateCounts(){counts.No=counts.OK=counts.Great=0;clues.forEach(c=>{if(c.Assessment)counts[c.Assessment]=(counts[c.Assessment]||0)+1;});assessmentCounts.textContent=`No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;}
-function updateProgress(){const total=clues.length||0;progressBar.style.width=total===0?'0%':`${(current/total)*100}%`;progressCount.textContent=`${Math.min(current+1,total)}/${total}`;}
+function loadSheet(url){
+Papa.parse(url,{download:true,header:true,complete:function(results){clues=results.data;current=0;counts={No:0,OK:0,Great:0};history.length=0;updateProgress();updateCounts();showNext();}});
+}
 
 function showNext(){
-if(clues.length===0){clueEl.textContent='No clues loaded.';answerEl.textContent='████████';answerEl.classList.remove('revealed');writerEl.textContent='';cardEl.style.display='block';return;}
-if(current>=clues.length){clueEl.textContent='All done!';answerEl.textContent='';writerEl.textContent='';cardEl.style.display='block';document.getElementById('buttons').style.display='none';progressBar.style.width='100%';progressCount.textContent=`${clues.length}/${clues.length}`;return;}
-const row=clues[current];
-if(currentSource==='clues'){
+  if(clues.length===0){
+    clueEl.textContent='No clues loaded.';
+    answerEl.textContent='████████';
+    answerEl.classList.remove('revealed');
+    writerEl.textContent='';
+    cardEl.style.display='block';
+    return;
+  }
+  if(current>=clues.length){
+    clueEl.textContent='All done!';
+    answerEl.textContent='';
+    writerEl.textContent='';
+    cardEl.style.display='block';
+    document.getElementById('buttons').style.display='none';
+    progressBar.style.width='100%';
+    progressCount.textContent=`${clues.length}/${clues.length}`;
+    return;
+  }
+  const row=clues[current];
+  if(currentSource==='clues'){
     clueEl.textContent='Write a clue for this word:';
+    answerEl.setAttribute('data-answer', row.Answer||'(no word)');
+    answerEl.classList.add('revealed');
     answerEl.textContent=row.Answer||'(no word)';
-    answerEl.setAttribute('data-answer', row.Answer||'');
-    answerEl.classList.remove('revealed'); // hidden until clicked
     writerEl.textContent=row.Writer?`Source: ${row.Writer}`:'';
-}else{
+    document.getElementById('buttons').style.display='none';
+  }else{
     clueEl.textContent=row.Clue||'(no clue)';
-    answerEl.setAttribute('data-answer',row.Answer||'');
+    answerEl.setAttribute('data-answer', row.Answer||'');
     answerEl.textContent='████████';
     answerEl.classList.remove('revealed');
     writerEl.textContent=row.Writer?`Writer: ${row.Writer}`:'';
-    document.getElementById('buttons').style.display='';
-}
-cardEl.style.display='block';cardEl.className='';void cardEl.offsetWidth;cardEl.classList.add('enter');updateProgress();updateCounts();
-}
-
-function toggleAnswer(el){if(el.classList.contains('revealed')){el.classList.remove('revealed');el.textContent='████████';}else{el.classList.add('revealed');el.textContent=el.getAttribute('data-answer')||'';}}
-
-const flash=document.createElement('div');flash.id='flash';flash.style.position='fixed';flash.style.top='40%';flash.style.left='50%';flash.style.transform='translate(-50%,-50%)';flash.style.fontSize='3.5rem';flash.style.pointerEvents='none';flash.style.opacity='0';flash.style.transition='opacity .35s, transform .35s';document.body.appendChild(flash);
-function flashMessage(sym){flash.textContent=sym;flash.style.opacity='1';flash.style.transform='translate(-50%,-50%) scale(1.05)';setTimeout(()=>{flash.style.opacity='0';flash.style.transform='translate(-50%,-50%) scale(1)';},650);}
-
-function animateSwipe(direction,callback){
-cardEl.classList.add(`swipe-${direction}`);
-if(currentSource==='clues' && direction==='down'){
-  setTimeout(()=>{current++;showNext();},360);return;
-}
-const emoji={left:'❌',right:'👍',down:'⭐'}[direction]||'';
-flashMessage(emoji);
-setTimeout(()=>{cardEl.className='';callback();current++;showNext();},420);
+    document.getElementById('buttons').style.display='flex';
+  }
+  cardEl.style.display='block';
+  cardEl.className='';
+  void cardEl.offsetWidth;
+  cardEl.classList.add('enter');
+  updateProgress();
+  updateCounts();
 }
 
-function recordAssessment(value){if(currentSource==='clues') return;if(current>=clues.length) return;clues[current].Assessment=value;saveProgress();history.push(current);current++;updateCounts();showNext();}
-function undoAssessment(){if(history.length===0)return;current=history.pop();saveProgress();showNext();updateCounts();}
-function openNote(){if(clues.length===0)return;noteText.value=clues[current].Note||'';noteOverlay.style.display='block';}
-function closeNote(){noteOverlay.style.display='none';noteText.blur();}
-function saveNote(){if(clues.length===0){closeNote();return;}clues[current].Note=noteText.value.trim();saveProgress();closeNote();}
-function exportCSV(){const out=clues.filter(r=>r && (r.Assessment || (r.Note && r.Note.trim().length>0)));if(out.length===0){alert('No reviewed clues or notes to export.');return;}const data=out.map(r=>({Clue:r.Clue||'',Answer:r.Answer||'',Writer:r.Writer||'',Assessment:r.Assessment||'',Note:r.Note||''}));const csv=Papa.unparse(data,{quotes:true});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`reviewed_clues_${currentSource}.csv`;link.click();}
-function saveProgress(){try{localStorage.setItem('clueMatchProgress_'+currentSource,JSON.stringify({current,clues}));}catch(e){console.warn('save failed',e);}}
-function resetProgress(){if(!confirm('Reset progress for this source?'))return;localStorage.removeItem('clueMatchProgress_'+currentSource);current=0;clues=[];loadSheet();}
+function toggleAnswer(el){
+  if(currentSource==='clues') return;
+  const ans=el.getAttribute('data-answer');
+  if(el.classList.contains('revealed')){el.textContent='████████';el.classList.remove('revealed');}
+  else{el.textContent=ans;el.classList.add('revealed');}
+}
 
-const mc=new Hammer(document.body);mc.get('swipe').set({direction:Hammer.DIRECTION_ALL});
-mc.on('swipeleft',()=>{if(currentSource!=='clues')animateSwipe('left',()=>recordAssessment('No'));});
-mc.on('swiperight',()=>{if(currentSource!=='clues')animateSwipe('right',()=>recordAssessment('OK'));});
-mc.on('swipedown',()=>{animateSwipe('down',()=>{if(currentSource!=='clues')recordAssessment('Great');});});
+function animateSwipe(dir,callback){
+  cardEl.classList.add('swipe-'+dir);
+  setTimeout(()=>{cardEl.className='';callback();showNext();},360);
+}
 
-document.addEventListener('DOMContentLoaded',()=>{setActiveTab('members');});
+function recordAssessment(val){
+  counts[val]++;history.push(val);updateCounts();
+}
 
-window.openNote=openNote;window.saveNote=saveNote;window.closeNote=closeNote;window.animateSwipe=animateSwipe;
-window.recordAssessment=recordAssessment;window.undoAssessment=undoAssessment;window.toggleAnswer=(el)=>toggleAnswer(el);window.exportCSV=exportCSV;
-window.resetProgress=resetProgress;
+function updateCounts(){
+  assessmentCounts.textContent=`No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
+}
+
+function updateProgress(){
+  const pct=(clues.length===0?0:(current/clues.length)*100);
+  progressBar.style.width=pct+'%';
+  progressCount.textContent=`${current}/${clues.length}`;
+}
+
+function resetProgress(){current=0;counts={No:0,OK:0,Great:0};history.length=0;showNext();updateCounts();}
+function undoAssessment(){if(history.length===0)return;const last=history.pop();counts[last]--;updateCounts();}
+function openNote(){noteOverlay.style.display='block';}
+function closeNote(){noteOverlay.style.display='none';}
+function saveNote(){alert('Note saved: '+noteText.value);closeNote();}
+function exportCSV(){alert('Export CSV clicked');}
 </script>
 </body>
 </html>
