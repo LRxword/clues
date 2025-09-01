@@ -1,161 +1,398 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>cluematch</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-
-<link href="https://fonts.googleapis.com/css2?family=Sansita:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<title>ClueMatch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-
 <style>
-:root { --bg:#cce7ff; --card-shadow:#000; --black:#111; }
-*{box-sizing:border-box;}
-body{margin:0;font-family:'Montserrat',sans-serif;background:var(--bg);
-  min-height:100vh; display:flex; flex-direction:column; align-items:center;
-  padding:1.6rem 1rem 6rem; color:var(--black);}
-h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 0.8rem 0;text-align:center;color:var(--black);display:flex;align-items:center;gap:0.6rem;}
-#tabs{display:flex;gap:0.8rem;margin-bottom:0.6rem;}
-.tab{padding:0.5rem 1rem;border-radius:18px;border:2px solid var(--black);background:white;cursor:pointer;font-weight:700;box-shadow:3px 3px 0 var(--card-shadow);color:var(--black);user-select:none;}
-.tab.active{background:var(--black);color:white;}
-#assessmentCounts{font-size:1.05rem;margin:0.4rem 0;color:var(--black);}
-#progress{width:90vw;max-width:520px;height:6px;background:rgba(255,255,255,0.4);border-radius:4px;overflow:hidden;margin-bottom:0.4rem;}
-#progressBar{height:100%;width:0%;background:#ffe6e6;transition:width .25s ease;}
-#progressCount{font-size:1.2rem;margin-bottom:1rem;color:var(--black);text-align:center;}
-#card{width:90vw;max-width:560px;background:white;border:3px solid var(--black);border-radius:20px;padding:1.6rem;box-shadow:4px 4px 0 var(--card-shadow);text-align:center;margin-bottom:1.2rem;transition:transform .36s ease,opacity .36s ease;font-size:2.2rem;color:var(--black);}
-#card.enter{transform:translateX(0) scale(1);opacity:1;}
-#card.swipe-left{transform:translateX(-150%) rotate(-20deg);opacity:0;}
-#card.swipe-right{transform:translateX(150%) rotate(20deg);opacity:0;}
-#card.swipe-down{transform:translateY(150%) rotate(15deg);opacity:0;}
-#clue{font-size:2.2rem;color:#222;margin-bottom:0.8rem;white-space:pre-wrap;}
-#answer{display:inline-block;font-family:'Sansita',sans-serif;font-weight:900;font-size:2.2rem;padding:0 0.3rem;border-radius:6px;letter-spacing:0.2em;cursor:pointer;transition:background .25s ease,color .25s ease,letter-spacing .25s;}
-#answer.revealed{letter-spacing:normal;}
-#writer{margin-top:1rem;font-size:1.05rem;color:#555;}
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background: #cce7ff; /* pale blue background */
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 7rem;
+  color: white;
+  user-select: none;
+  -webkit-text-size-adjust: 100%;
+}
 
-/* Buttons below clue */
-#buttons{display:flex;gap:0.4rem;flex-wrap:nowrap;width:90vw;max-width:520px;justify-content:space-between;margin-bottom:2rem;}
-.btn{flex:1 1 0; padding:0.5rem 0.6rem; font-size:0.95rem; cursor:pointer;}
-.btn.ghost{background:#eee;}
+h1 {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+}
 
-/* Bottom bar buttons */
-#bottomBar{position:fixed;bottom:0;left:0;width:100%;display:flex;height:64px;background:#222;color:white;box-shadow:0 -6px 12px rgba(0,0,0,0.15);}
-#bottomBar button{flex:1;border:none;font-weight:700;font-size:1rem;cursor:pointer;}
-#bottomBar button:hover{opacity:0.85;}
+#tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
-/* Reset button red */
-#resetBtn{background:#ff4d4d;color:white;border-radius:6px;padding:0.4rem 0.8rem;font-weight:700;cursor:pointer;}
-#resetBtn:hover{background:#e60000;}
-#noteOverlay{display:none;position:fixed;top:10%;left:50%;transform:translateX(-50%);width:70%;max-width:360px;background:white;border:3px solid var(--black);border-radius:16px;padding:1rem;box-shadow:6px 6px 0 var(--card-shadow);z-index:2000;}
-#noteText{width:100%;height:140px;font-size:2.2rem;padding:0.8rem;border-radius:10px;border:2px solid var(--black);resize:none;line-height:1.2;}
-#noteOverlay .saveBtn{margin-top:0.8rem;display:inline-block;padding:0.5rem 0.8rem;border-radius:12px;border:2px solid var(--black);background:#222;color:white;font-weight:700;cursor:pointer;}
-.hidden{display:none;}
+.tab {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.8);
+  color: #222;
+  transition: background 0.3s;
+}
+
+.tab.active {
+  background: #222;
+  color: white;
+}
+
+#assessmentCounts {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+
+#progress {
+  width: 90vw;
+  max-width: 500px;
+  height: 6px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background: #ffe6e6;
+  transition: width 0.3s ease;
+}
+
+#progressCount {
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #222;
+}
+
+#card {
+  background: white;
+  color: #222;
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  font-size: 2.2rem;
+  line-height: 1.4;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  text-align: center;
+  width: 90vw;
+  max-width: 480px;
+  margin-bottom: 2rem;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+#card.enter { transform: translateX(0) scale(1); opacity: 1; }
+#card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+#card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+
+#answer {
+  cursor: pointer;
+  padding: 0 0.4em;
+  border-radius: 6px;
+  font-size: 2.2rem;
+  font-weight: 700;
+  display: inline-block;
+  background: black;
+  color: black;
+  letter-spacing: 0.2em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#answer.revealed {
+  background: none;
+  color: #222;
+  letter-spacing: normal;
+}
+
+#writer {
+  font-size: 1.3rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+#buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 90vw;
+  max-width: 500px;
+  margin-bottom: 2rem;
+}
+
+button {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid black;
+  background: white;
+  color: black;
+  cursor: pointer;
+  box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
+  transition: background 0.3s;
+}
+
+#btnUndo { background: #ddd; }
+
+#exportBtn, #resetBtn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  max-width: 250px;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 0;
+  background-color: #444;
+  color: white;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+
+#resetBtn { left: 50%; background-color: #bb0000; }
+
+#flashMessage {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: 5rem;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  z-index: 999;
+  text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+}
+
+#flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+
+/* Note overlay */
+#noteOverlay {
+  display: none;
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 85%;
+  max-width: 300px;
+  background: white;
+  color: #222;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+#noteText {
+  width: 100%;
+  height: 120px;
+  font-size: 2.2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #222;
+  resize: none;
+  background: white;
+  color: #222;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+}
+#noteOverlay button {
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  background: #222;
+  color: white;
+  cursor: pointer;
+}
+
+#noteOverlay, #noteText {
+  box-sizing: border-box;
+}
+  
 </style>
 </head>
 <body>
-<h1>
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAMAAABC4vDmAAAAxlBMVEUAAAD10f2t0//////61v9zc3O82//6/f+02/9Ya4C8oMEMCgyv1f+SstdkVmj51P/z0PUYHSSKdo/jwepCOUWWf5pTR1ZMQU5aTV3KrdF9a4HDp8mzmLgYFRnqx/E1LTfS0tLN5P+pkK50Y3jx+P/o6Oirq6vl8f//3P8jHSQrJSzUtdqfiKRJWWza6/+GhYY+Pj4gICBaWlrDw8Obm5tLS0stLzLL1+V4k7Fid5GTqcJaY2xxfIqGmK0sNUKrxeSgxO01QU/sksuAAAAF/ElEQVR4nO3ca3uiOBQAYIK0TsGSHRDlIqGitmqwnV52tu7Odjv//08tVEHAEEAgcebp+VRrKy+5nBy5Cb1M3Dx8UwSWoTxe3C56uRDSLxYPj0xF+3h6pqBuvvEgRfHSL0ItnniZBOW2ANXnZxKExxsy6pajSRAuFiRU/0+uKOWZhLrhMvEO8UBCvfA1CU99AuoheVthGclWv//VP0ZdxO+ufZlhqPFmv14PLu8KUUMksYulkUKJg2m/CKUDdgEzKFHcqc4MJU7PESXOzxF12T9D1GDOAwVhOOtgIUq8Z4ySlksJ6DrGWAfRj0TUlCUKIt0J7JG3csONuN5IcxARFQ4qNigIkRWoQ1dIh2IGaMkNBQE2RlnQPkYTTqiQZA9JoijWyTtsUXhGbKR8MERBEBS2EjcUVmmQjlFRQiT82qnYTK2jwvSMdOzIFkYgJwtWlU1toqCEsG+bw/VqtfJGtoxSKuhXGuGto7A/y3aQFyT/Df0apNZQyNGGR22hqNbeZK1ZoyDEwZh80Gjtf/yBPqplagEFdWNYeBxrNYn+xCh6uz2UBFCKhHxq1yiyBGp2Xn1UKJJt4/C6NCMOMdAOr1Zj1fRKjw/WQYVZSA8HtCDMkqbyvdLdtvVkUiqqowOES3uzOirMi44x+kiBexRERoXs4x4aStN3jV2mqoYKVw6AAzNOyira/XJWTopU8Q8zsC/HUclsrISCCAdqqlF2KKSRPrA4xnr8FUGSm6FgVJhN1OzQMdEpE12OTQDo9KFY2lL6xD76BDNqQLnOaibEe7IPesfTUd7EJuXqkQ4gHtczKT5MoYIGKIGcUkIUsOuZwhGVzi70Zi5BFW1AslLcSidLtEwOtqjV1Ymow6BY2zK2jPIcKmdqPkz9h5NQQx3Hze9OEIQQyGUqL7tg6dTa+ERUPKLW+wYoreJMkEVRp8lpKBzvaBBvBZVMRjuHoub001DGfmyn9r8klWYSQrgP1OLiJJS3/0h3koxeSJ/kitw5StkD0n1Cn08rnENRU/pJqDjSu08fup7OCuVlWl4A8TxBDu5E3kAAAAASUVORK5CYII=" width="32" height="32">
-  Cluematch
-</h1>
+<h1>ClueMatch</h1>
 
-<div id="tabs"></div>
-<div id="assessmentCounts"></div>
+<div id="tabs">
+  <div class="tab active" data-source="members">Members</div>
+  <div class="tab" data-source="setters">Setters</div>
+  <div class="tab" data-source="book">Book</div>
+</div>
+
+<div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
+<div id="flashMessage"></div>
 
-<div id="card">
-  <div id="clue"></div>
-  <div id="answer" class="revealed"></div>
-</div>
+<div id="card" style="display:none;"></div>
 
 <div id="buttons">
-  <button class="btn" id="noBtn">No</button>
-  <button class="btn" id="okBtn">Ok</button>
-  <button class="btn" id="greatBtn">Great</button>
-  <button class="btn btn-ghost" id="noteBtn">Note</button>
-  <button class="btn" id="resetBtn">Reset</button>
+  <button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
+  <button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
+  <button onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
+  <button onclick="openNote()">Note</button>
+  <button onclick="undoAssessment()" id="btnUndo">Undo</button>
 </div>
 
+<button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
+<button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+
 <div id="noteOverlay">
-  <textarea id="noteText"></textarea>
-  <button class="saveBtn" id="saveNoteBtn">Save</button>
+  <textarea id="noteText" placeholder="Write your note here..."></textarea>
+  <button onclick="saveNote()">OK</button>
 </div>
 
 <script>
-let tabs = [
-  {name:"Tab 1", url:"https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_1/export?format=csv"},
-  {name:"Tab 2", url:"https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_2/export?format=csv"}
-];
+let clues = [];
+let current = 0;
+const history = [];
+const counts = { No:0, OK:0, Great:0 };
+const card = document.getElementById("card");
+const flash = document.getElementById("flashMessage");
+const progressBar = document.getElementById("progressBar");
+const progressCount = document.getElementById("progressCount");
+const assessmentCounts = document.getElementById("assessmentCounts");
+let currentSource = "members";
 
-let clues=[], current=0, counts={No:0,OK:0,Great:0}, history=[];
+const sheetUrls = {
+  members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
+  setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
+  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
+};
 
-function loadSheet(url){
-  Papa.parse(url,{
-    download:true,
-    header:true,
-    skipEmptyLines:true,
-    complete:function(results){
-      if(!results.data || results.data.length===0){
-        alert('No data loaded.');
-        return;
-      }
-      clues = results.data;
-      current=0;
-      counts={No:0,OK:0,Great:0};
-      history=[];
-      updateProgress();
+function loadSheet() {
+  const proxy = "https://corsproxy.io/?";
+  Papa.parse(proxy + sheetUrls[currentSource], {
+    download: true,
+    header: true,
+    complete: results => {
+      clues = results.data.filter(r => r.Clue && r.Answer && r.Writer);
+      const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
+      if (saved) {
+        try { const savedData = JSON.parse(saved); clues = savedData.clues; current = savedData.current||0; } 
+        catch(e){ console.warn("Failed to load saved progress."); }
+      } else { current = 0; }
+      history.length = 0;
       updateCounts();
+      updateProgress();
       showNext();
-    }
+    },
+    error: err => alert("Error loading sheet: " + err.message)
   });
 }
 
-function showNext(){
-  if(current>=clues.length){document.getElementById('clue').textContent="Done!"; document.getElementById('answer').textContent=""; return;}
-  document.getElementById('clue').textContent = clues[current].clue || '';
-  document.getElementById('answer').textContent = clues[current].answer || '';
+function updateCounts() {
+  counts.No=counts.OK=counts.Great=0;
+  clues.forEach(c=>{if(c.Assessment){counts[c.Assessment]++;}});
+  assessmentCounts.textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
 }
 
-function updateCounts(){
-  document.getElementById('assessmentCounts').textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
+function updateProgress() {
+  const percent = (current / clues.length) * 100;
+  progressBar.style.width = percent + "%";
+  progressCount.textContent = `${current + 1}/${clues.length}`;
 }
 
-function updateProgress(){
-  let pct = clues.length? Math.round(current/clues.length*100) : 0;
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressCount').textContent = `${current} / ${clues.length}`;
-}
-
-document.getElementById('noBtn').addEventListener('click',()=>{counts.No++;current++;history.push('No');updateCounts();updateProgress();showNext();});
-document.getElementById('okBtn').addEventListener('click',()=>{counts.OK++;current++;history.push('Ok');updateCounts();updateProgress();showNext();});
-document.getElementById('greatBtn').addEventListener('click',()=>{counts.Great++;current++;history.push('Great');updateCounts();updateProgress();showNext();});
-document.getElementById('resetBtn').addEventListener('click',()=>{
-  current=0;
-  counts={No:0,OK:0,Great:0};
-  history=[];
-  updateCounts();
+function showNext() {
+  if(current>=clues.length){ card.innerHTML="<strong>All done!</strong>"; card.style.display="block"; document.getElementById("buttons").style.display="none"; progressBar.style.width="100%"; progressCount.textContent=`${clues.length}/${clues.length}`; return;}
+  const clue = clues[current];
+  card.innerHTML=`
+    <p>${clue.Clue}</p>
+    <p><strong>Answer:</strong> <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span></p>
+    <p id="writer">${clue.Writer}</p>
+  `;
+  card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
+}
+
+function toggleAnswer(el){ if(el.classList.contains('revealed')){ el.classList.remove('revealed'); el.textContent="████████";} else{ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); } }
+
+function flashMessage(direction){ const emojiMap={right:"👍",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
+
+function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
+
+function recordAssessment(value){
+  if(current>=clues.length) return;
+  clues[current].Assessment=value;
+  saveProgress();
+  history.push(current);
+  current++;
+  updateCounts();
   showNext();
+}
+
+function undoAssessment(){
+  if(history.length===0) return;
+  current=history.pop();
+  saveProgress();
+  showNext();
+  updateCounts();
+}
+
+function exportCSV(){
+  const filtered = clues.filter(c=>c.Assessment);
+  const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue, Answer:c.Answer, Writer:c.Writer, Assessment:c.Assessment, Note:c.Note||"" })));
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob); link.download="reviewed_clues.csv"; link.click();
+}
+
+function saveProgress(){ localStorage.setItem("clueMatchProgress_"+currentSource,JSON.stringify({current,clues})); }
+function resetProgress(){ if(confirm("Are you sure you want to reset all progress?")){ localStorage.removeItem("clueMatchProgress_"+currentSource); location.reload(); } }
+
+function openNote(){ 
+  const noteOverlay=document.getElementById("noteOverlay"); 
+  const noteText=document.getElementById("noteText"); 
+  const clue=clues[current]; 
+  noteText.value=clue.Note||""; 
+  noteOverlay.style.display="block"; 
+}
+
+function saveNote(){
+  const noteText=document.getElementById("noteText"); 
+  clues[current].Note=noteText.value; 
+  document.getElementById("noteOverlay").style.display="none"; 
+  saveProgress();
+}
+
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    currentSource=tab.dataset.source;
+    loadSheet();
+    document.getElementById("buttons").style.display="flex";
+  });
 });
 
-function createTabs(){
-  let container = document.getElementById('tabs');
-  container.innerHTML = '';
-  tabs.forEach((t,i)=>{
-    let btn = document.createElement('div');
-    btn.className='tab'+(i===0?' active':'');
-    btn.textContent = t.name;
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      loadSheet(t.url);
-    });
-    container.appendChild(btn);
-  });
-}
+const mc=new Hammer(document.body);
+mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
+mc.on("swipeleft",()=>animateSwipe("left",()=>recordAssessment("No")));
+mc.on("swiperight",()=>animateSwipe("right",()=>recordAssessment("OK")));
+mc.on("swipedown",()=>animateSwipe("down",()=>recordAssessment("Great")));
 
-createTabs();
-loadSheet(tabs[0].url);
+window.onload=loadSheet;
 </script>
 </body>
 </html>
