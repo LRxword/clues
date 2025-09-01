@@ -2,23 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>cluesmash</title>
+<title>cluematch</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
 <link href="https://fonts.googleapis.com/css2?family=Sansita:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
 :root { --bg:#cce7ff; --card-shadow:#000; --black:#111; }
 *{box-sizing:border-box;}
-body{
-  margin:0; font-family:'Montserrat',sans-serif; background:var(--bg);
+body{margin:0;font-family:'Montserrat',sans-serif;background:var(--bg);
   min-height:100vh; display:flex; flex-direction:column; align-items:center;
-  padding:1.6rem 1rem 6rem; color:var(--black);
-}
-h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 0.8rem 0;text-align:center;color:var(--black);}
+  padding:1.6rem 1rem 6rem; color:var(--black);}
+h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 0.8rem 0;text-align:center;color:var(--black);display:flex;align-items:center;gap:0.6rem;}
 #tabs{display:flex;gap:0.8rem;margin-bottom:0.6rem;}
 .tab{padding:0.5rem 1rem;border-radius:18px;border:2px solid var(--black);background:white;cursor:pointer;font-weight:700;box-shadow:3px 3px 0 var(--card-shadow);color:var(--black);user-select:none;}
 .tab.active{background:var(--black);color:white;}
@@ -32,37 +29,23 @@ h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 
 #card.swipe-right{transform:translateX(150%) rotate(20deg);opacity:0;}
 #card.swipe-down{transform:translateY(150%) rotate(15deg);opacity:0;}
 #clue{font-size:2.2rem;color:#222;margin-bottom:0.8rem;white-space:pre-wrap;}
-#answer{display:inline-block;font-family:'Sansita',sans-serif;font-weight:900;font-size:2.2rem;background:black;color:black;padding:0 0.3rem;border-radius:6px;letter-spacing:0.2em;cursor:pointer;transition:background .25s ease,color .25s ease,letter-spacing .25s;}
-#answer.revealed{background:none;color:var(--black);letter-spacing:normal;}
+#answer{display:inline-block;font-family:'Sansita',sans-serif;font-weight:900;font-size:2.2rem;padding:0 0.3rem;border-radius:6px;letter-spacing:0.2em;cursor:pointer;transition:background .25s ease,color .25s ease,letter-spacing .25s;}
+#answer.revealed{letter-spacing:normal;}
 #writer{margin-top:1rem;font-size:1.05rem;color:#555;}
-#resetBtn {
-  background: #ff4d4d; /* red background */
-  color: white;
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
-}
-#buttons {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: nowrap; 
-  width: 90vw;
-  max-width: 520px;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-.btn {
-  flex: 1 1 18%; 
-  padding: 0.5rem 0.4rem;
-  min-width: 0;
-  font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.btn.ghost {background:#eee;}
+
+/* Buttons below clue */
+#buttons{display:flex;gap:0.4rem;flex-wrap:nowrap;width:90vw;max-width:520px;justify-content:space-between;margin-bottom:2rem;}
+.btn{flex:1 1 0; padding:0.5rem 0.6rem; font-size:0.95rem; cursor:pointer;}
+.btn.ghost{background:#eee;}
+
+/* Bottom bar buttons */
 #bottomBar{position:fixed;bottom:0;left:0;width:100%;display:flex;height:64px;background:#222;color:white;box-shadow:0 -6px 12px rgba(0,0,0,0.15);}
-#bottomBar button{flex:1;border:none;background:transparent;color:white;font-weight:700;font-size:1rem;cursor:pointer;}
-#bottomBar button:hover{background:rgba(255,255,255,0.04);}
+#bottomBar button{flex:1;border:none;font-weight:700;font-size:1rem;cursor:pointer;}
+#bottomBar button:hover{opacity:0.85;}
+
+/* Reset button red */
+#resetBtn{background:#ff4d4d;color:white;border-radius:6px;padding:0.4rem 0.8rem;font-weight:700;cursor:pointer;}
+#resetBtn:hover{background:#e60000;}
 #noteOverlay{display:none;position:fixed;top:10%;left:50%;transform:translateX(-50%);width:70%;max-width:360px;background:white;border:3px solid var(--black);border-radius:16px;padding:1rem;box-shadow:6px 6px 0 var(--card-shadow);z-index:2000;}
 #noteText{width:100%;height:140px;font-size:2.2rem;padding:0.8rem;border-radius:10px;border:2px solid var(--black);resize:none;line-height:1.2;}
 #noteOverlay .saveBtn{margin-top:0.8rem;display:inline-block;padding:0.5rem 0.8rem;border-radius:12px;border:2px solid var(--black);background:#222;color:white;font-weight:700;cursor:pointer;}
@@ -70,144 +53,109 @@ h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 
 </style>
 </head>
 <body>
-<h1 style="display:flex;align-items:center;gap:0.6rem;">
-  <img src="data:image/png;base64,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" alt="Logo" style="height:2.6rem;">
-  cluesmash
+<h1>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAMAAABC4vDmAAAAxlBMVEUAAAD10f2t0//////61v9zc3O82//6/f+02/9Ya4C8oMEMCgyv1f+SstdkVmj51P/z0PUYHSSKdo/jwepCOUWWf5pTR1ZMQU5aTV3KrdF9a4HDp8mzmLgYFRnqx/E1LTfS0tLN5P+pkK50Y3jx+P/o6Oirq6vl8f//3P8jHSQrJSzUtdqfiKRJWWza6/+GhYY+Pj4gICBaWlrDw8Obm5tLS0stLzLL1+V4k7Fid5GTqcJaY2xxfIqGmK0sNUKrxeSgxO01QU/sksuAAAAF/ElEQVR4nO3ca3uiOBQAYIK0TsGSHRDlIqGitmqwnV52tu7Odjv//08tVEHAEEAgcebp+VRrKy+5nBy5Cb1M3Dx8UwSWoTxe3C56uRDSLxYPj0xF+3h6pqBuvvEgRfHSL0ItnniZBOW2ANXnZxKExxsy6pajSRAuFiRU/0+uKOWZhLrhMvEO8UBCvfA1CU99AuoheVthGclWv//VP0ZdxO+ufZlhqPFmv14PLu8KUUMksYulkUKJg2m/CKUDdgEzKFHcqc4MJU7PESXOzxF12T9D1GDOAwVhOOtgIUq8Z4ySlksJ6DrGWAfRj0TUlCUKIt0J7JG3csONuN5IcxARFQ4qNigIkRWoQ1dIh2IGaMkNBQE2RlnQPkYTTqiQZA9JoijWyTtsUXhGbKR8MERBEBS2EjcUVmmQjlFRQiT82qnYTK2jwvSMdOzIFkYgJwtWlU1toqCEsG+bw/VqtfJGtoxSKuhXGuGto7A/y3aQFyT/Df0apNZQyNGGR22hqNbeZK1ZoyDEwZh80Gjtf/yBPqplagEFdWNYeBxrNYn+xCh6uz2UBFCKhHxq1yiyBGp2Xn1UKJJt4/C6NCMOMdAOr1Zj1fRKjw/WQYVZSA8HtCDMkqbyvdLdtvVkUiqqowOES3uzOirMi44x+kiBexRERoXs4x4aStN3jV2mqoYKVw6AAzNOyira/XJWTopU8Q8zsC/HUclsrISCCAdqqlF2KKSRPrA4xnr8FUGSm6FgVJhN1OzQMdEpE12OTQDo9KFY2lL6xD76BDNqQLnOaibEe7IPesfTUd7EJuXqkQ4gHtczKT5MoYIGKIGcUkIUsOuZwhGVzi70Zi5BFW1AslLcSidLtEwOtqjV1Ymow6BY2zK2jPIcKmdqPkz9h5NQQx3Hze9OEIQQyGUqL7tg6dTa+ERUPKLW+wYoreJMkEVRp8lpKBzvaBBvBZVMRjuHoub001DGfmyn9r8klWYSQrgP1OLiJJS3/0h3koxeSJ/kitw5StkD0n1Cn08rnENRU/pJqDjSu08fup7OCuVlWl4A8TxBDu5E3kAAAAASUVORK5CYII=" width="32" height="32">
+  Cluematch
 </h1>
-<div id="tabs">
-<div class="tab active" data-source="members">Members</div>
-<div class="tab" data-source="setters">Setters</div>
-<div class="tab" data-source="book">Book</div>
-<div class="tab" data-source="clues">Clues</div>
-</div>
-<div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
+
+<div id="tabs"></div>
+<div id="assessmentCounts"></div>
 <div id="progress"><div id="progressBar"></div></div>
-<div id="progressCount">0 / 0</div>
-<div id="card" style="display:none;">
-<div id="clue">Loading clue…</div>
-<div>
-<strong>Answer:</strong>
-<span id="answer" onclick="toggleAnswer(this)" data-answer="">████████</span>
+<div id="progressCount"></div>
+
+<div id="card">
+  <div id="clue"></div>
+  <div id="answer" class="revealed"></div>
 </div>
-<p id="writer"></p>
-</div>
+
 <div id="buttons">
-<button class="btn" id="btnNo" onclick="animateSwipe('left',()=>recordAssessment('No'))">No</button>
-<button class="btn" id="btnOK" onclick="animateSwipe('right',()=>recordAssessment('OK'))">OK</button>
-<button class="btn" id="btnGreat" onclick="animateSwipe('down',()=>recordAssessment('Great'))">Great</button>
-<button class="btn" id="btnNote" onclick="openNote()">Note</button>
-<button class="btn ghost" id="btnUndo" onclick="undoAssessment()">Undo</button>
+  <button class="btn" id="noBtn">No</button>
+  <button class="btn" id="okBtn">Ok</button>
+  <button class="btn" id="greatBtn">Great</button>
+  <button class="btn btn-ghost" id="noteBtn">Note</button>
+  <button class="btn" id="resetBtn">Reset</button>
 </div>
+
 <div id="noteOverlay">
-<textarea id="noteText" placeholder="Write your note here..."></textarea>
-<div style="display:flex;gap:8px;justify-content:flex-end;">
-<button class="saveBtn" onclick="saveNote()">Save</button>
-<button class="saveBtn" onclick="closeNote()">Close</button>
-</div>
-</div>
-<div id="bottomBar">
-<button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-<button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+  <textarea id="noteText"></textarea>
+  <button class="saveBtn" id="saveNoteBtn">Save</button>
 </div>
 
 <script>
-let clues=[],current=0,currentSource='members',counts={No:0,OK:0,Great:0};
-const history=[],tabs=document.querySelectorAll('.tab');
-const cardEl=document.getElementById('card'),clueEl=document.getElementById('clue'),answerEl=document.getElementById('answer');
-const writerEl=document.getElementById('writer'),progressBar=document.getElementById('progressBar');
-const progressCount=document.getElementById('progressCount'),assessmentCounts=document.getElementById('assessmentCounts');
-const noteOverlay=document.getElementById('noteOverlay'),noteText=document.getElementById('noteText');
+let tabs = [
+  {name:"Tab 1", url:"https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_1/export?format=csv"},
+  {name:"Tab 2", url:"https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_2/export?format=csv"}
+];
 
-const sheetUrls={
-members:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-setters:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQFNiJjV5qz1n4aPnCE6t66rJ_6bqIgmw7jGxNwEBnPiMBH_9jq5aGGsHLkZ4sIh3K1lhHzyI2b-Dr/pub?output=csv",
-book:"https://docs.google.com/spreadsheets/d/e/2PACX-1vRTnL68Cav62wlXeHksupnL09nZzOkID35gILvF9s8lK1V7aRLMdMtU7aqNOBZB3S1jTds06z4lLgk/pub?output=csv",
-clues:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3UEWkHZIWvwIc4Qm6TTd8sM5vMLIOX3wC4kEUEzknJ1GwL0PrsRZLypx1kp-mcRzrz4u7msDwPCe7/pub?output=csv"
-};
-
-tabs.forEach(tab=>{
-tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentSource=tab.dataset.source;loadSheet(sheetUrls[currentSource]);});
-});
+let clues=[], current=0, counts={No:0,OK:0,Great:0}, history=[];
 
 function loadSheet(url){
-Papa.parse(url,{download:true,header:true,complete:function(results){clues=results.data;current=0;counts={No:0,OK:0,Great:0};history.length=0;updateProgress();updateCounts();showNext();}});
+  Papa.parse(url,{
+    download:true,
+    header:true,
+    skipEmptyLines:true,
+    complete:function(results){
+      if(!results.data || results.data.length===0){
+        alert('No data loaded.');
+        return;
+      }
+      clues = results.data;
+      current=0;
+      counts={No:0,OK:0,Great:0};
+      history=[];
+      updateProgress();
+      updateCounts();
+      showNext();
+    }
+  });
 }
 
 function showNext(){
-  if(clues.length===0){
-    clueEl.textContent='No clues loaded.';
-    answerEl.textContent='████████';
-    answerEl.classList.remove('revealed');
-    writerEl.textContent='';
-    cardEl.style.display='block';
-    return;
-  }
-  if(current>=clues.length){
-    clueEl.textContent='All done!';
-    answerEl.textContent='';
-    writerEl.textContent='';
-    cardEl.style.display='block';
-    document.getElementById('buttons').style.display='none';
-    progressBar.style.width='100%';
-    progressCount.textContent=`${clues.length}/${clues.length}`;
-    return;
-  }
-  const row=clues[current];
-  if(currentSource==='clues'){
-    clueEl.textContent='Write a clue for this word:';
-    answerEl.setAttribute('data-answer', row.Answer||'(no word)');
-    answerEl.classList.add('revealed');
-    answerEl.textContent=row.Answer||'(no word)';
-    writerEl.textContent=row.Writer?`Source: ${row.Writer}`:'';
-    document.getElementById('buttons').style.display='none';
-  }else{
-    clueEl.textContent=row.Clue||'(no clue)';
-    answerEl.setAttribute('data-answer', row.Answer||'');
-    answerEl.textContent='████████';
-    answerEl.classList.remove('revealed');
-    writerEl.textContent=row.Writer?`Writer: ${row.Writer}`:'';
-    document.getElementById('buttons').style.display='flex';
-  }
-  cardEl.style.display='block';
-  cardEl.className='';
-  void cardEl.offsetWidth;
-  cardEl.classList.add('enter');
-  updateProgress();
-  updateCounts();
-}
-
-function toggleAnswer(el){
-  if(currentSource==='clues') return;
-  const ans=el.getAttribute('data-answer');
-  if(el.classList.contains('revealed')){el.textContent='████████';el.classList.remove('revealed');}
-  else{el.textContent=ans;el.classList.add('revealed');}
-}
-
-function animateSwipe(dir,callback){
-  cardEl.classList.add('swipe-'+dir);
-  setTimeout(()=>{cardEl.className='';callback();showNext();},360);
-}
-
-function recordAssessment(val){
-  counts[val]++;history.push(val);updateCounts();
+  if(current>=clues.length){document.getElementById('clue').textContent="Done!"; document.getElementById('answer').textContent=""; return;}
+  document.getElementById('clue').textContent = clues[current].clue || '';
+  document.getElementById('answer').textContent = clues[current].answer || '';
 }
 
 function updateCounts(){
-  assessmentCounts.textContent=`No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
+  document.getElementById('assessmentCounts').textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
 }
 
 function updateProgress(){
-  const pct=(clues.length===0?0:(current/clues.length)*100);
-  progressBar.style.width=pct+'%';
-  progressCount.textContent=`${current}/${clues.length}`;
+  let pct = clues.length? Math.round(current/clues.length*100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = `${current} / ${clues.length}`;
 }
 
-function resetProgress(){current=0;counts={No:0,OK:0,Great:0};history.length=0;showNext();updateCounts();}
-function undoAssessment(){if(history.length===0)return;const last=history.pop();counts[last]--;updateCounts();}
-function openNote(){noteOverlay.style.display='block';}
-function closeNote(){noteOverlay.style.display='none';}
-function saveNote(){alert('Note saved: '+noteText.value);closeNote();}
-function exportCSV(){alert('Export CSV clicked');}
+document.getElementById('noBtn').addEventListener('click',()=>{counts.No++;current++;history.push('No');updateCounts();updateProgress();showNext();});
+document.getElementById('okBtn').addEventListener('click',()=>{counts.OK++;current++;history.push('Ok');updateCounts();updateProgress();showNext();});
+document.getElementById('greatBtn').addEventListener('click',()=>{counts.Great++;current++;history.push('Great');updateCounts();updateProgress();showNext();});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  current=0;
+  counts={No:0,OK:0,Great:0};
+  history=[];
+  updateCounts();
+  updateProgress();
+  showNext();
+});
+
+function createTabs(){
+  let container = document.getElementById('tabs');
+  container.innerHTML = '';
+  tabs.forEach((t,i)=>{
+    let btn = document.createElement('div');
+    btn.className='tab'+(i===0?' active':'');
+    btn.textContent = t.name;
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      loadSheet(t.url);
+    });
+    container.appendChild(btn);
+  });
+}
+
+createTabs();
+loadSheet(tabs[0].url);
 </script>
 </body>
 </html>
