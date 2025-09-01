@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>ClueMatch</title>
+<title>cluesmash</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Sansita:ital,wght@1,700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sansita+Black:ital,wght@1,900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 <style>
@@ -18,17 +19,16 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 2rem 1rem 7rem;
-  color: #222;
+  color: white;
   user-select: none;
 }
 
 h1 {
-  font-family: 'Sansita', sans-serif;
+  font-family: 'Sansita Black', sans-serif;
   font-style: italic;
-  font-weight: 700;
+  font-weight: 900;
   font-size: 4rem;
   margin-bottom: 0.5rem;
-  color: black;
   text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
 }
 
@@ -36,24 +36,21 @@ h1 {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
-  border: 2px solid black;
-  border-radius: 16px;
-  padding: 0.3rem;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-  background: #fff;
 }
 
 .tab {
-  padding: 0.8rem 1.4rem;
+  padding: 0.6rem 1.2rem;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 20px;
+  border-radius: 16px;
   cursor: pointer;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.8);
   color: #222;
-  transition: background 0.3s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: background 0.3s, transform 0.2s;
 }
 
+.tab:hover { transform: translateY(-2px); }
 .tab.active {
   background: #222;
   color: white;
@@ -62,6 +59,7 @@ h1 {
 #assessmentCounts {
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
+  color: #222;
 }
 
 #progress {
@@ -85,6 +83,7 @@ h1 {
   font-size: 1.4rem;
   margin-bottom: 1.5rem;
   text-align: center;
+  color: #222;
 }
 
 #card {
@@ -117,8 +116,8 @@ h1 {
   background: black;
   color: black;
   letter-spacing: 0.2em;
-  transition: background-color 0.3s ease, color 0.3s ease;
   font-family: 'Montserrat', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #answer.revealed {
@@ -145,10 +144,10 @@ h1 {
 
 button {
   flex: 1;
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.8rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 16px;
   border: 2px solid black;
   background: white;
   color: black;
@@ -225,7 +224,7 @@ button {
   margin-top: 1rem;
   padding: 0.6rem 1rem;
   font-weight: 700;
-  border-radius: 12px;
+  border-radius: 16px;
   border: none;
   background: #222;
   color: white;
@@ -234,7 +233,7 @@ button {
 </style>
 </head>
 <body>
-<h1>ClueMatch</h1>
+<h1>cluesmash</h1>
 
 <div id="tabs">
   <div class="tab active" data-source="members">Members</div>
@@ -292,15 +291,17 @@ function loadSheet() {
     header: true,
     complete: results => {
       if(currentSource==="clue") {
-        clues = results.data.filter(r => r['Column A']);
+        clues = results.data
+          .filter(r => Object.values(r)[0])
+          .map(r => ({ Word: Object.values(r)[0] }));
       } else {
         clues = results.data.filter(r => r.Clue && r.Answer && r.Writer);
       }
       const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
-      if(saved) {
-        try { const savedData = JSON.parse(saved); clues = savedData.clues; current = savedData.current||0; } 
+      if(saved){
+        try{ const savedData=JSON.parse(saved); clues=savedData.clues; current=savedData.current||0; } 
         catch(e){ console.warn("Failed to load saved progress."); }
-      } else { current = 0; }
+      } else { current=0; }
       history.length = 0;
       updateCounts();
       updateProgress();
@@ -333,7 +334,7 @@ function showNext() {
   }
   const clue = clues[current];
   if(currentSource==="clue") {
-    card.innerHTML=`<p><strong>Clue:</strong> ${clue['Column A']}</p>`;
+    card.innerHTML=`<p><strong>Clue:</strong> ${clue.Word}</p>`;
   } else {
     card.innerHTML=`
       <p>${clue.Clue}</p>
@@ -347,26 +348,15 @@ function showNext() {
 
 function toggleAnswer(el){
   if(el.classList.contains('revealed')){ 
-    el.classList.remove('revealed'); 
-    el.textContent="████████";
+    el.classList.remove('revealed'); el.textContent="████████";
   } else { 
-    el.classList.add('revealed'); 
-    el.textContent=el.getAttribute('data-answer'); 
-  } 
+    el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); 
+  }
 }
 
-function flashMessage(direction){ 
-  const emojiMap={right:"👍",left:"❌",down:"⭐"}; 
-  flash.textContent=emojiMap[direction]||""; 
-  flash.classList.add("show"); 
-  setTimeout(()=>flash.classList.remove("show"),600); 
-}
+function flashMessage(direction){ const emojiMap={right:"👍",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
 
-function animateSwipe(direction,callback){ 
-  card.classList.add(`swipe-${direction}`); 
-  flashMessage(direction); 
-  setTimeout(()=>{ card.className=''; callback(); },400); 
-}
+function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
 
 function recordAssessment(value){
   if(current>=clues.length) return;
@@ -388,22 +378,13 @@ function undoAssessment(){
 
 function exportCSV(){
   const filtered = clues.filter(c=>c.Assessment);
-  const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue||c['Column A'], Answer:c.Answer||"", Writer:c.Writer||"", Assessment:c.Assessment, Note:c.Note||"" })));
-  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); 
-  const link=document.createElement("a");
-  link.href=URL.createObjectURL(blob); 
-  link.download="reviewed_clues.csv"; 
-  link.click();
+  const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue||"", Answer:c.Answer||"", Writer:c.Writer||"", Assessment:c.Assessment, Note:c.Note||"" })));
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob); link.download="reviewed_clues.csv"; link.click();
 }
 
 function saveProgress(){ localStorage.setItem("clueMatchProgress_"+currentSource,JSON.stringify({current,clues})); }
-
-function resetProgress(){ 
-  if(confirm("Are you sure you want to reset all progress?")){
-    localStorage.removeItem("clueMatchProgress_"+currentSource); 
-    location.reload(); 
-  } 
-}
+function resetProgress(){ if(confirm("Are you sure you want to reset all progress?")){ localStorage.removeItem("clueMatchProgress_"+currentSource); location.reload(); } }
 
 function openNote(){ 
   const noteOverlay=document.getElementById("noteOverlay"); 
