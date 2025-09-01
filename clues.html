@@ -11,7 +11,7 @@
 body {
   margin: 0;
   font-family: 'Montserrat', sans-serif;
-  background: #cce7ff; /* pale blue background */
+  background: #cce7ff;
   min-height: 100vh;
   overflow-x: hidden;
   display: flex;
@@ -33,6 +33,7 @@ h1 {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .tab {
@@ -130,14 +131,13 @@ h1 {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  flex-wrap: wrap;
   width: 90vw;
   max-width: 500px;
   margin-bottom: 2rem;
 }
 
-button {
-  flex: 1;
+#buttons button {
+  flex: 1 1 auto;
   padding: 0.6rem 0.8rem;
   font-size: 1rem;
   font-weight: 600;
@@ -185,7 +185,6 @@ button {
 
 #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 
-/* Note overlay */
 #noteOverlay {
   display: none;
   position: fixed;
@@ -229,7 +228,6 @@ button {
 #noteOverlay, #noteText {
   box-sizing: border-box;
 }
-  
 </style>
 </head>
 <body>
@@ -239,6 +237,7 @@ button {
   <div class="tab active" data-source="members">Members</div>
   <div class="tab" data-source="setters">Setters</div>
   <div class="tab" data-source="book">Book</div>
+  <div class="tab" data-source="clue">Clue</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
@@ -279,7 +278,8 @@ let currentSource = "members";
 const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
   setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
-  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
+  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
+  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv" // you can use same as 'book' or another URL
 };
 
 function loadSheet() {
@@ -316,18 +316,31 @@ function updateProgress() {
 }
 
 function showNext() {
-  if(current>=clues.length){ card.innerHTML="<strong>All done!</strong>"; card.style.display="block"; document.getElementById("buttons").style.display="none"; progressBar.style.width="100%"; progressCount.textContent=`${clues.length}/${clues.length}`; return;}
+  if(current>=clues.length){ 
+    card.innerHTML="<strong>All done!</strong>"; 
+    card.style.display="block"; 
+    document.getElementById("buttons").style.display="none"; 
+    progressBar.style.width="100%"; 
+    progressCount.textContent=`${clues.length}/${clues.length}`; 
+    return;
+  }
   const clue = clues[current];
+  const answerText = (currentSource === "clue") ? clue.Answer : "████████";
+  const revealedClass = (currentSource === "clue") ? "revealed" : "";
   card.innerHTML=`
     <p>${clue.Clue}</p>
-    <p><strong>Answer:</strong> <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span></p>
+    <p><strong>Answer:</strong> <span id="answer" class="${revealedClass}" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">${answerText}</span></p>
     <p id="writer">${clue.Writer}</p>
   `;
   card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
 }
 
-function toggleAnswer(el){ if(el.classList.contains('revealed')){ el.classList.remove('revealed'); el.textContent="████████";} else{ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); } }
+function toggleAnswer(el){ 
+  if(currentSource==="clue") return; // don't toggle in clue mode
+  if(el.classList.contains('revealed')){ el.classList.remove('revealed'); el.textContent="████████";} 
+  else{ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); } 
+}
 
 function flashMessage(direction){ const emojiMap={right:"👍",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
 
