@@ -1,551 +1,200 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>ClueMatch</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta charset="utf-8" />
+<title>cluematch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
-  <!-- Fonts: Sansita for title & answers; Montserrat for other text -->
-  <link href="https://fonts.googleapis.com/css2?family=Sansita:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sansita:wght@900&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
-  <style>
-    /* base */
-    :root { --bg: #cce7ff; --card-shadow: #000; --black: #111; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Montserrat', sans-serif;
-      background: var(--bg);
-      -webkit-text-size-adjust: 100%;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.6rem 1rem 6rem;
-      color: var(--black);
-    }
-
-    /* title */
-    h1 {
-      font-family: 'Sansita', sans-serif;
-      font-weight: 900;
-      font-size: 3.4rem;
-      margin: 0 0 0.8rem 0;
-      color: var(--black);
-      text-align: center;
-    }
-
-    /* tabs */
-    #tabs { display:flex; gap:0.8rem; margin-bottom:0.6rem; }
-    .tab {
-      padding:0.5rem 1rem;
-      border-radius:18px;
-      border:2px solid var(--black);
-      background:white;
-      cursor:pointer;
-      font-weight:700;
-      box-shadow:3px 3px 0 var(--card-shadow);
-      color:var(--black);
-      user-select:none;
-    }
-    .tab.active { background:var(--black); color:white; }
-
-    /* counts + progress */
-    #assessmentCounts { font-size:1.05rem; margin:0.4rem 0; color:var(--black); }
-    #progress { width:90vw; max-width:520px; height:6px; background:rgba(255,255,255,0.4); border-radius:4px; overflow:hidden; margin-bottom:0.4rem; }
-    #progressBar { height:100%; width:0%; background:#ffe6e6; transition:width .25s ease; }
-    #progressCount { font-size:1.2rem; margin-bottom:1rem; color:var(--black); text-align:center; }
-
-    /* card */
-    #card {
-      width:90vw; max-width:560px;
-      background:white;
-      border:3px solid var(--black);
-      border-radius:20px;
-      padding:1.6rem;
-      box-shadow:4px 4px 0 var(--card-shadow);
-      text-align:center;
-      margin-bottom:1.2rem;
-      transition: transform .36s ease, opacity .36s ease;
-      font-size:2.2rem; /* clue text sized large */
-      color:var(--black);
-    }
-    /* swipe classes */
-    #card.enter { transform: translateX(0) scale(1); opacity:1; }
-    #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity:0; }
-    #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity:0; }
-    #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity:0; }
-
-    /* clue & answer */
-    #clue { font-size: 2.2rem; color: #222; margin-bottom: 0.8rem; white-space: pre-wrap; }
-    #answer {
-      display:inline-block;
-      font-family:'Sansita', sans-serif; /* Sansita for the answer */
-      font-weight:900;
-      font-size:2.2rem;
-      background: black;
-      color: black;
-      padding:0 0.3rem;
-      border-radius:6px;
-      letter-spacing:0.2em;
-      cursor:pointer;
-      transition: background .25s ease, color .25s ease, letter-spacing .25s;
-    }
-    #answer.revealed { background: none; color: var(--black); letter-spacing: normal; }
-
-    #writer { margin-top:1rem; font-size:1.05rem; color:#555; }
-
-    /* buttons row */
-    #buttons { display:flex; gap:0.6rem; flex-wrap:wrap; width:90vw; max-width:520px; justify-content:space-between; margin-bottom:3.4rem; }
-    .btn {
-      flex:1; min-width:96px;
-      padding:0.6rem 0.8rem;
-      border-radius:50px;
-      border:2px solid var(--black);
-      background:#fcd6f7;
-      color:var(--black);
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:3px 3px 0 var(--card-shadow);
-      user-select:none;
-    }
-    .btn.ghost { background:#eee; }
-
-    /* bottom fixed bar: download/reset (full width split) */
-    #bottomBar {
-      position: fixed;
-      bottom: 0; left: 0;
-      width: 100%;
-      display: flex;
-      height: 64px;
-      background: #222;
-      color: white;
-      box-shadow: 0 -6px 12px rgba(0,0,0,0.15);
-    }
-    #bottomBar button {
-      flex:1;
-      border: none;
-      background: transparent;
-      color:white;
-      font-weight:700;
-      font-size:1rem;
-      cursor:pointer;
-    }
-    #bottomBar button:hover { background: rgba(255,255,255,0.04); }
-
-    /* note overlay */
-    #noteOverlay {
-      display:none;
-      position:fixed;
-      top:10%;
-      left:50%;
-      transform:translateX(-50%);
-      width:50%;
-      max-width:360px;
-      background:white;
-      border:3px solid var(--black);
-      border-radius:16px;
-      padding:1rem;
-      box-shadow:6px 6px 0 var(--card-shadow);
-      z-index:2000;
-    }
-    #noteText {
-      width:100%;
-      height:140px;
-      font-size:2.2rem; /* same size as clue/answer */
-      padding:0.8rem;
-      border-radius:10px;
-      border:2px solid var(--black);
-      resize:none;
-      line-height:1.2;
-    }
-    #noteOverlay .saveBtn {
-      margin-top:0.8rem;
-      display:inline-block;
-      padding:0.5rem 0.8rem;
-      border-radius:12px;
-      border:2px solid var(--black);
-      background:#222;
-      color:white;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    /* small helpers */
-    .hidden { display:none; }
-    .info { color:#444; font-size:0.95rem; margin-bottom:0.5rem; }
-  </style>
+<style>
+:root { --bg:#cce7ff; --card-shadow:#000; --black:#111; }
+*{box-sizing:border-box;}
+body{
+  margin:0; font-family:'Montserrat',sans-serif; background:var(--bg);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  padding:1.6rem 1rem 6rem; color:var(--black);
+}
+h1{font-family:'Sansita',sans-serif;font-weight:900;font-size:3.4rem;margin:0 0 0.8rem 0;text-align:center;color:var(--black);}
+#tabs{display:flex;gap:0.8rem;margin-bottom:0.6rem;}
+.tab{padding:0.5rem 1rem;border-radius:18px;border:2px solid var(--black);background:white;cursor:pointer;font-weight:700;box-shadow:3px 3px 0 var(--card-shadow);color:var(--black);user-select:none;}
+.tab.active{background:var(--black);color:white;}
+#assessmentCounts{font-size:1.05rem;margin:0.4rem 0;color:var(--black);}
+#progress{width:90vw;max-width:520px;height:6px;background:rgba(255,255,255,0.4);border-radius:4px;overflow:hidden;margin-bottom:0.4rem;}
+#progressBar{height:100%;width:0%;background:#ffe6e6;transition:width .25s ease;}
+#progressCount{font-size:1.2rem;margin-bottom:1rem;color:var(--black);text-align:center;}
+#card{width:90vw;max-width:560px;background:white;border:3px solid var(--black);border-radius:20px;padding:1.6rem;box-shadow:4px 4px 0 var(--card-shadow);text-align:center;margin-bottom:1.2rem;transition:transform .36s ease,opacity .36s ease;font-size:2.2rem;color:var(--black);}
+#card.enter{transform:translateX(0) scale(1);opacity:1;}
+#card.swipe-left{transform:translateX(-150%) rotate(-20deg);opacity:0;}
+#card.swipe-right{transform:translateX(150%) rotate(20deg);opacity:0;}
+#card.swipe-down{transform:translateY(150%) rotate(15deg);opacity:0;}
+#clue{font-size:2.2rem;color:#222;margin-bottom:0.8rem;white-space:pre-wrap;}
+#answer{display:inline-block;font-family:'Sansita',sans-serif;font-weight:900;font-size:2.2rem;background:black;color:black;padding:0 0.3rem;border-radius:6px;letter-spacing:0.2em;cursor:pointer;transition:background .25s ease,color .25s ease,letter-spacing .25s;}
+#answer.revealed{background:none;color:var(--black);letter-spacing:normal;}
+#writer{margin-top:1rem;font-size:1.05rem;color:#555;}
+#buttons{display:flex;gap:0.6rem;flex-wrap:wrap;width:90vw;max-width:520px;justify-content:space-between;margin-bottom:3.4rem;}
+.btn{flex:1;min-width:96px;padding:0.6rem 0.8rem;border-radius:50px;border:2px solid var(--black);background:#fcd6f7;color:var(--black);font-weight:700;cursor:pointer;box-shadow:3px 3px 0 var(--card-shadow);user-select:none;}
+.btn.ghost{background:#eee;}
+#bottomBar{position:fixed;bottom:0;left:0;width:100%;display:flex;height:64px;background:#222;color:white;box-shadow:0 -6px 12px rgba(0,0,0,0.15);}
+#bottomBar button{flex:1;border:none;background:transparent;color:white;font-weight:700;font-size:1rem;cursor:pointer;}
+#bottomBar button:hover{background:rgba(255,255,255,0.04);}
+#noteOverlay{display:none;position:fixed;top:10%;left:50%;transform:translateX(-50%);width:70%;max-width:360px;background:white;border:3px solid var(--black);border-radius:16px;padding:1rem;box-shadow:6px 6px 0 var(--card-shadow);z-index:2000;}
+#noteText{width:100%;height:140px;font-size:2.2rem;padding:0.8rem;border-radius:10px;border:2px solid var(--black);resize:none;line-height:1.2;}
+#noteOverlay .saveBtn{margin-top:0.8rem;display:inline-block;padding:0.5rem 0.8rem;border-radius:12px;border:2px solid var(--black);background:#222;color:white;font-weight:700;cursor:pointer;}
+.hidden{display:none;}
+</style>
 </head>
 <body>
-  <h1>ClueMatch</h1>
+<h1>cluematch</h1>
+<div id="tabs">
+<div class="tab active" data-source="members">Members</div>
+<div class="tab" data-source="setters">Setters</div>
+<div class="tab" data-source="book">Book</div>
+<div class="tab" data-source="clues">Clues</div>
+</div>
+<div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
+<div id="progress"><div id="progressBar"></div></div>
+<div id="progressCount">0 / 0</div>
+<div id="card" style="display:none;">
+<div id="clue">Loading clue…</div>
+<div>
+<strong>Answer:</strong>
+<span id="answer" class="" onclick="toggleAnswer(this)" data-answer="">████████</span>
+</div>
+<p id="writer"></p>
+</div>
+<div id="buttons">
+<button class="btn" id="btnNo" onclick="animateSwipe('left',()=>recordAssessment('No'))">No</button>
+<button class="btn" id="btnOK" onclick="animateSwipe('right',()=>recordAssessment('OK'))">OK</button>
+<button class="btn" id="btnGreat" onclick="animateSwipe('down',()=>recordAssessment('Great'))">Great</button>
+<button class="btn" id="btnNote" onclick="openNote()">Note</button>
+<button class="btn ghost" id="btnUndo" onclick="undoAssessment()">Undo</button>
+</div>
+<div id="noteOverlay">
+<textarea id="noteText" placeholder="Write your note here..."></textarea>
+<div style="display:flex;gap:8px;justify-content:flex-end;">
+<button class="saveBtn" onclick="saveNote()">Save</button>
+<button class="saveBtn" onclick="closeNote()">Close</button>
+</div>
+</div>
+<div id="bottomBar">
+<button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
+<button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+</div>
 
-  <div id="tabs">
-    <div class="tab active" data-source="members">Members</div>
-    <div class="tab" data-source="setters">Setters</div>
-    <div class="tab" data-source="book">Book</div>
-    <div class="tab" data-source="clues">Clues</div>
-  </div>
+<script>
+let clues=[],current=0,currentSource='members',counts={No:0,OK:0,Great:0};
+const history=[],tabs=document.querySelectorAll('.tab');
+const cardEl=document.getElementById('card'),clueEl=document.getElementById('clue'),answerEl=document.getElementById('answer');
+const writerEl=document.getElementById('writer'),progressBar=document.getElementById('progressBar');
+const progressCount=document.getElementById('progressCount'),assessmentCounts=document.getElementById('assessmentCounts');
+const noteOverlay=document.getElementById('noteOverlay'),noteText=document.getElementById('noteText');
 
-  <div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
+const sheetUrls={
+members:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
+setters:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
+book:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
+clues:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
+};
 
-  <div id="progress"><div id="progressBar"></div></div>
-  <div id="progressCount">0 / 0</div>
+function setActiveTab(source){
+tabs.forEach(t=>t.classList.toggle('active',t.dataset.source===source));
+currentSource=source;
+document.getElementById('btnNo').style.display = source==='clues'?'none':'';
+document.getElementById('btnOK').style.display = source==='clues'?'none':'';
+document.getElementById('btnGreat').style.display = source==='clues'?'none':'';
+loadSheet();
+}
 
-  <div id="card" style="display:none;">
-    <div id="clue">Loading clue…</div>
-    <div>
-      <strong>Answer:</strong>
-      <span id="answer" class="" onclick="toggleAnswer(this)" data-answer="">████████</span>
-    </div>
-    <p id="writer"></p>
-  </div>
+tabs.forEach(t=>t.addEventListener('click',()=>setActiveTab(t.dataset.source)));
 
-  <div id="buttons">
-    <button class="btn" id="btnNo" onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-    <button class="btn" id="btnOK" onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
-    <button class="btn" id="btnGreat" onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
-    <button class="btn" id="btnNote" onclick="openNote()">Note</button>
-    <button class="btn ghost" id="btnUndo" onclick="undoAssessment()">Undo</button>
-  </div>
+function loadSheet(){
+cardEl.style.display='none';
+clueEl.textContent='Loading...';
+progressCount.textContent='…';
+progressBar.style.width='0%';
+const url=sheetUrls[currentSource];
+if(!url){clues=[];current=0;updateCounts();updateProgress();showNext();return;}
+Papa.parse('https://corsproxy.io/?'+url,{download:true,header:true,skipEmptyLines:true,
+complete: results=>{
+const rows=(results && results.data)?results.data.map(r=>({
+Clue:r.Clue||r.clue||'',
+Answer:r.Answer||r.answer||r.Word||r.word||'',
+Writer:r.Writer||r.writer||r.Author||r.author||'',
+Note:r.Note||r.note||'',
+Assessment:r.Assessment||r.assessment||''
+})):[];
 
-  <div id="noteOverlay">
-    <textarea id="noteText" placeholder="Write your note here..."></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="saveBtn" onclick="saveNote()">Save</button>
-      <button class="saveBtn" onclick="closeNote()">Close</button>
-    </div>
-  </div>
+clues=rows;
+const saved=localStorage.getItem('clueMatchProgress_'+currentSource);
+if(saved){try{const sd=JSON.parse(saved);if(sd.clues && Array.isArray(sd.clues)){clues=sd.clues;current=sd.current||0;}else current=0;}catch(e){current=0;}}else current=0;
+history.length=0;
+updateCounts();updateProgress();showNext();
+},error: err=>{console.warn('CSV load failed:',err);clues=[];current=0;clueEl.textContent='Failed to load sheet — check URL.';cardEl.style.display='block';updateCounts();updateProgress();}
+});
+}
 
-  <div id="bottomBar">
-    <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-    <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
-  </div>
+function updateCounts(){counts.No=counts.OK=counts.Great=0;clues.forEach(c=>{if(c.Assessment)counts[c.Assessment]=(counts[c.Assessment]||0)+1;});assessmentCounts.textContent=`No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;}
+function updateProgress(){const total=clues.length||0;progressBar.style.width=total===0?'0%':`${(current/total)*100}%`;progressCount.textContent=`${Math.min(current+1,total)}/${total}`;}
 
-  <script>
-    /* State */
-    let clues = [];
-    let current = 0;
-    const history = [];
-    const counts = { No:0, OK:0, Great:0 };
-    let currentSource = 'members';
+function showNext(){
+if(clues.length===0){clueEl.textContent='No clues loaded.';answerEl.textContent='████████';answerEl.classList.remove('revealed');writerEl.textContent='';cardEl.style.display='block';return;}
+if(current>=clues.length){clueEl.textContent='All done!';answerEl.textContent='';writerEl.textContent='';cardEl.style.display='block';document.getElementById('buttons').style.display='none';progressBar.style.width='100%';progressCount.textContent=`${clues.length}/${clues.length}`;return;}
+const row=clues[current];
+if(currentSource==='clues'){
+clueEl.textContent='Write a clue for this word:';
+answerEl.textContent=row.Answer||'(no word)';
+answerEl.setAttribute('data-answer',row.Answer||'');
+answerEl.classList.add('revealed');
+writerEl.textContent=row.Writer?`Source: ${row.Writer}`:'';
+}else{
+clueEl.textContent=row.Clue||'(no clue)';
+answerEl.setAttribute('data-answer',row.Answer||'');
+answerEl.textContent='████████';
+answerEl.classList.remove('revealed');
+writerEl.textContent=row.Writer?`Writer: ${row.Writer}`:'';
+document.getElementById('buttons').style.display='';
+}
+cardEl.style.display='block';cardEl.className='';void cardEl.offsetWidth;cardEl.classList.add('enter');updateProgress();updateCounts();
+}
 
-    const tabs = document.querySelectorAll('.tab');
-    const sheetUrls = {
-      members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-      setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
-      book:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-      clues:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
-    };
+function toggleAnswer(el){if(el.classList.contains('revealed')){el.classList.remove('revealed');el.textContent='████████';}else{el.classList.add('revealed');el.textContent=el.getAttribute('data-answer')||'';}}
 
-    const cardEl = document.getElementById('card');
-    const clueEl = document.getElementById('clue');
-    const answerEl = document.getElementById('answer');
-    const writerEl = document.getElementById('writer');
-    const progressBar = document.getElementById('progressBar');
-    const progressCount = document.getElementById('progressCount');
-    const assessmentCounts = document.getElementById('assessmentCounts');
-    const noteOverlay = document.getElementById('noteOverlay');
-    const noteText = document.getElementById('noteText');
+const flash=document.createElement('div');flash.id='flash';flash.style.position='fixed';flash.style.top='40%';flash.style.left='50%';flash.style.transform='translate(-50%,-50%)';flash.style.fontSize='3.5rem';flash.style.pointerEvents='none';flash.style.opacity='0';flash.style.transition='opacity .35s, transform .35s';document.body.appendChild(flash);
+function flashMessage(sym){flash.textContent=sym;flash.style.opacity='1';flash.style.transform='translate(-50%,-50%) scale(1.05)';setTimeout(()=>{flash.style.opacity='0';flash.style.transform='translate(-50%,-50%) scale(1)';},650);}
 
-    /* Helpers */
-    function setActiveTab(source) {
-      tabs.forEach(t => t.classList.toggle('active', t.dataset.source === source));
-      currentSource = source;
-      // hide assessment buttons in Clues mode
-      const isClues = source === 'clues';
-      document.getElementById('btnNo').style.display = isClues ? 'none' : '';
-      document.getElementById('btnOK').style.display = isClues ? 'none' : '';
-      document.getElementById('btnGreat').style.display = isClues ? 'none' : '';
-      // Note & Undo always available
-      loadSheet();
-    }
+function animateSwipe(direction,callback){
+cardEl.classList.add(`swipe-${direction}`);
+if(currentSource==='clues' && direction==='down'){
+  setTimeout(()=>{current++;showNext();},360);return;
+}
+const emoji={left:'❌',right:'👍',down:'⭐'}[direction]||'';
+flashMessage(emoji);
+setTimeout(()=>{cardEl.className='';callback();current++;showNext();},420);
+}
 
-    tabs.forEach(t => t.addEventListener('click', () => setActiveTab(t.dataset.source)));
+function recordAssessment(value){if(currentSource==='clues') return;if(current>=clues.length) return;clues[current].Assessment=value;saveProgress();history.push(current);current++;updateCounts();showNext();}
+function undoAssessment(){if(history.length===0)return;current=history.pop();saveProgress();showNext();updateCounts();}
+function openNote(){if(clues.length===0)return;noteText.value=clues[current].Note||'';noteOverlay.style.display='block';}
+function closeNote(){noteOverlay.style.display='none';noteText.blur();}
+function saveNote(){if(clues.length===0){closeNote();return;}clues[current].Note=noteText.value.trim();saveProgress();closeNote();}
+function exportCSV(){const out=clues.filter(r=>r && (r.Assessment || (r.Note && r.Note.trim().length>0)));if(out.length===0){alert('No reviewed clues or notes to export.');return;}const data=out.map(r=>({Clue:r.Clue||'',Answer:r.Answer||'',Writer:r.Writer||'',Assessment:r.Assessment||'',Note:r.Note||''}));const csv=Papa.unparse(data,{quotes:true});const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`reviewed_clues_${currentSource}.csv`;link.click();}
+function saveProgress(){try{localStorage.setItem('clueMatchProgress_'+currentSource,JSON.stringify({current,clues}));}catch(e){console.warn('save failed',e);}}
+function resetProgress(){if(!confirm('Reset progress for this source?'))return;localStorage.removeItem('clueMatchProgress_'+currentSource);current=0;clues=[];loadSheet();}
 
-    /* Load CSV safely (won't freeze UI if fails) */
-    function loadSheet() {
-      cardEl.style.display = 'none';
-      clueEl.textContent = 'Loading...';
-      progressCount.textContent = '…';
-      progressBar.style.width = '0%';
-      const url = sheetUrls[currentSource];
-      if (!url) {
-        clues = [];
-        current = 0;
-        updateCounts();
-        updateProgress();
-        showNext();
-        return;
-      }
-      const proxy = 'https://corsproxy.io/?';
-      Papa.parse(proxy + url, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: results => {
-          // Normalize rows into objects with Clue, Answer, Writer, Note, Assessment, Word
-          const rows = (results && results.data) ? results.data.map(r => {
-            return {
-              Clue: r.Clue || r.clue || '',
-              Answer: r.Answer || r.answer || r.Word || r.word || '',
-              Writer: r.Writer || r.writer || r.Author || r.author || '',
-              Note: r.Note || r.note || '',
-              Assessment: r.Assessment || r.assessment || ''
-            };
-          }) : [];
-          clues = rows;
-          const saved = localStorage.getItem('clueMatchProgress_' + currentSource);
-          if (saved) {
-            try {
-              const sd = JSON.parse(saved);
-              if (sd.clues && Array.isArray(sd.clues)) {
-                clues = sd.clues;
-                current = sd.current || 0;
-              } else {
-                current = 0;
-              }
-            } catch(e) { current = 0; }
-          } else {
-            current = 0;
-          }
-          history.length = 0;
-          updateCounts();
-          updateProgress();
-          showNext();
-        },
-        error: err => {
-          // Show error message but allow tab switching
-          console.warn('CSV load failed:', err);
-          clues = [];
-          current = 0;
-          clueEl.textContent = 'Failed to load sheet — check your URL or network.';
-          cardEl.style.display = 'block';
-          updateCounts();
-          updateProgress();
-        }
-      });
-    }
+const mc=new Hammer(document.body);mc.get('swipe').set({direction:Hammer.DIRECTION_ALL});
+mc.on('swipeleft',()=>{if(currentSource!=='clues')animateSwipe('left',()=>recordAssessment('No'));});
+mc.on('swiperight',()=>{if(currentSource!=='clues')animateSwipe('right',()=>recordAssessment('OK'));});
+mc.on('swipedown',()=>{animateSwipe('down',()=>{if(currentSource!=='clues')recordAssessment('Great');});});
 
-    function updateCounts() {
-      counts.No = counts.OK = counts.Great = 0;
-      clues.forEach(c => { if (c.Assessment) counts[c.Assessment] = (counts[c.Assessment]||0) + 1; });
-      assessmentCounts.textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
-    }
+document.addEventListener('DOMContentLoaded',()=>{setActiveTab('members');});
 
-    function updateProgress() {
-      const total = clues.length || 0;
-      const pct = total === 0 ? 0 : Math.round((current / total) * 10000)/100;
-      progressBar.style.width = total === 0 ? '0%' : `${(current/total)*100}%`;
-      progressCount.textContent = `${Math.min(current+1, total)}/${total}`;
-    }
-
-    function showNext() {
-      if (clues.length === 0) {
-        clueEl.textContent = 'No clues loaded.';
-        answerEl.setAttribute('data-answer','');
-        answerEl.textContent = '████████';
-        writerEl.textContent = '';
-        cardEl.style.display = 'block';
-        return;
-      }
-      if (current >= clues.length) {
-        clueEl.textContent = 'All done!';
-        answerEl.setAttribute('data-answer','');
-        answerEl.textContent = '';
-        writerEl.textContent = '';
-        cardEl.style.display = 'block';
-        document.getElementById('buttons').style.display = 'none';
-        progressBar.style.width = '100%';
-        progressCount.textContent = `${clues.length}/${clues.length}`;
-        return;
-      }
-
-      const row = clues[current];
-      // In Clues mode, the sheet supplies a WORD (we stored it in Answer); there is no Clue yet
-      if (currentSource === 'clues') {
-        clueEl.textContent = 'Write a clue for this word:';
-        // show the word in the "answer" slot and reveal it (Sansita)
-        answerEl.classList.add('revealed');
-        answerEl.textContent = row.Answer || '(no word)';
-        answerEl.setAttribute('data-answer', row.Answer || '');
-        writerEl.textContent = row.Writer ? `Source: ${row.Writer}` : '';
-      } else {
-        // Normal appraisal modes: show Clue and mask the Answer
-        clueEl.textContent = row.Clue || '(no clue)';
-        answerEl.setAttribute('data-answer', row.Answer || '');
-        answerEl.classList.remove('revealed');
-        answerEl.textContent = '████████';
-        writerEl.textContent = row.Writer ? `Writer: ${row.Writer}` : '';
-      }
-
-      cardEl.style.display = 'block';
-      cardEl.className = '';
-      void cardEl.offsetWidth;
-      cardEl.classList.add('enter');
-      updateProgress();
-      updateCounts();
-      // ensure buttons visible for normal modes
-      if (currentSource !== 'clues') document.getElementById('buttons').style.display = '';
-    }
-
-    function toggleAnswer(el) {
-      // reveal/hide
-      if (currentSource === 'clues') {
-        // already visible in clues mode — optionally do nothing
-        return;
-      }
-      if (el.classList.contains('revealed')) {
-        el.classList.remove('revealed');
-        el.textContent = '████████';
-      } else {
-        el.classList.add('revealed');
-        el.textContent = el.getAttribute('data-answer') || '';
-      }
-    }
-
-    /* Flash message */
-    const flash = document.createElement('div');
-    flash.id = 'flash';
-    flash.style.position = 'fixed';
-    flash.style.top = '40%';
-    flash.style.left = '50%';
-    flash.style.transform = 'translate(-50%,-50%)';
-    flash.style.fontSize = '3.5rem';
-    flash.style.pointerEvents = 'none';
-    flash.style.opacity = '0';
-    flash.style.transition = 'opacity .35s, transform .35s';
-    document.body.appendChild(flash);
-    function flashMessage(sym) {
-      flash.textContent = sym;
-      flash.style.opacity = '1';
-      flash.style.transform = 'translate(-50%,-50%) scale(1.05)';
-      setTimeout(()=>{ flash.style.opacity='0'; flash.style.transform='translate(-50%,-50%) scale(1)'; }, 650);
-    }
-
-    /* swipe animation helper */
-    function animateSwipe(direction, callback) {
-      // in Clues mode, we don't animate for assessments
-      if (currentSource === 'clues' && (direction === 'left' || direction === 'right' || direction === 'down')) {
-        // do nothing for assessments
-        return;
-      }
-      cardEl.classList.add(`swipe-${direction}`);
-      const emoji = { left: '❌', right: '👍', down: '⭐' }[direction] || '';
-      flashMessage(emoji);
-      setTimeout(()=>{ cardEl.className = ''; callback(); }, 420);
-    }
-
-    /* record assessment, advance */
-    function recordAssessment(value) {
-      if (currentSource === 'clues') return; // no assessments in clues mode
-      if (current >= clues.length) return;
-      clues[current].Assessment = value;
-      // save progress and history
-      saveProgress();
-      history.push(current);
-      current++;
-      updateCounts();
-      showNext();
-    }
-
-    function undoAssessment() {
-      if (history.length === 0) return;
-      current = history.pop();
-      saveProgress();
-      // show the restored item
-      showNext();
-      updateCounts();
-    }
-
-    /* Notes: do not advance on save */
-    function openNote() {
-      if (clues.length === 0) return;
-      noteText.value = clues[current].Note || '';
-      noteOverlay.style.display = 'block';
-      // DO NOT focus automatically (prevents mobile zoom)
-    }
-    function closeNote() {
-      noteOverlay.style.display = 'none';
-      noteText.blur();
-    }
-    function saveNote() {
-      if (clues.length === 0) { closeNote(); return; }
-      clues[current].Note = noteText.value.trim();
-      saveProgress();
-      closeNote();
-      // note does NOT advance the cursor (user will assess or move manually)
-      // In Clues mode the note is intended to be the clue text
-    }
-
-    /* CSV export — include rows that have Assessment OR Note (so clues-mode notes are exported) */
-    function exportCSV() {
-      const out = clues.filter(r => r && (r.Assessment || (r.Note && r.Note.trim().length>0)));
-      if (out.length === 0) {
-        alert('No reviewed clues or notes to export.');
-        return;
-      }
-      // build uniform object list
-      const data = out.map(r => ({
-        Clue: r.Clue || '',
-        Answer: r.Answer || '',
-        Writer: r.Writer || '',
-        Assessment: r.Assessment || '',
-        Note: r.Note || ''
-      }));
-      const csv = Papa.unparse(data, { quotes: true });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `reviewed_clues_${currentSource}.csv`;
-      link.click();
-    }
-
-    /* Save progress to localStorage per source */
-    function saveProgress() {
-      try {
-        const payload = { current, clues };
-        localStorage.setItem('clueMatchProgress_' + currentSource, JSON.stringify(payload));
-      } catch(e) { console.warn('save failed', e); }
-    }
-
-    /* Reset progress for current source */
-    function resetProgress() {
-      if (!confirm('Reset progress for this source?')) return;
-      localStorage.removeItem('clueMatchProgress_' + currentSource);
-      // reset in-memory state and reload
-      current = 0;
-      clues = [];
-      loadSheet();
-    }
-
-    /* Hammer swipes (but disabled for Clues mode) */
-    const mc = new Hammer(document.body);
-    mc.get('swipe').set({ direction: Hammer.DIRECTION_ALL });
-    mc.on('swipeleft', () => animateSwipe('left', ()=> recordAssessment('No')));
-    mc.on('swiperight', () => animateSwipe('right', ()=> recordAssessment('OK')));
-    mc.on('swipedown', () => animateSwipe('down', ()=> recordAssessment('Great')));
-
-    /* Tab initialising + load default */
-    // default already active 'members'
-    document.addEventListener('DOMContentLoaded', () => {
-      // attach click to answer reveal (works already inline)
-      setActiveTab('members');
-    });
-
-    // Expose small helpers to inline onclicks (they're referenced in markup)
-    window.openNote = openNote;
-    window.saveNote = saveNote;
-    window.closeNote = closeNote;
-    window.animateSwipe = animateSwipe;
-    window.recordAssessment = recordAssessment;
-    window.undoAssessment = undoAssessment;
-    window.toggleAnswer = (el) => toggleAnswer(el);
-    window.exportCSV = exportCSV;
-    window.resetProgress = resetProgress;
-  </script>
+window.openNote=openNote;window.saveNote=saveNote;window.closeNote=closeNote;window.animateSwipe=animateSwipe;
+window.recordAssessment=recordAssessment;window.undoAssessment=undoAssessment;window.toggleAnswer=(el)=>toggleAnswer(el);window.exportCSV=exportCSV;
+window.resetProgress=resetProgress;
+</script>
 </body>
 </html>
