@@ -200,10 +200,13 @@ cursor: pointer;
 .emoji-btn {
   cursor: pointer;
   transition: transform 0.15s ease;
+  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000; /* chunky layered shadow */
 }
+
 .emoji-btn:hover,
 .emoji-btn:active {
   transform: scale(1.3);
+  text-shadow: 3px 3px 0 #000, 6px 6px 0 #000; /* bigger chunky shadow on tap */
 }
   
 #resetBtn { left: 50%; background-color: #bb0000; } /* kept your original color */
