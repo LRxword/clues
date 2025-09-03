@@ -283,12 +283,12 @@ cursor: pointer;
 
 <div id="card" style="display:none;"></div>
 
-<div id="buttons" style="display:flex; justify-content:space-between; gap:1rem; width:90vw; max-width:500px; margin-bottom:2rem; font-size:2.5rem;">
-  <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('OK'))">😐</span>
-  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Great'))">⭐</span>
-  <span class="emoji-btn" onclick="openNote()">✏️</span>
-  <span class="emoji-btn" onclick="undoAssessment()">↩️</span>
+<div id="buttons">
+  <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No">❌</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('OK'))" aria-label="OK">😐</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Great'))" aria-label="Great">⭐</span>
+  <span class="emoji-btn" onclick="openNote()" aria-label="Note">✏️</span>
+  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo">↩️</span>
 </div>
 
   
