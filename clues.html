@@ -275,11 +275,11 @@ cursor: pointer;
 <div id="card" style="display:none;"></div>
 
 <div id="buttons">
-<button onclick="animateSwipe('left', () => recordAssessment('No'))">No</button>
-<button onclick="animateSwipe('right', () => recordAssessment('OK'))">OK</button>
-<button onclick="animateSwipe('down', () => recordAssessment('Great'))">Great</button>
-<button onclick="openNote()">Note</button>
-<button onclick="undoAssessment()" id="btnUndo">Undo</button>
+  <button onclick="animateSwipe('left', () => recordAssessment('No'))">❌</button>
+  <button onclick="animateSwipe('right', () => recordAssessment('OK'))">😐</button>
+  <button onclick="animateSwipe('down', () => recordAssessment('Great'))">⭐</button>
+  <button onclick="openNote()">✏️</button>
+  <button onclick="undoAssessment()" id="btnUndo">↩️</button>
 </div>
 
 <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
