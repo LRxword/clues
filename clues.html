@@ -389,7 +389,7 @@ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer');
 }
 }
 
-function flashMessage(direction){ const emojiMap={right:"👍",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
+function flashMessage(direction){ const emojiMap={right:"😐",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
 
 function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
 
