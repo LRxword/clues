@@ -279,7 +279,7 @@ cursor: pointer;
 <div class="tab" data-source="clue">Clue</div>
 </div>
 
-<div id="assessmentCounts">No: 0 | OK: 0 | Great: 0</div>
+<div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
 <div id="flashMessage"></div>
@@ -288,8 +288,8 @@ cursor: pointer;
 
 <div id="buttons">
   <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('OK'))" aria-label="Workshop">🛠️</span>
-  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Great'))" aria-label="Perfect">⭐</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop">🔧</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Perfect'))" aria-label="Perfect">⭐</span>
   <span class="emoji-btn" onclick="openNote()" aria-label="Note">✏️</span>
   <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo">↩️</span>
 </div>
@@ -299,7 +299,7 @@ cursor: pointer;
 <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
 <div id="noteOverlay">
-<textarea id="noteText" placeholder="Write your note here..."></textarea>
+<textarea id="noteText" placeholder="Write here..."></textarea>
 <button onclick="saveNote()">OK</button>
 </div>
 
@@ -307,7 +307,7 @@ cursor: pointer;
 let clues = [];
 let current = 0;
 const history = [];
-const counts = { No:0, OK:0, Great:0 };
+const counts = { No:0, Workshop:0, Perfect:0 };
 const card = document.getElementById("card");
 const flash = document.getElementById("flashMessage");
 const progressBar = document.getElementById("progressBar");
@@ -350,9 +350,9 @@ error: err => alert("Error loading sheet: " + err.message)
 }
 
 function updateCounts() {
-counts.No=counts.OK=counts.Great=0;
+counts.No=counts.Workshop=counts.Perfect=0;
 clues.forEach(c=>{if(c.Assessment){counts[c.Assessment]++;}});
-assessmentCounts.textContent = `No: ${counts.No} | OK: ${counts.OK} | Great: ${counts.Great}`;
+assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
 
 function updateProgress() {
@@ -392,7 +392,7 @@ el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer');
 }
 }
 
-function flashMessage(direction){ const emojiMap={right:"⚒️",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
+function flashMessage(direction){ const emojiMap={right:"🔧",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
 
 function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
 
@@ -452,8 +452,8 @@ document.getElementById("buttons").style.display="flex";
 const mc=new Hammer(document.body);
 mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
 mc.on("swipeleft",()=>animateSwipe("left",()=>recordAssessment("No")));
-mc.on("swiperight",()=>animateSwipe("right",()=>recordAssessment("OK")));
-mc.on("swipedown",()=>animateSwipe("down",()=>recordAssessment("Great")));
+mc.on("swiperight",()=>animateSwipe("right",()=>recordAssessment("Workshop")));
+mc.on("swipedown",()=>animateSwipe("down",()=>recordAssessment("Perfect")));
 
 window.onload=loadSheet;
 </script>
