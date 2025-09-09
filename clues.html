@@ -11,272 +11,266 @@
 <style>
 /* Base */
 body {
-margin: 0;
-font-family: 'Montserrat', sans-serif;
-background: #cce7ff;
-min-height: 100vh;
-overflow-x: hidden;
-display: flex;
-flex-direction: column;
-align-items: center;
-padding: 2rem 1rem 7rem;
-color: white;
-user-select: none;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background: #cce7ff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 7rem;
+  color: white;
+  user-select: none;
 }
 
-/* Title: Sansita Black italics, clean black */
-h1 {
-font-family: 'Sansita Black';
-font-style: italic;
-font-weight: 900;
-font-size: 4rem;
-margin-bottom: 0.5rem;
-color: #000;               /* ensure black like parent app */
-text-shadow: none;         /* cleaner per reference */
+/* Title: image-only wrapper */
+#title-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+h1 { /* still here if you ever revert to text title */
+  font-family: 'Sansita Black';
+  font-style: italic;
+  font-weight: 900;
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  color: #000;
+  text-shadow: none;
 }
 
 /* Tabs row */
 #tabs {
-display: flex;
-gap: 1rem;
-margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 /* Tab buttons with black depth */
 .tab {
-padding: 0.6rem 1.2rem;
-font-size: 1rem;
-font-weight: 700;
-border-radius: 16px;
-cursor: pointer;
-background: #fff;
-color: #000;
-border: 2px solid #000;            /* bold edge */
-box-shadow: 4px 4px 0 #000;        /* chunky black shadow for depth */
-transition: transform 0.1s ease-in-out, background 0.2s ease;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 16px;
+  cursor: pointer;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  transition: transform 0.1s ease-in-out, background 0.2s ease;
 }
 .tab:hover { transform: translateY(-1px); }
-.tab:active {
-transform: translate(2px, 2px);
-box-shadow: 2px 2px 0 #000;
-}
-.tab.active {
-  background: #fff2b3; /* yellow background */
-  color: #000;         /* black text */
-}
+.tab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+.tab.active { background: #fff2b3; color: #000; }
 
 /* Counts & progress */
 #assessmentCounts {
-font-size: 1.2rem;
-margin-bottom: 0.5rem;
-color: #222;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #222;
 }
 
 #progress {
-width: 90vw;
-max-width: 500px;
-height: 6px;
-background: rgba(255,255,255,0.3);
-border-radius: 3px;
-margin-bottom: 0.3rem;
-overflow: hidden;
+  width: 90vw;
+  max-width: 500px;
+  height: 6px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
 }
 
 #progressBar {
-height: 100%;
-width: 0%;
-background: #ffe6e6;
-transition: width 0.3s ease;
+  height: 100%;
+  width: 0%;
+  background: #ffe6e6;
+  transition: width 0.3s ease;
 }
 
 #progressCount {
-font-size: 1.4rem;
-margin-bottom: 1.5rem;
-text-align: center;
-color: #222;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #222;
 }
 
 /* Clue pane: bold 3D border and shadow */
 #card {
-background: white;
-color: #222;
-border: 3px solid #000;           /* thicker black border */
-border-radius: 20px;              /* slightly tighter radius */
-padding: 2rem 1.5rem;
-font-size: 2.2rem;
-line-height: 1.4;
-box-shadow: 6px 6px 0 #000;       /* offset black “pop” shadow */
-text-align: center;
-  width: 90vw;
-  max-width: 480px;
+  background: white;
+  color: #222;
+  border: 3px solid #000;
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  font-size: 2.2rem;
+  line-height: 1.4;
+  box-shadow: 6px 6px 0 #000;
+  text-align: center;
   width: 80vw;
   max-width: 380px;
-margin-bottom: 2rem;
-transition: transform 0.4s ease, opacity 0.4s ease;
+  margin-bottom: 2rem;
+  transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
-/* Swipe animations (unchanged) */
+/* Swipe animations */
 #card.enter { transform: translateX(0) scale(1); opacity: 1; }
 #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
 #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
 #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
-/* Answer (kept as you had it – Montserrat). 
-  If you want the answer in Sansita too, swap font-family below to 'Sansita Black'. */
+/* Answer block */
 #answer {
-cursor: pointer;
-padding: 0 0.4em;
-border-radius: 6px;
-font-size: 2.2rem;
-font-weight: 700;
-display: inline-block;
-background: black;
-color: black;
-letter-spacing: 0.2em;
-font-family: 'Montserrat', sans-serif;
-transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+  padding: 0 0.4em;
+  border-radius: 6px;
+  font-size: 2.2rem;
+  font-weight: 700;
+  display: inline-block;
+  background: black;
+  color: black;
+  letter-spacing: 0.2em;
+  font-family: 'Montserrat', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
-#answer.revealed {
-background: none;
-color: #222;
-letter-spacing: normal;
-}
+#answer.revealed { background: none; color: #222; letter-spacing: normal; }
 
-#title-wrapper {
-  display: flex;
-  justify-content: center; /* centers horizontally */
-  margin-bottom: 0.5rem;
-}
-  
 #writer {
-font-size: 1.3rem;
-color: #555;
-margin-top: 1rem;
+  font-size: 1.3rem;
+  color: #555;
+  margin-top: 1rem;
 }
 
-/* Buttons row */
+/* Emoji controls */
 #buttons {
   display: flex;
-  justify-content: center;   /* center them instead of spreading apart */
-  gap: 2.2rem;               /* smaller gap between emojis */
-  width: auto;               /* don’t stretch to full width */
+  justify-content: center;
+  gap: 2.2rem;
+  width: auto;
   margin-bottom: 2rem;
-  font-size: 2.5rem;         /* emoji size */
+  font-size: 2.5rem;
 }
-
-/* Buttons (unchanged logic; visual kept compatible with new style) */
-button {
-flex: 1;
-padding: 0.6rem 0.8rem;
-font-size: 1rem;
-font-weight: 600;
-border-radius: 16px;
-border: 2px solid black;
-background: white;
-color: black;
-cursor: pointer;
-box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
-transition: background 0.3s;
-}
-#btnUndo { background: #ddd; }
-
-/* Bottom fixed buttons */
-#exportBtn, #resetBtn {
-position: fixed;
-bottom: 0;
-left: 0;
-width: 50%;
-max-width: 250px;
-padding: 1rem;
-font-size: 1.1rem;
-border-radius: 0;
-background-color: #444;
-color: white;
-text-align: center;
-border: none;
-cursor: pointer;
-}
-
 .emoji-btn {
   cursor: pointer;
   transition: transform 0.15s ease;
-  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000; /* chunky layered shadow */
+  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000;
 }
-
 .emoji-btn:hover,
 .emoji-btn:active {
   transform: scale(1.3);
-  text-shadow: 3px 3px 0 #000, 6px 6px 0 #000; /* bigger chunky shadow on tap */
+  text-shadow: 3px 3px 0 #000, 6px 6px 0 #000;
 }
-  
-#resetBtn { left: 50%; background-color: #bb0000; } /* kept your original color */
+
+/* Bottom fixed buttons */
+#exportBtn, #resetBtn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  max-width: 250px;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 0;
+  background-color: #444;
+  color: white;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+#resetBtn { left: 50%; background-color: #bb0000; }
 
 /* Flash emoji */
 #flashMessage {
-position: fixed;
-top: 40%;
-left: 50%;
-transform: translate(-50%, -50%) scale(0.8);
-font-size: 5rem;
-opacity: 0;
-transition: opacity 0.4s ease, transform 0.4s ease;
-pointer-events: none;
-z-index: 999;
-text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: 5rem;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  z-index: 999;
+  text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
 }
 #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 
 /* Note overlay */
 #noteOverlay {
-display: none;
-position: fixed;
-top: 10%;
-left: 50%;
-transform: translateX(-50%);
-width: 75%;
-max-width: 300px;
-background: white;
-color: #222;
-border-radius: 20px;
-padding: 1.5rem;
-box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-z-index: 1000;
+  display: none;
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  max-width: 300px;
+  background: white;
+  color: #222;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 1000;
 }
 #noteText {
-width: 85%;
-height: 120px;
-font-size: 2.2rem;
-padding: 1rem;
-border-radius: 12px;
-border: 2px solid #222;
-resize: none;
-background: white;
-color: #222;
-line-height: 1.4;
+  width: 85%;
+  height: 120px;
+  font-size: 2.2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #222;
+  resize: none;
+  background: white;
+  color: #222;
+  line-height: 1.4;
 }
 #noteOverlay button {
-margin-top: 1rem;
-padding: 0.6rem 1rem;
-font-weight: 700;
-border-radius: 16px;
-border: none;
-background: #222;
-color: white;
-cursor: pointer;
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  border-radius: 16px;
+  border: none;
+  background: #222;
+  color: white;
+  cursor: pointer;
+}
+
+/* --- Clue tab extras (only render when currentSource==='clue') --- */
+#clueMeta {
+  margin-top: 0.6rem;
+  font-size: 1rem;
+  color: #444;
+}
+#anagramRow {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  font-size: 1.4rem;
+  color: #111;
+}
+#anagramText {
+  padding: .2rem .5rem;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 #000;
+  min-width: 8ch;
+  display: inline-block;
+}
+#shuffleBtn {
+  font-size: 1.8rem;
 }
 </style>
 </head>
 <body>
 <div id="title-wrapper">
-  <img src="https://i.imgur.com/3cTvC1h.png" 
-       alt="cluesmash logo" 
-       style="height:40px; width:auto;">
+  <img src="https://i.imgur.com/3cTvC1h.png" alt="cluesmash logo" style="height:40px; width:auto;">
 </div>
+
 <div id="tabs">
-<div class="tab active" data-source="members">Members</div>
-<div class="tab" data-source="setters">Setters</div>
-<div class="tab" data-source="book">Book</div>
-<div class="tab" data-source="clue">Clue</div>
+  <div class="tab active" data-source="members">Members</div>
+  <div class="tab" data-source="setters">Setters</div>
+  <div class="tab" data-source="book">Book</div>
+  <div class="tab" data-source="clue">Clue</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
@@ -286,28 +280,33 @@ cursor: pointer;
 
 <div id="card" style="display:none;"></div>
 
+<!-- Emoji controls -->
 <div id="buttons">
-  <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop">🔧</span>
-  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Perfect'))" aria-label="Perfect">⭐</span>
-  <span class="emoji-btn" onclick="openNote()" aria-label="Note">✏️</span>
-  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo">↩️</span>
+  <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No" role="button" tabindex="0">❌</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop" role="button" tabindex="0">🔧</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Perfect'))" aria-label="Perfect" role="button" tabindex="0">⭐</span>
+  <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
+  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
 </div>
 
-  
 <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
 <div id="noteOverlay">
-<textarea id="noteText" placeholder="Write here..."></textarea>
-<button onclick="saveNote()">OK</button>
+  <textarea id="noteText" placeholder="Write here..."></textarea>
+  <button onclick="saveNote()">OK</button>
 </div>
 
 <script>
+/* -------- Haptics (mobile-friendly) -------- */
+function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* Data & state */
 let clues = [];
 let current = 0;
 const history = [];
 const counts = { No:0, Workshop:0, Perfect:0 };
+
 const card = document.getElementById("card");
 const flash = document.getElementById("flashMessage");
 const progressBar = document.getElementById("progressBar");
@@ -316,145 +315,237 @@ const assessmentCounts = document.getElementById("assessmentCounts");
 let currentSource = "members";
 
 const sheetUrls = {
-members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
-setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
-book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
+  members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
+  setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
+  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
+  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
 };
 
-function loadSheet() {
-const proxy = "https://corsproxy.io/?";
-Papa.parse(proxy + sheetUrls[currentSource], {
-download: true,
-header: true,
-complete: results => {
-if(currentSource==="clue") {
-clues = results.data
-.filter(r => Object.values(r)[0])
-.map(r => ({ Word: Object.values(r)[0] }));
-} else {
-clues = results.data.filter(r => r.Clue && r.Answer && r.Writer);
+/* Utils for CLUE mode */
+function shuffleWord(w){
+  const a = (w||'').split('');
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.join('');
 }
-const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
-if(saved){
-try{ const savedData=JSON.parse(saved); clues=savedData.clues; current=savedData.current||0; } 
-catch(e){ console.warn("Failed to load saved progress."); }
-} else { current=0; }
-history.length = 0;
-updateCounts();
-updateProgress();
-showNext();
-},
-error: err => alert("Error loading sheet: " + err.message)
-});
+function wordStats(w){
+  if(!w) return '';
+  const up = w.toUpperCase();
+  const vowels = (up.match(/[AEIOU]/g)||[]).length;
+  const cons = up.length - vowels;
+  return `${up[0]}…${up[up.length-1]} • V:${vowels} C:${cons}`;
 }
 
+/* Load CSV */
+function loadSheet() {
+  const proxy = "https://corsproxy.io/?";
+  Papa.parse(proxy + sheetUrls[currentSource], {
+    download: true,
+    header: true,
+    complete: results => {
+      if(currentSource==="clue") {
+        clues = results.data
+          .map(r => Object.values(r)[0])
+          .filter(Boolean)
+          .map(word => ({ Word: (word||'').trim() }));
+      } else {
+        clues = results.data
+          .map(r => ({
+            Clue: (r.Clue||'').trim(),
+            Answer: (r.Answer||'').trim(),
+            Writer: (r.Writer||'').trim(),
+            Assessment: r.Assessment || '',
+            Note: r.Note || ''
+          }))
+          .filter(r => r.Clue && r.Answer && r.Writer);
+      }
+      const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
+      if(saved){
+        try{ const savedData=JSON.parse(saved); clues=savedData.clues; current=savedData.current||0; } 
+        catch(e){ console.warn("Failed to load saved progress."); }
+      } else { current=0; }
+      history.length = 0;
+      updateCounts();
+      updateProgress();
+      showNext();
+    },
+    error: err => alert("Error loading sheet: " + err.message)
+  });
+}
+
+/* UI updates */
 function updateCounts() {
-counts.No=counts.Workshop=counts.Perfect=0;
-clues.forEach(c=>{if(c.Assessment){counts[c.Assessment]++;}});
-assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
+  counts.No=counts.Workshop=counts.Perfect=0;
+  clues.forEach(c=>{ if(c.Assessment){ counts[c.Assessment] = (counts[c.Assessment]||0)+1; }});
+  assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
 
 function updateProgress() {
-const percent = (current / clues.length) * 100;
-progressBar.style.width = percent + "%";
-progressCount.textContent = `${current + 1}/${clues.length}`;
+  const percent = (clues.length ? (current / clues.length) * 100 : 0);
+  progressBar.style.width = percent + "%";
+  progressCount.textContent = clues.length ? `${current + 1}/${clues.length}` : `0/0`;
 }
 
 function showNext() {
-if(current>=clues.length){ 
-card.innerHTML="<strong>All done!</strong>"; 
-card.style.display="block"; 
-document.getElementById("buttons").style.display="none"; 
-progressBar.style.width="100%"; 
-progressCount.textContent=`${clues.length}/${clues.length}`; 
-return;
-}
-const clue = clues[current];
-if(currentSource==="clue") {
-card.innerHTML=`<p><strong>Clue:</strong> ${clue.Word}</p>`;
-} else {
-card.innerHTML=`
-     <p>${clue.Clue}</p>
-     <p><strong>Answer:</strong> <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span></p>
-     <p id="writer">${clue.Writer}</p>
-   `;
-}
-card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
-updateProgress();
+  if(current>=clues.length){
+    card.innerHTML="<strong>All done!</strong>";
+    card.style.display="block";
+    document.getElementById("buttons").style.display="none";
+    progressBar.style.width="100%";
+    progressCount.textContent=`${clues.length}/${clues.length}`;
+    return;
+  }
+  const clue = clues[current];
+  if(currentSource==="clue"){
+    const w = (clue.Word||'').toUpperCase();
+    const stats = wordStats(w);
+    const shuffled = shuffleWord(w);
+    card.innerHTML = `
+      <p style="margin:0 0 .4rem 0; font-weight:700;">${w}</p>
+      <div id="clueMeta">${stats}</div>
+      <div id="anagramRow">
+        <span id="anagramText">${shuffled}</span>
+        <span id="shuffleBtn" class="emoji-btn" aria-label="Shuffle" role="button" tabindex="0">🔀</span>
+      </div>
+    `;
+    // wire shuffle
+    const shuffleBtn = card.querySelector('#shuffleBtn');
+    const anaText = card.querySelector('#anagramText');
+    shuffleBtn.onclick = () => { buzz(15); anaText.textContent = shuffleWord(w); };
+    shuffleBtn.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); shuffleBtn.click(); } });
+  } else {
+    card.innerHTML = `
+      <p>${clue.Clue}</p>
+      <p><strong>Answer:</strong> 
+        <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
+      </p>
+      <p id="writer">${clue.Writer}</p>
+    `;
+  }
+  card.style.display="block"; 
+  card.className='';
+  void card.offsetWidth; 
+  card.classList.add('enter');
+  updateProgress();
 }
 
+/* Answer reveal */
 function toggleAnswer(el){
-if(el.classList.contains('revealed')){ 
-el.classList.remove('revealed'); el.textContent="████████";
-} else { 
-el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer'); 
+  buzz(10);
+  if(el.classList.contains('revealed')){
+    el.classList.remove('revealed'); el.textContent="████████";
+  } else {
+    el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer');
+  }
 }
+
+/* Flash + swipe */
+function flashMessage(direction){
+  const emojiMap={ right:"🔧", left:"❌", down:"⭐" };
+  flash.textContent=emojiMap[direction]||"";
+  flash.classList.add("show");
+  setTimeout(()=>flash.classList.remove("show"),600);
 }
 
-function flashMessage(direction){ const emojiMap={right:"🔧",left:"❌",down:"⭐"}; flash.textContent=emojiMap[direction]||""; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
+function animateSwipe(direction,callback){
+  buzz(20);
+  card.classList.add(`swipe-${direction}`);
+  flashMessage(direction);
+  setTimeout(()=>{ card.className=''; callback(); },400);
+}
 
-function animateSwipe(direction,callback){ card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
-
+/* Record / undo */
 function recordAssessment(value){
-if(current>=clues.length) return;
-clues[current].Assessment=value;
-saveProgress();
-history.push(current);
-current++;
-updateCounts();
-showNext();
+  if(current>=clues.length) return;
+  clues[current].Assessment=value;
+  saveProgress();
+  history.push(current);
+  current++;
+  updateCounts();
+  showNext();
 }
 
 function undoAssessment(){
-if(history.length===0) return;
-current=history.pop();
-saveProgress();
-showNext();
-updateCounts();
+  if(history.length===0) return;
+  buzz(20);
+  current=history.pop();
+  saveProgress();
+  showNext();
+  updateCounts();
 }
 
+/* Export */
 function exportCSV(){
-const filtered = clues.filter(c=>c.Assessment);
-const csv = Papa.unparse(filtered.map(c=>({ Clue:c.Clue||"", Answer:c.Answer||"", Writer:c.Writer||"", Assessment:c.Assessment, Note:c.Note||"" })));
-const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); const link=document.createElement("a");
-link.href=URL.createObjectURL(blob); link.download="reviewed_clues.csv"; link.click();
+  buzz(15);
+  const filtered = clues.filter(c=>c.Assessment);
+  const csv = Papa.unparse(filtered.map(c=>({
+    Clue: c.Clue || c.Word || "",
+    Answer: c.Answer || "",
+    Writer: c.Writer || "",
+    Assessment: c.Assessment || "",
+    Note: c.Note || ""
+  })));
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); 
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob); 
+  link.download="reviewed_clues.csv"; 
+  link.click();
 }
 
-function saveProgress(){ localStorage.setItem("clueMatchProgress_"+currentSource,JSON.stringify({current,clues})); }
-function resetProgress(){ if(confirm("Are you sure you want to reset all progress?")){ localStorage.removeItem("clueMatchProgress_"+currentSource); location.reload(); } }
+/* Persistence */
+function saveProgress(){ 
+  localStorage.setItem("clueMatchProgress_"+currentSource, JSON.stringify({current, clues}));
+}
+function resetProgress(){ 
+  if(confirm("Are you sure you want to reset all progress?")){
+    buzz(25);
+    localStorage.removeItem("clueMatchProgress_"+currentSource); 
+    location.reload(); 
+  }
+}
 
+/* Notes */
 function openNote(){ 
-const noteOverlay=document.getElementById("noteOverlay"); 
-const noteText=document.getElementById("noteText"); 
-const clue=clues[current]; 
-noteText.value=clue.Note||""; 
-noteOverlay.style.display="block"; 
+  buzz(10);
+  const noteOverlay=document.getElementById("noteOverlay"); 
+  const noteText=document.getElementById("noteText"); 
+  const clue=clues[current]; 
+  noteText.value=(clue && clue.Note) || ""; 
+  noteOverlay.style.display="block"; 
 }
-
 function saveNote(){
-const noteText=document.getElementById("noteText"); 
-clues[current].Note=noteText.value; 
-document.getElementById("noteOverlay").style.display="none"; 
-saveProgress();
+  buzz(15);
+  const noteText=document.getElementById("noteText"); 
+  if(clues[current]) clues[current].Note=noteText.value; 
+  document.getElementById("noteOverlay").style.display="none"; 
+  saveProgress();
 }
 
+/* Tabs */
 document.querySelectorAll(".tab").forEach(tab=>{
-tab.addEventListener("click",()=>{
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-tab.classList.add("active");
-currentSource=tab.dataset.source;
-loadSheet();
-document.getElementById("buttons").style.display="flex";
-});
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    currentSource=tab.dataset.source;
+    loadSheet();
+    document.getElementById("buttons").style.display="flex";
+  });
 });
 
+/* Swipe gestures */
 const mc=new Hammer(document.body);
 mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
 mc.on("swipeleft",()=>animateSwipe("left",()=>recordAssessment("No")));
 mc.on("swiperight",()=>animateSwipe("right",()=>recordAssessment("Workshop")));
 mc.on("swipedown",()=>animateSwipe("down",()=>recordAssessment("Perfect")));
 
+/* Keyboard accessibility for emoji */
+document.querySelectorAll('.emoji-btn').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
+  });
+});
+
+/* Init */
 window.onload=loadSheet;
 </script>
 </body>
