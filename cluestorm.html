@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 <style>
+/* Base */
 body {
   margin: 0;
   font-family: 'Montserrat', sans-serif;
@@ -32,14 +33,14 @@ body {
 }
 #app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
 
-/* Title image */
+/* Title image (match cluesmash) */
 #title-wrapper {
   display: flex;
   justify-content: center;
   margin-bottom: 0.5rem;
 }
 
-/* Card */
+/* Card (word panel) — same feel as cluesmash */
 #card {
   background: #fff;
   color: #222;
@@ -59,13 +60,16 @@ body {
 #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
 #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
 #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-#card.swipe-up { transform: translateY(-150%) rotate(-15deg); opacity: 0; }
 
-/* Emoji controls */
+/* Word text */
+#wordText { margin: 0; font-weight: 700; font-size: 2.2rem; }
+
+/* Emoji controls (exact same style as cluesmash) */
 #buttons {
   display: flex;
   justify-content: center;
   gap: 2.2rem;
+  width: auto;
   margin-bottom: 2rem;
   font-size: 2.5rem;
 }
@@ -80,11 +84,15 @@ body {
   text-shadow: 3px 3px 0 #000, 6px 6px 0 #000;
 }
 
-/* Progress */
+/* Progress + counts (mirrors cluesmash positioning) */
+#assessmentCounts {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+}
 #progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin-bottom: .4rem; }
 #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
-#progressCount { font-size: 1.2rem; color: #222; margin-bottom: .6rem; text-align:center; }
-#statusCounts { font-size: 1.05rem; color: #222; margin-bottom: .4rem; }
+#progressCount { font-size: 1.2rem; color: #222; margin-bottom: .8rem; text-align:center; }
 
 /* Flash emoji */
 #flashMessage {
@@ -107,9 +115,9 @@ body {
   z-index: 1000;
 }
 #noteText {
-  width: 100%; height: 130px; font-size: 1.2rem;
+  width: 100%; height: 130px; font-size: 2rem;
   padding: .8rem; border-radius: 12px; border: 2px solid #000;
-  resize: none; background: #fff; color: #222;
+  resize: none; background: #fff; color: #222; line-height: 1.4;
 }
 #noteOverlay button {
   margin-top: 1rem; padding: 0.6rem 1rem;
@@ -134,19 +142,20 @@ body {
   <img src="https://i.imgur.com/3cTvC1h.png" alt="cluestorm logo" style="height:40px; width:auto;">
 </div>
 
+<div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount">0/0</div>
-<div id="statusCounts">Saved: 0 | Skipped: 0</div>
 <div id="flashMessage"></div>
 
 <div id="card" style="display:none;"></div>
 
+<!-- Emoji controls — EXACTLY like cluesmash and same functions -->
 <div id="buttons">
-  <span class="emoji-btn" id="saveBtn" aria-label="Save">✅</span>
-  <span class="emoji-btn" id="noteBtn" aria-label="Note">📝</span>
-  <span class="emoji-btn" id="skipBtn" aria-label="Skip">⏭️</span>
-  <span class="emoji-btn" id="shuffleBtn" aria-label="Shuffle">🔀</span>
-  <span class="emoji-btn" id="undoBtn" aria-label="Undo">↩️</span>
+  <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No" role="button" tabindex="0">❌</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop" role="button" tabindex="0">🔧</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Perfect'))" aria-label="Perfect" role="button" tabindex="0">⭐</span>
+  <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
+  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
 </div>
 
 <button id="exportBtn">Download Drafts CSV</button>
@@ -158,96 +167,169 @@ body {
 </div>
 
 <script>
+/* Config: 8-letter words CSV */
 const WORDS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv";
 
+/* Haptics */
 function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 
-let items = []; let current = 0; const history=[];
-const card=document.getElementById('card');
-const progressBar=document.getElementById('progressBar');
-const progressCount=document.getElementById('progressCount');
-const statusCounts=document.getElementById('statusCounts');
-const flash=document.getElementById('flashMessage');
+/* State */
+let items = []; // [{Word, Note, Assessment, Timestamp}]
+let current = 0;
+const history = []; // stack of indices for undo
 
-function updateProgress(){
-  const total=items.length;
-  progressBar.style.width= total? ((current/total)*100)+'%':'0%';
-  progressCount.textContent= total? `${current+1}/${total}`:'0/0';
-  const saved=items.filter(x=>x.Status==='Saved').length;
-  const skipped=items.filter(x=>x.Status==='Skipped').length;
-  statusCounts.textContent=`Saved: ${saved} | Skipped: ${skipped}`;
+/* DOM */
+const card = document.getElementById('card');
+const flash = document.getElementById('flashMessage');
+const progressBar = document.getElementById('progressBar');
+const progressCount = document.getElementById('progressCount');
+const assessmentCounts = document.getElementById('assessmentCounts');
+
+/* Load words */
+function loadWords(){
+  const proxy = "https://corsproxy.io/?";
+  card.style.display='block'; card.textContent='Loading…';
+  Papa.parse(proxy + WORDS_CSV, {
+    download: true,
+    header: true,
+    complete: res => {
+      items = res.data
+        .map(r => Object.values(r)[0])
+        .filter(Boolean)
+        .map(w => ({ Word: String(w).trim(), Note: '', Assessment: '', Timestamp: '' }));
+      const saved = localStorage.getItem('cluestormProgress_v2');
+      if(saved){
+        try { const s = JSON.parse(saved); if(Array.isArray(s.items) && s.items.length){ items = s.items; current = s.current || 0; } } catch(e){}
+      }
+      showWord();
+      updateCounts();
+    },
+    error: err => alert("Error loading words: " + err.message)
+  });
 }
+
+/* UI */
 function showWord(){
-  if(current>=items.length){ card.innerHTML="<strong>All done!</strong>"; card.style.display='block'; return; }
-  const w=(items[current].Word||'').toUpperCase();
-  card.innerHTML=`<p>${w}</p>`;
-  card.style.display='block'; card.className=''; void card.offsetWidth; card.classList.add('enter');
+  if(current >= items.length){
+    card.innerHTML = "<strong>All done!</strong>";
+    card.style.display = "block";
+    progressBar.style.width = "100%";
+    progressCount.textContent = `${items.length}/${items.length}`;
+    document.getElementById('buttons').style.display = 'none';
+    return;
+  }
+  const w = (items[current].Word||'').toUpperCase();
+  card.innerHTML = `<p id="wordText">${w}</p>`;
+  card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
 }
+function updateProgress(){
+  const total = items.length || 0;
+  progressBar.style.width = total ? ((current/total)*100)+'%' : '0%';
+  progressCount.textContent = total ? `${current+1}/${total}` : '0/0';
+}
+function updateCounts(){
+  let no=0, wk=0, pf=0;
+  items.forEach(x => {
+    if(x.Assessment==='No') no++;
+    else if(x.Assessment==='Workshop') wk++;
+    else if(x.Assessment==='Perfect') pf++;
+  });
+  assessmentCounts.textContent = `No: ${no} | Workshop: ${wk} | Perfect: ${pf}`;
+}
 
-function saveDraft(){
-  items[current].Draft=items[current].Draft||''; 
-  items[current].Status='Saved'; 
-  items[current].Timestamp=new Date().toISOString();
+/* Flash and swipe */
+function flashMessage(direction){
+  const emojiMap={ right:"🔧", left:"❌", down:"⭐" };
+  flash.textContent = emojiMap[direction] || "";
+  flash.classList.add("show");
+  setTimeout(()=>flash.classList.remove("show"), 600);
+}
+function animateSwipe(direction, callback){
+  buzz(20);
+  card.classList.add(`swipe-${direction}`);
+  flashMessage(direction);
+  setTimeout(()=>{ card.className=''; callback(); }, 400);
+}
+
+/* Actions (same API names as cluesmash) */
+function recordAssessment(value){
+  if(current >= items.length) return;
+  items[current].Assessment = value;
+  items[current].Timestamp = new Date().toISOString();
   history.push(current);
-  buzz(); flashMessage("✅"); current++; showWord(); persist();
+  persist();
+  current++;
+  updateCounts();
+  showWord();
 }
-function skipWord(){
-  items[current].Status='Skipped';
-  items[current].Timestamp=new Date().toISOString();
-  history.push(current);
-  buzz(); flashMessage("⏭️"); current++; showWord(); persist();
+function undoAssessment(){
+  if(history.length===0) return;
+  buzz(20);
+  const idx = history.pop();
+  if(items[idx]) { items[idx].Assessment = ''; items[idx].Timestamp = ''; }
+  current = idx;
+  persist();
+  updateCounts();
+  showWord();
 }
-function undo(){ if(history.length===0)return; current=history.pop(); showWord(); buzz(); flashMessage("↩️"); }
-function openNote(){ document.getElementById('noteOverlay').style.display='block'; document.getElementById('noteText').value=items[current].Draft||''; }
-function saveNote(){ items[current].Draft=document.getElementById('noteText').value; document.getElementById('noteOverlay').style.display='none'; persist(); }
-function openShuffle(){ 
-  const w=(items[current]?.Word||'').toUpperCase();
-  if(w) window.open(`https://new.wordsmith.org/anagram/anagram.cgi?anagram=${encodeURIComponent(w)}&t=500&a=n`,'_blank');
+function openNote(){
+  buzz(10);
+  const noteOverlay = document.getElementById('noteOverlay');
+  const noteText = document.getElementById('noteText');
+  noteText.value = items[current]?.Note || '';
+  noteOverlay.style.display = 'block';
+}
+function saveNote(){
+  buzz(15);
+  const noteText = document.getElementById('noteText');
+  if(items[current]) items[current].Note = noteText.value;
+  document.getElementById('noteOverlay').style.display = 'none';
+  persist();
 }
 
-function flashMessage(emoji){ flash.textContent=emoji||''; flash.classList.add("show"); setTimeout(()=>flash.classList.remove("show"),600); }
-function animateSwipe(direction,callback){ buzz(); card.classList.add(`swipe-${direction}`); flashMessage(direction); setTimeout(()=>{ card.className=''; callback(); },400); }
-
-function persist(){ localStorage.setItem('cluestormProgress', JSON.stringify({current,items})); }
-
+/* Export only assessed rows */
 function exportCSV(){
-  const drafted=items.filter(x=>x.Status==='Saved');
-  if(drafted.length===0){ alert('No saved drafts yet.'); return; }
-  const csv=Papa.unparse(drafted.map(x=>({Word:x.Word||'',Draft:x.Draft||'',Status:x.Status||'',Timestamp:x.Timestamp||''})));
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='cluestorm_drafts.csv'; a.click();
+  buzz(15);
+  const assessed = items.filter(x => x.Assessment);
+  if(assessed.length===0){ alert('No assessed items yet.'); return; }
+  const csv = Papa.unparse(assessed.map(x => ({
+    Word: x.Word || '',
+    Assessment: x.Assessment || '',
+    Note: x.Note || '',
+    Timestamp: x.Timestamp || ''
+  })));
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cluestorm_assessed.csv';
+  a.click();
 }
-function resetAll(){ if(confirm('Reset all progress?')){ localStorage.removeItem('cluestormProgress'); location.reload(); } }
 
-function loadWords(){
-  const proxy="https://corsproxy.io/?"; card.style.display='block'; card.textContent='Loading…';
-  Papa.parse(proxy+WORDS_CSV,{download:true,header:true,complete:res=>{
-    items=res.data.map(r=>Object.values(r)[0]).filter(Boolean).map(w=>({Word:String(w).trim(),Draft:'',Status:'',Timestamp:''}));
-    const saved=localStorage.getItem('cluestormProgress'); if(saved){ try{ const savedData=JSON.parse(saved); if(savedData?.items?.length){ items=savedData.items; current=savedData.current||0; } }catch(e){} }
-    showWord();
-  }});
-}
+/* Storage */
+function persist(){ localStorage.setItem('cluestormProgress_v2', JSON.stringify({ current, items })); }
+function resetAll(){ if(confirm('Reset all cluestorm progress?')){ localStorage.removeItem('cluestormProgress_v2'); location.reload(); } }
 
-document.getElementById('saveBtn').onclick=()=>animateSwipe('right',saveDraft);
-document.getElementById('skipBtn').onclick=()=>animateSwipe('left',skipWord);
-document.getElementById('noteBtn').onclick=()=>animateSwipe('down',openNote);
-document.getElementById('shuffleBtn').onclick=()=>animateSwipe('up',openShuffle);
-document.getElementById('undoBtn').onclick=undo;
+/* Wire emoji buttons EXACTLY like cluesmash */
+document.getElementById('exportBtn').onclick = exportCSV;
+document.getElementById('resetBtn').onclick = resetAll;
+document.getElementById('overlaySave').onclick = saveNote;
 
-document.getElementById('overlaySave').onclick=saveNote;
-document.getElementById('exportBtn').onclick=exportCSV;
-document.getElementById('resetBtn').onclick=resetAll;
+/* Swipes (directions match the emojis above) */
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swipeleft",  ()=> animateSwipe('left',  ()=> recordAssessment('No')));
+mc.on("swiperight", ()=> animateSwipe('right', ()=> recordAssessment('Workshop')));
+mc.on("swipedown",  ()=> animateSwipe('down',  ()=> recordAssessment('Perfect')));
 
-/* Swipes */
-const mc=new Hammer(document.body);
-mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
-mc.on("swiperight",()=>animateSwipe('right',saveDraft));
-mc.on("swipeleft",()=>animateSwipe('left',skipWord));
-mc.on("swipedown",()=>animateSwipe('down',openNote));
-mc.on("swipeup",()=>animateSwipe('up',openShuffle));
+/* Keyboard accessible emoji (Enter/Space triggers click) */
+document.querySelectorAll('.emoji-btn').forEach(el=>{
+  el.addEventListener('keydown', e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
+  });
+});
 
-window.onload=loadWords;
+window.onload = loadWords;
 </script>
 </body>
 </html>
