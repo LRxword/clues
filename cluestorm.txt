@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>cluestorm</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sansita+Black:ital,wght@1,900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<style>
+/* Base */
+:root { --blk:#000; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background: #cce7ff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 7rem;
+  color: #111;
+  user-select: none;
+}
+
+/* Title */
+h1 {
+  font-family: 'Sansita Black', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 3.2rem;
+  margin: 0 0 .6rem 0;
+  color: #000;
+}
+
+/* Switch pill (to cluesmash) */
+#app-switch{
+  position: fixed;
+  top: 10px; right: 10px;
+  background: #fff; color: #000;
+  border: 2px solid #000; border-radius: 999px;
+  padding: .45rem .7rem; font-size: .9rem; text-decoration: none;
+  box-shadow: 4px 4px 0 #000; z-index: 1200;
+}
+#app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+
+/* Card (word panel) */
+#card {
+  background: #fff;
+  color: #222;
+  border: 3px solid var(--blk);
+  border-radius: 20px;
+  padding: 1.6rem 1.2rem;
+  font-size: 2.2rem;
+  line-height: 1.3;
+  box-shadow: 6px 6px 0 var(--blk);
+  text-align: center;
+  width: 80vw;
+  max-width: 380px;
+  margin: .6rem 0 1.6rem 0;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+#card.enter { transform: translateX(0) scale(1); opacity: 1; }
+#card.swipe-left { transform: translateX(-150%) rotate(-10deg); opacity: 0; }
+#card.swipe-right { transform: translateX(150%) rotate(10deg); opacity: 0; }
+#card.swipe-down { transform: translateY(150%) rotate(6deg); opacity: 0; }
+
+/* Word + helpers */
+#wordText { margin: 0 0 .35rem 0; font-weight: 700; font-size: 2.2rem; }
+#meta {
+  margin-top: .2rem; font-size: 1rem; color: #444;
+}
+#anagramRow {
+  margin-top: .7rem; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.4rem; color: #111;
+}
+#anagramText {
+  padding: .2rem .5rem; background: #fff;
+  border: 2px solid #000; border-radius: 12px; min-width: 8ch;
+  box-shadow: 3px 3px 0 #000; display: inline-block;
+}
+
+/* Emoji control row */
+#buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1.3rem;
+  width: auto;
+  margin: .2rem 0 1.4rem 0;
+  font-size: 2.6rem;
+}
+.emoji-btn {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000;
+}
+.emoji-btn:hover,
+.emoji-btn:active {
+  transform: scale(1.2);
+  text-shadow: 3px 3px 0 #000, 6px 6px 0 #000;
+}
+
+/* Progress + counters */
+#progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin-bottom: .4rem; }
+#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
+#progressCount { font-size: 1.2rem; color: #222; margin-bottom: .6rem; text-align:center; }
+#statusCounts { font-size: 1.05rem; color: #222; margin-bottom: .4rem; }
+
+/* Flash emoji */
+#flashMessage {
+  position: fixed; top: 40%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: 5rem; opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none; z-index: 999;
+  text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+}
+#flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+
+/* Note overlay */
+#noteOverlay {
+  display: none; position: fixed; top: 10%; left: 50%;
+  transform: translateX(-50%);
+  width: 75%; max-width: 320px; background: #fff; color: #222;
+  border-radius: 20px; padding: 1.2rem;
+  border: 2px solid #000; box-shadow: 6px 6px 0 #000;
+  z-index: 1000;
+}
+#noteOverlay h2 {
+  margin: 0 0 .6rem 0; font-size: 1.1rem; font-weight: 700; color:#111; text-align:center;
+}
+#noteText {
+  width: 100%; height: 130px; font-size: 1.2rem;
+  padding: .8rem; border-radius: 12px; border: 2px solid #000;
+  resize: none; background: #fff; color: #222; line-height: 1.4;
+}
+#noteOverlay .row {
+  display:flex; gap:.6rem; justify-content:center; margin-top:.8rem;
+}
+.overlay-btn {
+  padding: .55rem .9rem; font-weight: 700; border-radius: 14px; border: 2px solid #000;
+  background: #fff; color: #000; box-shadow: 3px 3px 0 #000; cursor: pointer;
+}
+.overlay-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+
+/* Bottom fixed buttons */
+#exportBtn, #resetBtn {
+  position: fixed; bottom: 0; left: 0;
+  width: 50%; max-width: 250px; padding: 1rem; font-size: 1.05rem;
+  border-radius: 0; background-color: #444; color: white; text-align: center; border: none; cursor: pointer;
+}
+#resetBtn { left: 50%; background-color: #bb0000; }
+</style>
+</head>
+<body>
+<h1>cluestorm</h1>
+<a id="app-switch" href="cluesmash.html" aria-label="Switch to Appraise">Appraise ↗</a>
+
+<div id="progress"><div id="progressBar"></div></div>
+<div id="progressCount">0/0</div>
+<div id="statusCounts">Saved: 0 | Skipped: 0</div>
+<div id="flashMessage"></div>
+
+<div id="card" style="display:none;"></div>
+
+<!-- Emoji controls -->
+<div id="buttons">
+  <span class="emoji-btn" id="saveBtn" aria-label="Save" role="button" tabindex="0">✅</span>
+  <span class="emoji-btn" id="noteBtn" aria-label="Note" role="button" tabindex="0">📝</span>
+  <span class="emoji-btn" id="skipBtn" aria-label="Skip" role="button" tabindex="0">⏭️</span>
+  <span class="emoji-btn" id="shuffleBtn" aria-label="Shuffle" role="button" tabindex="0">🔀</span>
+  <span class="emoji-btn" id="undoBtn" aria-label="Undo" role="button" tabindex="0">↩️</span>
+</div>
+
+<button id="exportBtn">Download Drafts CSV</button>
+<button id="resetBtn">Reset Progress</button>
+
+<!-- Note overlay -->
+<div id="noteOverlay" aria-modal="true" role="dialog">
+  <h2>Draft clue</h2>
+  <textarea id="noteText" placeholder="Write your clue draft..."></textarea>
+  <div class="row">
+    <button class="overlay-btn" id="overlayCancel">Cancel</button>
+    <button class="overlay-btn" id="overlaySave">Save</button>
+  </div>
+</div>
+
+<script>
+/* --- Config --- */
+const WORDS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv";
+
+/* --- Haptics --- */
+function buzz(ms=18){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* --- State --- */
+let items = [];      // [{Word, Draft, Status, Timestamp}]
+let current = 0;
+const history = [];  // stack of {index, snapshot}
+
+/* --- DOM --- */
+const card = document.getElementById('card');
+const progressBar = document.getElementById('progressBar');
+const progressCount = document.getElementById('progressCount');
+const statusCounts = document.getElementById('statusCounts');
+const flash = document.getElementById('flashMessage');
+
+const noteOverlay = document.getElementById('noteOverlay');
+const noteText = document.getElementById('noteText');
+const overlayCancel = document.getElementById('overlayCancel');
+const overlaySave = document.getElementById('overlaySave');
+
+/* --- Helpers --- */
+function shuffleWord(w){
+  const a=(w||'').split(''); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.join('');
+}
+function wordStats(w){
+  if(!w) return ''; const up=w.toUpperCase(); const v=(up.match(/[AEIOU]/g)||[]).length; return `${up[0]}…${up[up.length-1]} • V:${v} C:${up.length-v}`;
+}
+function flashMessage(emoji){ flash.textContent=emoji||''; flash.classList.add('show'); setTimeout(()=>flash.classList.remove('show'),600); }
+
+function updateProgress(){
+  const total = items.length;
+  progressBar.style.width = total ? ((current/total)*100)+'%' : '0%';
+  progressCount.textContent = total ? `${current+1}/${total}` : `0/0`;
+  const saved = items.filter(x=>x.Status==='Saved').length;
+  const skipped = items.filter(x=>x.Status==='Skipped').length;
+  statusCounts.textContent = `Saved: ${saved} | Skipped: ${skipped}`;
+}
+
+function showWord(){
+  if(current>=items.length){
+    card.innerHTML = "<strong>All done!</strong>";
+    card.style.display = 'block';
+    return;
+  }
+  const w = (items[current].Word||'').toUpperCase();
+  const stats = wordStats(w);
+  const shuffled = shuffleWord(w);
+  card.innerHTML = `
+    <p id="wordText">${w}</p>
+    <div id="meta">${stats}</div>
+    <div id="anagramRow">
+      <span id="anagramText">${shuffled}</span>
+      <span id="inlineShuffle" class="emoji-btn" aria-label="Shuffle" role="button" tabindex="0">🔀</span>
+    </div>
+  `;
+  card.style.display='block';
+  card.className=''; void card.offsetWidth; card.classList.add('enter');
+
+  // wire inline shuffle
+  const inlineShuffle = document.getElementById('inlineShuffle');
+  const anaText = document.getElementById('anagramText');
+  inlineShuffle.onclick = ()=>{ buzz(12); anaText.textContent = shuffleWord(w); };
+  inlineShuffle.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inlineShuffle.click(); } });
+
+  updateProgress();
+}
+
+function saveSnapshot(){
+  const snapshot = JSON.parse(JSON.stringify(items[current]));
+  history.push({ index: current, snapshot });
+}
+
+function saveDraft(){
+  // If overlay open, take its text; otherwise keep current Draft
+  const draft = noteText.value || items[current].Draft || '';
+  saveSnapshot();
+  items[current].Draft = draft;
+  items[current].Status = 'Saved';
+  items[current].Timestamp = new Date().toISOString();
+  persist();
+  buzz(18); flashMessage('✅');
+  current = Math.min(current+1, items.length); 
+  showWord();
+}
+
+function skipWord(){
+  saveSnapshot();
+  items[current].Status = 'Skipped';
+  items[current].Timestamp = new Date().toISOString();
+  persist();
+  buzz(18); flashMessage('⏭️');
+  current = Math.min(current+1, items.length);
+  showWord();
+}
+
+function undo(){
+  if(history.length===0) return;
+  const {index, snapshot} = history.pop();
+  items[index] = snapshot;
+  current = index;
+  persist();
+  buzz(20); flashMessage('↩️');
+  showWord();
+}
+
+function openNote(){
+  noteText.value = (items[current].Draft||'');
+  noteOverlay.style.display = 'block';
+  // Do not auto-focus to avoid iOS zoom weirdness; user will tap if needed.
+}
+function closeNote(){ noteOverlay.style.display='none'; }
+
+/* --- Storage --- */
+function persist(){ 
+  localStorage.setItem('cluestormProgress', JSON.stringify({ current, items }));
+  updateProgress();
+}
+function loadProgress(){
+  const raw = localStorage.getItem('cluestormProgress');
+  if(!raw) return false;
+  try {
+    const { current: c, items: its } = JSON.parse(raw);
+    if(Array.isArray(its)){
+      items = its; current = c||0; return true;
+    }
+  } catch(e){}
+  return false;
+}
+
+/* --- CSV --- */
+function exportCSV(){
+  buzz(18);
+  const drafted = items.filter(x=>x.Status==='Saved');
+  if(drafted.length===0){ alert('No saved drafts yet.'); return; }
+  const csv = Papa.unparse(drafted.map(x=>({
+    Word: x.Word||'',
+    Draft: x.Draft||'',
+    Status: x.Status||'',
+    Timestamp: x.Timestamp||''
+  })));
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cluestorm_drafts.csv';
+  a.click();
+}
+
+function resetAll(){
+  if(confirm('Reset all cluestorm progress?')){
+    buzz(25);
+    localStorage.removeItem('cluestormProgress');
+    location.reload();
+  }
+}
+
+/* --- Load words --- */
+function loadWords(){
+  const proxy = "https://corsproxy.io/?";
+  Papa.parse(proxy + WORDS_CSV, {
+    download: true,
+    header: true,
+    complete: res => {
+      // Take first column values as words
+      items = res.data
+        .map(r => Object.values(r)[0])
+        .filter(Boolean)
+        .map(w => ({ Word: String(w).trim(), Draft: '', Status: '', Timestamp: '' }));
+      if(!loadProgress()){ current = 0; }
+      showWord();
+    },
+    error: err => alert("Error loading words: " + err.message)
+  });
+}
+
+/* --- Wire controls --- */
+document.getElementById('saveBtn').onclick = saveDraft;
+document.getElementById('skipBtn').onclick = skipWord;
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('noteBtn').onclick = ()=>{ buzz(10); openNote(); };
+document.getElementById('shuffleBtn').onclick = ()=>{
+  buzz(12);
+  const w = (items[current]?.Word||'').toUpperCase();
+  const el = document.getElementById('anagramText');
+  if(el) el.textContent = shuffleWord(w);
+};
+
+overlayCancel.onclick = ()=>{ buzz(10); closeNote(); };
+overlaySave.onclick = ()=>{ saveDraft(); closeNote(); };
+
+document.getElementById('exportBtn').onclick = exportCSV;
+document.getElementById('resetBtn').onclick = resetAll;
+
+/* Keyboard accessibility for emoji */
+document.querySelectorAll('.emoji-btn').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
+  });
+});
+
+/* Init */
+window.onload = loadWords;
+
+/* Optional: if hosted alongside cluesmash.html, the switch pill already points there */
+</script>
+</body>
+</html>
