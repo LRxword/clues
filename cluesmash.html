@@ -24,13 +24,24 @@ body {
   user-select: none;
 }
 
+/* Top-right pill to cluestorm */
+#app-switch{
+  position: fixed;
+  top: 10px; right: 10px;
+  background: #fff; color: #000;
+  border: 2px solid #000; border-radius: 999px;
+  padding: .45rem .7rem; font-size: .9rem; text-decoration: none;
+  box-shadow: 4px 4px 0 #000; z-index: 1200;
+}
+#app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+
 /* Title: image-only wrapper */
 #title-wrapper {
   display: flex;
   justify-content: center;
   margin-bottom: 0.5rem;
 }
-h1 { /* still here if you ever revert to text title */
+h1 { /* kept in case you revert to text */
   font-family: 'Sansita Black';
   font-style: italic;
   font-weight: 900;
@@ -70,7 +81,6 @@ h1 { /* still here if you ever revert to text title */
   margin-bottom: 0.5rem;
   color: #222;
 }
-
 #progress {
   width: 90vw;
   max-width: 500px;
@@ -80,14 +90,7 @@ h1 { /* still here if you ever revert to text title */
   margin-bottom: 0.3rem;
   overflow: hidden;
 }
-
-#progressBar {
-  height: 100%;
-  width: 0%;
-  background: #ffe6e6;
-  transition: width 0.3s ease;
-}
-
+#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
 #progressCount {
   font-size: 1.4rem;
   margin-bottom: 1.5rem;
@@ -95,7 +98,7 @@ h1 { /* still here if you ever revert to text title */
   color: #222;
 }
 
-/* Clue pane: bold 3D border and shadow */
+/* Clue pane */
 #card {
   background: white;
   color: #222;
@@ -231,37 +234,11 @@ h1 { /* still here if you ever revert to text title */
   color: white;
   cursor: pointer;
 }
-
-/* --- Clue tab extras (only render when currentSource==='clue') --- */
-#clueMeta {
-  margin-top: 0.6rem;
-  font-size: 1rem;
-  color: #444;
-}
-#anagramRow {
-  margin-top: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .6rem;
-  font-size: 1.4rem;
-  color: #111;
-}
-#anagramText {
-  padding: .2rem .5rem;
-  background: #fff;
-  border: 2px solid #000;
-  border-radius: 12px;
-  box-shadow: 3px 3px 0 #000;
-  min-width: 8ch;
-  display: inline-block;
-}
-#shuffleBtn {
-  font-size: 1.8rem;
-}
 </style>
 </head>
 <body>
+<a id="app-switch" href="cluestorm.html" aria-label="Switch to cluestorm">Write ↗</a>
+
 <div id="title-wrapper">
   <img src="https://i.imgur.com/3cTvC1h.png" alt="cluesmash logo" style="height:40px; width:auto;">
 </div>
@@ -270,7 +247,6 @@ h1 { /* still here if you ever revert to text title */
   <div class="tab active" data-source="members">Members</div>
   <div class="tab" data-source="setters">Setters</div>
   <div class="tab" data-source="book">Book</div>
-  <div class="tab" data-source="clue">Clue</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
@@ -298,7 +274,7 @@ h1 { /* still here if you ever revert to text title */
 </div>
 
 <script>
-/* -------- Haptics (mobile-friendly) -------- */
+/* Haptics */
 function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 
 /* Data & state */
@@ -314,55 +290,37 @@ const progressCount = document.getElementById("progressCount");
 const assessmentCounts = document.getElementById("assessmentCounts");
 let currentSource = "members";
 
+/* Sources (only Members/Setters/Book here) */
 const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
   setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
-  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv",
-  clue: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv"
+  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
 };
-
-/* Utils for CLUE mode */
-function shuffleWord(w){
-  const a = (w||'').split('');
-  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-  return a.join('');
-}
-function wordStats(w){
-  if(!w) return '';
-  const up = w.toUpperCase();
-  const vowels = (up.match(/[AEIOU]/g)||[]).length;
-  const cons = up.length - vowels;
-  return `${up[0]}…${up[up.length-1]} • V:${vowels} C:${cons}`;
-}
 
 /* Load CSV */
 function loadSheet() {
   const proxy = "https://corsproxy.io/?";
+  card.style.display='block'; card.textContent='Loading…';
   Papa.parse(proxy + sheetUrls[currentSource], {
     download: true,
     header: true,
     complete: results => {
-      if(currentSource==="clue") {
-        clues = results.data
-          .map(r => Object.values(r)[0])
-          .filter(Boolean)
-          .map(word => ({ Word: (word||'').trim() }));
-      } else {
-        clues = results.data
-          .map(r => ({
-            Clue: (r.Clue||'').trim(),
-            Answer: (r.Answer||'').trim(),
-            Writer: (r.Writer||'').trim(),
-            Assessment: r.Assessment || '',
-            Note: r.Note || ''
-          }))
-          .filter(r => r.Clue && r.Answer && r.Writer);
-      }
+      clues = results.data
+        .map(r => ({
+          Clue: (r.Clue||'').trim(),
+          Answer: (r.Answer||'').trim(),
+          Writer: (r.Writer||'').trim(),
+          Assessment: r.Assessment || '',
+          Note: r.Note || ''
+        }))
+        .filter(r => r.Clue && r.Answer && r.Writer);
+
       const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
       if(saved){
-        try{ const savedData=JSON.parse(saved); clues=savedData.clues; current=savedData.current||0; } 
+        try{ const savedData=JSON.parse(saved); if(savedData?.clues?.length){ clues=savedData.clues; current=savedData.current||0; } }
         catch(e){ console.warn("Failed to load saved progress."); }
       } else { current=0; }
+
       history.length = 0;
       updateCounts();
       updateProgress();
@@ -378,13 +336,11 @@ function updateCounts() {
   clues.forEach(c=>{ if(c.Assessment){ counts[c.Assessment] = (counts[c.Assessment]||0)+1; }});
   assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
-
 function updateProgress() {
   const percent = (clues.length ? (current / clues.length) * 100 : 0);
   progressBar.style.width = percent + "%";
   progressCount.textContent = clues.length ? `${current + 1}/${clues.length}` : `0/0`;
 }
-
 function showNext() {
   if(current>=clues.length){
     card.innerHTML="<strong>All done!</strong>";
@@ -395,36 +351,15 @@ function showNext() {
     return;
   }
   const clue = clues[current];
-  if(currentSource==="clue"){
-    const w = (clue.Word||'').toUpperCase();
-    const stats = wordStats(w);
-    const shuffled = shuffleWord(w);
-    card.innerHTML = `
-      <p style="margin:0 0 .4rem 0; font-weight:700;">${w}</p>
-      <div id="clueMeta">${stats}</div>
-      <div id="anagramRow">
-        <span id="anagramText">${shuffled}</span>
-        <span id="shuffleBtn" class="emoji-btn" aria-label="Shuffle" role="button" tabindex="0">🔀</span>
-      </div>
-    `;
-    // wire shuffle
-    const shuffleBtn = card.querySelector('#shuffleBtn');
-    const anaText = card.querySelector('#anagramText');
-    shuffleBtn.onclick = () => { buzz(15); anaText.textContent = shuffleWord(w); };
-    shuffleBtn.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); shuffleBtn.click(); } });
-  } else {
-    card.innerHTML = `
-      <p>${clue.Clue}</p>
-      <p><strong>Answer:</strong> 
-        <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
-      </p>
-      <p id="writer">${clue.Writer}</p>
-    `;
-  }
+  card.innerHTML = `
+    <p>${clue.Clue}</p>
+    <p><strong>Answer:</strong> 
+      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
+    </p>
+    <p id="writer">${clue.Writer}</p>
+  `;
   card.style.display="block"; 
-  card.className='';
-  void card.offsetWidth; 
-  card.classList.add('enter');
+  card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
 }
 
@@ -445,7 +380,6 @@ function flashMessage(direction){
   flash.classList.add("show");
   setTimeout(()=>flash.classList.remove("show"),600);
 }
-
 function animateSwipe(direction,callback){
   buzz(20);
   card.classList.add(`swipe-${direction}`);
@@ -463,7 +397,6 @@ function recordAssessment(value){
   updateCounts();
   showNext();
 }
-
 function undoAssessment(){
   if(history.length===0) return;
   buzz(20);
@@ -478,7 +411,7 @@ function exportCSV(){
   buzz(15);
   const filtered = clues.filter(c=>c.Assessment);
   const csv = Papa.unparse(filtered.map(c=>({
-    Clue: c.Clue || c.Word || "",
+    Clue: c.Clue || "",
     Answer: c.Answer || "",
     Writer: c.Writer || "",
     Assessment: c.Assessment || "",
