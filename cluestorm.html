@@ -7,10 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Sansita+Black:ital,wght@1,900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 <style>
-/* Base */
 :root { --blk:#000; }
 * { box-sizing: border-box; }
+
+/* Base */
 body {
   margin: 0;
   font-family: 'Montserrat', sans-serif;
@@ -66,38 +68,42 @@ h1 {
 #card.swipe-left { transform: translateX(-150%) rotate(-10deg); opacity: 0; }
 #card.swipe-right { transform: translateX(150%) rotate(10deg); opacity: 0; }
 #card.swipe-down { transform: translateY(150%) rotate(6deg); opacity: 0; }
+#card.swipe-up { transform: translateY(-150%) rotate(-6deg); opacity: 0; }
 
 /* Word + helpers */
 #wordText { margin: 0 0 .35rem 0; font-weight: 700; font-size: 2.2rem; }
-#meta {
-  margin-top: .2rem; font-size: 1rem; color: #444;
-}
+#meta { margin-top: .2rem; font-size: 1rem; color: #444; }
 #anagramRow {
-  margin-top: .7rem; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.4rem; color: #111;
+  margin-top: .7rem; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.4rem; color: #111; flex-wrap: wrap;
 }
 #anagramText {
   padding: .2rem .5rem; background: #fff;
   border: 2px solid #000; border-radius: 12px; min-width: 8ch;
   box-shadow: 3px 3px 0 #000; display: inline-block;
 }
+#anaLink {
+  padding: .25rem .6rem; font-size: .9rem; background: #fff; color: #000; text-decoration: none;
+  border: 2px solid #000; border-radius: 999px; box-shadow: 3px 3px 0 #000;
+}
+#anaLink:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
 
-/* Emoji control row */
+/* Emoji control row (match cluesmash style) */
 #buttons {
   display: flex;
   justify-content: center;
-  gap: 1.3rem;
+  gap: 2.2rem;            /* same spacing as cluesmash */
   width: auto;
-  margin: .2rem 0 1.4rem 0;
-  font-size: 2.6rem;
+  margin: .6rem 0 1.4rem 0;
+  font-size: 2.5rem;      /* same size as cluesmash */
 }
 .emoji-btn {
   cursor: pointer;
   transition: transform 0.15s ease;
-  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000;
+  text-shadow: 2px 2px 0 #000, 4px 4px 0 #000; /* chunky depth */
 }
 .emoji-btn:hover,
 .emoji-btn:active {
-  transform: scale(1.2);
+  transform: scale(1.3);
   text-shadow: 3px 3px 0 #000, 6px 6px 0 #000;
 }
 
@@ -164,7 +170,7 @@ h1 {
 
 <div id="card" style="display:none;"></div>
 
-<!-- Emoji controls -->
+<!-- Emoji controls (kept like cluesmash but mapped to cluestorm actions) -->
 <div id="buttons">
   <span class="emoji-btn" id="saveBtn" aria-label="Save" role="button" tabindex="0">✅</span>
   <span class="emoji-btn" id="noteBtn" aria-label="Note" role="button" tabindex="0">📝</span>
@@ -212,14 +218,19 @@ const overlaySave = document.getElementById('overlaySave');
 
 /* --- Helpers --- */
 function shuffleWord(w){
-  const a=(w||'').split(''); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  const a=(w||'').split('');
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a.join('');
 }
 function wordStats(w){
-  if(!w) return ''; const up=w.toUpperCase(); const v=(up.match(/[AEIOU]/g)||[]).length; return `${up[0]}…${up[up.length-1]} • V:${v} C:${up.length-v}`;
+  if(!w) return '';
+  const up=w.toUpperCase();
+  const v=(up.match(/[AEIOU]/g)||[]).length;
+  return `${up[0]}…${up[up.length-1]} • V:${v} C:${up.length-v}`;
 }
 function flashMessage(emoji){ flash.textContent=emoji||''; flash.classList.add('show'); setTimeout(()=>flash.classList.remove('show'),600); }
 
+/* --- Progress / render --- */
 function updateProgress(){
   const total = items.length;
   progressBar.style.width = total ? ((current/total)*100)+'%' : '0%';
@@ -233,17 +244,20 @@ function showWord(){
   if(current>=items.length){
     card.innerHTML = "<strong>All done!</strong>";
     card.style.display = 'block';
+    document.getElementById("buttons").style.display="none";
     return;
   }
   const w = (items[current].Word||'').toUpperCase();
   const stats = wordStats(w);
   const shuffled = shuffleWord(w);
+  const wordsmithUrl = `https://new.wordsmith.org/anagram/anagram.cgi?anagram=${encodeURIComponent(w)}&t=500&a=n`;
   card.innerHTML = `
     <p id="wordText">${w}</p>
     <div id="meta">${stats}</div>
     <div id="anagramRow">
       <span id="anagramText">${shuffled}</span>
       <span id="inlineShuffle" class="emoji-btn" aria-label="Shuffle" role="button" tabindex="0">🔀</span>
+      <a id="anaLink" href="${wordsmithUrl}" target="_blank" rel="noopener">Anagrams ↗</a>
     </div>
   `;
   card.style.display='block';
@@ -264,7 +278,6 @@ function saveSnapshot(){
 }
 
 function saveDraft(){
-  // If overlay open, take its text; otherwise keep current Draft
   const draft = noteText.value || items[current].Draft || '';
   saveSnapshot();
   items[current].Draft = draft;
@@ -299,7 +312,7 @@ function undo(){
 function openNote(){
   noteText.value = (items[current].Draft||'');
   noteOverlay.style.display = 'block';
-  // Do not auto-focus to avoid iOS zoom weirdness; user will tap if needed.
+  // no auto-focus to avoid iOS zoom
 }
 function closeNote(){ noteOverlay.style.display='none'; }
 
@@ -349,11 +362,11 @@ function resetAll(){
 /* --- Load words --- */
 function loadWords(){
   const proxy = "https://corsproxy.io/?";
+  card.style.display='block'; card.textContent='Loading…';
   Papa.parse(proxy + WORDS_CSV, {
     download: true,
     header: true,
     complete: res => {
-      // Take first column values as words
       items = res.data
         .map(r => Object.values(r)[0])
         .filter(Boolean)
@@ -365,7 +378,7 @@ function loadWords(){
   });
 }
 
-/* --- Wire controls --- */
+/* --- Wire emoji buttons --- */
 document.getElementById('saveBtn').onclick = saveDraft;
 document.getElementById('skipBtn').onclick = skipWord;
 document.getElementById('undoBtn').onclick = undo;
@@ -390,10 +403,25 @@ document.querySelectorAll('.emoji-btn').forEach(el=>{
   });
 });
 
+/* --- Swipe gestures (HammerJS) --- */
+/*  swipe right  → Save
+    swipe left   → Skip
+    swipe down   → Shuffle
+    swipe up     → Note
+*/
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swiperight", ()=> { saveDraft(); });
+mc.on("swipeleft",  ()=> { skipWord(); });
+mc.on("swipedown",  ()=> {
+  const w = (items[current]?.Word||'').toUpperCase();
+  const el = document.getElementById('anagramText');
+  if(el){ buzz(12); el.textContent = shuffleWord(w); flashMessage('🔀'); }
+});
+mc.on("swipeup",    ()=> { buzz(12); openNote(); flashMessage('📝'); });
+
 /* Init */
 window.onload = loadWords;
-
-/* Optional: if hosted alongside cluesmash.html, the switch pill already points there */
 </script>
 </body>
 </html>
