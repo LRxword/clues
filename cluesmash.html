@@ -290,17 +290,15 @@ const progressCount = document.getElementById("progressCount");
 const assessmentCounts = document.getElementById("assessmentCounts");
 let currentSource = "members";
 
-/* Sources (only Members/Setters/Book here) */
+/* Sources */
 const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
   setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
 };
 
-<script>
-// --- helpers (add these) ---
+/* ---------- helpers (plain functions, NOT another <script>) ---------- */
 function normalizeRow(r, cols){
-  // cols = {clue, answer, writer}
   const g = (obj, key) => (obj && key && obj[key]) || '';
   return {
     Clue:   String(g(r, cols.clue)).trim(),
@@ -310,12 +308,9 @@ function normalizeRow(r, cols){
     Note: String(r?.Note || '').trim()
   };
 }
-function makeKey(r){
-  // stable key per row
-  return [r.Clue, r.Answer, r.Writer].join('§');
-}
+function makeKey(r){ return [r.Clue, r.Answer, r.Writer].join('§'); }
 
-// --- replace your loadSheet() with this ---
+/* ---------- robust loader (replaces old loadSheet) ---------- */
 function loadSheet() {
   const proxy = "https://corsproxy.io/?";
   card.style.display = 'block';
@@ -327,23 +322,19 @@ function loadSheet() {
     complete: results => {
       const rows = Array.isArray(results.data) ? results.data : [];
 
-      // 1) Detect column names robustly (case/space tolerant)
-      let clueCol='', answerCol='', writerCol='';
+      // Detect header names (case/space tolerant)
+      let clueCol='Clue', answerCol='Answer', writerCol='Writer';
       if (rows.length) {
-        const first = rows[0] || {};
-        const keys = Object.keys(first);
-        // build map of lowercased/trimmed keys -> original keys
+        const keys = Object.keys(rows[0] || {});
         const keyMap = {};
         keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
-
-        // try common variants
         const pick = (cands) => cands.find(c => keyMap[c.toLowerCase().replace(/\s+/g,'')]) || '';
-        clueCol   = keyMap[pick(['clue','clues','cluetext'])]    || 'Clue';
-        answerCol = keyMap[pick(['answer','answers','solution'])]|| 'Answer';
-        writerCol = keyMap[pick(['writer','setter','author'])]   || 'Writer';
+        clueCol   = keyMap[pick(['clue','clues','cluetext'])]    || clueCol;
+        answerCol = keyMap[pick(['answer','answers','solution'])]|| answerCol;
+        writerCol = keyMap[pick(['writer','setter','author'])]   || writerCol;
       }
 
-      // 2) Fresh parse (normalize + filter)
+      // Fresh parse
       let fresh = rows
         .map(r => normalizeRow(r, {clue: clueCol, answer: answerCol, writer: writerCol}))
         .filter(r => r.Clue && r.Answer && r.Writer);
@@ -354,14 +345,13 @@ function loadSheet() {
         return;
       }
 
-      // 3) Read saved (but don’t replace fresh)
+      // Read saved (if any) but only merge Assessment/Note
       let saved = null;
       try {
         const raw = localStorage.getItem("clueMatchProgress_" + currentSource);
         if (raw) saved = JSON.parse(raw);
       } catch {}
 
-      // 4) Merge saved Assessment/Note by key (Clue+Answer+Writer)
       const savedMap = new Map();
       if (saved && Array.isArray(saved.clues)) {
         for (const s of saved.clues) {
@@ -371,18 +361,13 @@ function loadSheet() {
       }
       fresh = fresh.map(r => {
         const sv = savedMap.get(makeKey(r));
-        if (sv) {
-          r.Assessment = sv.Assessment || r.Assessment;
-          r.Note = sv.Note || r.Note;
-        }
+        if (sv) { r.Assessment = sv.Assessment || r.Assessment; r.Note = sv.Note || r.Note; }
         return r;
       });
 
-      // 5) Restore a safe index; otherwise start at 0
       const idx = (saved && Number.isInteger(saved.current)) ? saved.current : 0;
       current = (idx >= 0 && idx < fresh.length) ? idx : 0;
 
-      // 6) Commit & render
       clues = fresh;
       history.length = 0;
       updateCounts();
@@ -392,8 +377,6 @@ function loadSheet() {
     error: err => alert("Error loading sheet: " + err.message)
   });
 }
-</script>
-
 
 /* UI updates */
 function updateCounts() {
