@@ -237,8 +237,6 @@ h1 { /* kept in case you revert to text */
 </style>
 </head>
 <body>
-<a id="app-switch" href="cluestorm.html" aria-label="Switch to cluestorm">Write ↗</a>
-
 <div id="title-wrapper">
   <img src="https://i.imgur.com/3cTvC1h.png" alt="cluesmash logo" style="height:40px; width:auto;">
 </div>
@@ -247,6 +245,7 @@ h1 { /* kept in case you revert to text */
   <div class="tab active" data-source="members">Members</div>
   <div class="tab" data-source="setters">Setters</div>
   <div class="tab" data-source="book">Book</div>
+  <div class="tab" data-link="cluestorm.html">Write</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
@@ -504,11 +503,20 @@ function saveNote(){
 /* Tabs */
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",()=>{
+    const link = tab.dataset.link;
+    if (link) {
+      // Navigate to cluestorm (write mode)
+      window.location.href = link;           // same tab
+      // window.open(link, "_blank");        // use this instead if you want a new tab
+      return;
+    }
+
+    // Regular data-source tabs
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     tab.classList.add("active");
-    currentSource=tab.dataset.source;
+    currentSource = tab.dataset.source;
     loadSheet();
-    document.getElementById("buttons").style.display="flex";
+    document.getElementById("buttons").style.display = "flex";
   });
 });
 
