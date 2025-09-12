@@ -297,30 +297,93 @@ const sheetUrls = {
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
 };
 
-/* Load CSV */
+<script>
+// --- helpers (add these) ---
+function normalizeRow(r, cols){
+  // cols = {clue, answer, writer}
+  const g = (obj, key) => (obj && key && obj[key]) || '';
+  return {
+    Clue:   String(g(r, cols.clue)).trim(),
+    Answer: String(g(r, cols.answer)).trim(),
+    Writer: String(g(r, cols.writer)).trim(),
+    Assessment: String(r?.Assessment || '').trim(),
+    Note: String(r?.Note || '').trim()
+  };
+}
+function makeKey(r){
+  // stable key per row
+  return [r.Clue, r.Answer, r.Writer].join('§');
+}
+
+// --- replace your loadSheet() with this ---
 function loadSheet() {
   const proxy = "https://corsproxy.io/?";
-  card.style.display='block'; card.textContent='Loading…';
+  card.style.display = 'block';
+  card.textContent = 'Loading…';
+
   Papa.parse(proxy + sheetUrls[currentSource], {
     download: true,
     header: true,
     complete: results => {
-      clues = results.data
-        .map(r => ({
-          Clue: (r.Clue||'').trim(),
-          Answer: (r.Answer||'').trim(),
-          Writer: (r.Writer||'').trim(),
-          Assessment: r.Assessment || '',
-          Note: r.Note || ''
-        }))
+      const rows = Array.isArray(results.data) ? results.data : [];
+
+      // 1) Detect column names robustly (case/space tolerant)
+      let clueCol='', answerCol='', writerCol='';
+      if (rows.length) {
+        const first = rows[0] || {};
+        const keys = Object.keys(first);
+        // build map of lowercased/trimmed keys -> original keys
+        const keyMap = {};
+        keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
+
+        // try common variants
+        const pick = (cands) => cands.find(c => keyMap[c.toLowerCase().replace(/\s+/g,'')]) || '';
+        clueCol   = keyMap[pick(['clue','clues','cluetext'])]    || 'Clue';
+        answerCol = keyMap[pick(['answer','answers','solution'])]|| 'Answer';
+        writerCol = keyMap[pick(['writer','setter','author'])]   || 'Writer';
+      }
+
+      // 2) Fresh parse (normalize + filter)
+      let fresh = rows
+        .map(r => normalizeRow(r, {clue: clueCol, answer: answerCol, writer: writerCol}))
         .filter(r => r.Clue && r.Answer && r.Writer);
 
-      const saved = localStorage.getItem("clueMatchProgress_" + currentSource);
-      if(saved){
-        try{ const savedData=JSON.parse(saved); if(savedData?.clues?.length){ clues=savedData.clues; current=savedData.current||0; } }
-        catch(e){ console.warn("Failed to load saved progress."); }
-      } else { current=0; }
+      if (!fresh.length) {
+        card.textContent = 'No rows found.';
+        clues = []; current = 0; updateCounts(); updateProgress();
+        return;
+      }
 
+      // 3) Read saved (but don’t replace fresh)
+      let saved = null;
+      try {
+        const raw = localStorage.getItem("clueMatchProgress_" + currentSource);
+        if (raw) saved = JSON.parse(raw);
+      } catch {}
+
+      // 4) Merge saved Assessment/Note by key (Clue+Answer+Writer)
+      const savedMap = new Map();
+      if (saved && Array.isArray(saved.clues)) {
+        for (const s of saved.clues) {
+          const k = makeKey(s || {});
+          if (k) savedMap.set(k, { Assessment: s.Assessment || '', Note: s.Note || '' });
+        }
+      }
+      fresh = fresh.map(r => {
+        const sv = savedMap.get(makeKey(r));
+        if (sv) {
+          r.Assessment = sv.Assessment || r.Assessment;
+          r.Note = sv.Note || r.Note;
+        }
+        return r;
+      });
+
+      // 5) Restore a safe index; otherwise start at 0
+      const idx = (saved && Number.isInteger(saved.current)) ? saved.current : 0;
+      current = (idx >= 0 && idx < fresh.length) ? idx : 0;
+
+      // 6) Commit & render
+      clues = fresh;
       history.length = 0;
       updateCounts();
       updateProgress();
@@ -329,6 +392,8 @@ function loadSheet() {
     error: err => alert("Error loading sheet: " + err.message)
   });
 }
+</script>
+
 
 /* UI updates */
 function updateCounts() {
