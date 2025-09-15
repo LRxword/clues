@@ -20,18 +20,8 @@ body {
   align-items: center;
   padding: 2rem 1rem 7rem;
   user-select: none;
+  color:#111;
 }
-
-/* Switch pill to cluesmash */
-#app-switch{
-  position: fixed;
-  top: 10px; right: 10px;
-  background: #fff; color: #000;
-  border: 2px solid #000; border-radius: 999px;
-  padding: .45rem .7rem; font-size: .9rem; text-decoration: none;
-  box-shadow: 4px 4px 0 #000; z-index: 1200;
-}
-#app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
 
 /* Title image (match cluesmash) */
 #title-wrapper {
@@ -40,59 +30,57 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* Tabs (match cluesmash style) */
+#tabs {
+  display: flex; gap: 1rem; margin-bottom: 1rem;
+}
+.tab {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem; font-weight: 700;
+  border-radius: 16px; cursor: pointer;
+  background: #fff; color: #000;
+  border: 2px solid #000; box-shadow: 4px 4px 0 #000;
+  transition: transform 0.1s ease-in-out, background 0.2s ease;
+  user-select: none;
+}
+.tab:hover { transform: translateY(-1px); }
+.tab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+.tab.active { background: #fff2b3; color: #000; }
+
+/* Counts & progress */
+#assessmentCounts { font-size: 1.1rem; margin-bottom: 0.5rem; color: #222; }
+#progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin-bottom: .4rem; }
+#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
+#progressCount { font-size: 1.2rem; color: #222; margin-bottom: .8rem; text-align:center; }
+
 /* Card (word panel) — same feel as cluesmash */
 #card {
-  background: #fff;
-  color: #222;
-  border: 3px solid #000;
-  border-radius: 20px;
-  padding: 2rem 1.5rem;
-  font-size: 2.2rem;
-  line-height: 1.4;
-  box-shadow: 6px 6px 0 #000;
-  text-align: center;
-  width: 80vw;
-  max-width: 380px;
-  margin-bottom: 2rem;
+  background: #fff; color: #222;
+  border: 3px solid #000; border-radius: 20px;
+  padding: 2rem 1.5rem; font-size: 2.2rem; line-height: 1.4;
+  box-shadow: 6px 6px 0 #000; text-align: center;
+  width: 80vw; max-width: 380px; margin-bottom: 2rem;
   transition: transform 0.4s ease, opacity 0.4s ease;
 }
 #card.enter { transform: translateX(0) scale(1); opacity: 1; }
 #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
 #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
 #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-
-/* Word text */
 #wordText { margin: 0; font-weight: 700; font-size: 2.2rem; }
 
-/* Emoji controls (exact same style as cluesmash) */
+/* Emoji controls (exactly like cluesmash) */
 #buttons {
-  display: flex;
-  justify-content: center;
-  gap: 2.2rem;
-  width: auto;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
+  display: flex; justify-content: center; gap: 2.2rem;
+  width: auto; margin-bottom: 2rem; font-size: 2.5rem;
 }
 .emoji-btn {
-  cursor: pointer;
-  transition: transform 0.15s ease;
+  cursor: pointer; transition: transform 0.15s ease;
   text-shadow: 2px 2px 0 #000, 4px 4px 0 #000;
 }
-.emoji-btn:hover,
-.emoji-btn:active {
+.emoji-btn:hover, .emoji-btn:active {
   transform: scale(1.3);
   text-shadow: 3px 3px 0 #000, 6px 6px 0 #000;
 }
-
-/* Progress + counts (mirrors cluesmash positioning) */
-#assessmentCounts {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: #222;
-}
-#progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; margin-bottom: .4rem; }
-#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
-#progressCount { font-size: 1.2rem; color: #222; margin-bottom: .8rem; text-align:center; }
 
 /* Flash emoji */
 #flashMessage {
@@ -109,21 +97,44 @@ body {
 #noteOverlay {
   display: none; position: fixed; top: 10%; left: 50%;
   transform: translateX(-50%);
-  width: 75%; max-width: 320px; background: #fff; color: #222;
+  width: 90%; max-width: 360px; background: #fff; color: #222;
   border-radius: 20px; padding: 1.2rem;
   border: 2px solid #000; box-shadow: 6px 6px 0 #000;
   z-index: 1000;
 }
+#overlayHeader {
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem; margin-bottom:.6rem;
+}
+#overlayWord {
+  font-weight:800; font-size:1.1rem; padding:.35rem .6rem; background:#fff2b3;
+  border:2px solid #000; border-radius:12px; box-shadow:3px 3px 0 #000;
+}
+#overlayTools {
+  display:flex; gap:.5rem;
+}
+.tool-btn {
+  padding:.4rem .55rem; font-size:1.1rem; background:#fff; color:#000; border:2px solid #000; border-radius:12px;
+  box-shadow:3px 3px 0 #000; cursor:pointer; user-select:none;
+}
+.tool-btn:active { transform: translate(2px,2px); box-shadow:1px 1px 0 #000; }
+
+#lookupField {
+  width:100%; margin:.3rem 0 .6rem 0;
+  font-size:1.1rem; padding:.5rem .7rem; border:2px dashed #000; border-radius:10px;
+  background:#f9f9f9; color:#111;
+}
+
+/* Textarea + OK */
 #noteText {
-  width: 100%; height: 130px; font-size: 2rem;
+  width: 100%; height: 130px; font-size: 1.2rem;
   padding: .8rem; border-radius: 12px; border: 2px solid #000;
   resize: none; background: #fff; color: #222; line-height: 1.4;
 }
-#noteOverlay button {
-  margin-top: 1rem; padding: 0.6rem 1rem;
+#noteOverlay button#overlaySave {
+  margin-top: 0.8rem; padding: 0.6rem 1rem;
   font-weight: 700; border-radius: 16px;
   border: none; background: #222; color: white;
-  cursor: pointer;
+  cursor: pointer; width:100%;
 }
 
 /* Bottom fixed buttons */
@@ -136,10 +147,15 @@ body {
 </style>
 </head>
 <body>
-<a id="app-switch" href="cluesmash.html" aria-label="Switch to Appraise">Appraise ↗</a>
-
 <div id="title-wrapper">
   <img src="https://i.imgur.com/3cTvC1h.png" alt="cluestorm logo" style="height:40px; width:auto;">
+</div>
+
+<!-- Tabs -->
+<div id="tabs">
+  <div class="tab active" data-source="random">Random</div>
+  <div class="tab" data-source="grid">Grid</div>
+  <div class="tab" id="tab-appraise" data-source="appraise">Appraise</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
@@ -149,7 +165,7 @@ body {
 
 <div id="card" style="display:none;"></div>
 
-<!-- Emoji controls — EXACTLY like cluesmash and same functions -->
+<!-- Emoji controls — EXACTLY like cluesmash -->
 <div id="buttons">
   <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No" role="button" tabindex="0">❌</span>
   <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop" role="button" tabindex="0">🔧</span>
@@ -161,14 +177,28 @@ body {
 <button id="exportBtn">Download Drafts CSV</button>
 <button id="resetBtn">Reset Progress</button>
 
-<div id="noteOverlay">
+<!-- Note overlay -->
+<div id="noteOverlay" aria-modal="true" role="dialog">
+  <div id="overlayHeader">
+    <div id="overlayWord">WORD</div>
+    <div id="overlayTools">
+      <button class="tool-btn" id="btnAnagram" title="Open Wordsmith anagrams">🔀</button>
+      <button class="tool-btn" id="btnLookup" title="Select word to use system Look Up">🔎</button>
+      <button class="tool-btn" id="btnCopy" title="Copy word to clipboard">📋</button>
+    </div>
+  </div>
+  <!-- Selectable field to trigger iOS/Android 'Look Up' via long-press -->
+  <input id="lookupField" type="text" readonly value="" />
   <textarea id="noteText" placeholder="Write your clue draft..."></textarea>
   <button id="overlaySave">OK</button>
 </div>
 
 <script>
-/* Config: 8-letter words CSV */
-const WORDS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv";
+/* CSV sources */
+const SOURCES = {
+  random: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTif8KzuwqF_THEi6RRM7VnWbAHwX4awQge_XiAMSsk91zBD6mYq4Ns5nqaH0c2EiPqSbP7Gl4L6h4_/pub?output=csv",
+  grid:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTpK1X5vaqxSTD2LGSEmzP-ukVT-sUMsTsJnkUE4j94muzir2EC6N81VH2PIX89_DscpDvrk23ZXH7/pub?output=csv"
+};
 
 /* Haptics */
 function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
@@ -177,6 +207,7 @@ function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 let items = []; // [{Word, Note, Assessment, Timestamp}]
 let current = 0;
 const history = []; // stack of indices for undo
+let currentSource = 'random';
 
 /* DOM */
 const card = document.getElementById('card');
@@ -185,24 +216,44 @@ const progressBar = document.getElementById('progressBar');
 const progressCount = document.getElementById('progressCount');
 const assessmentCounts = document.getElementById('assessmentCounts');
 
-/* Load words */
+/* Utils */
+function persist(){ localStorage.setItem('cluestormProgress_'+currentSource, JSON.stringify({ current, items })); }
+function loadPersist(){
+  const raw = localStorage.getItem('cluestormProgress_'+currentSource);
+  if(!raw) return false;
+  try{
+    const s = JSON.parse(raw);
+    if(Array.isArray(s.items) && s.items.length){ items = s.items; current = s.current || 0; return true; }
+  }catch(e){}
+  return false;
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* Load words for a given tab */
 function loadWords(){
+  if(currentSource==='appraise'){ window.location.href = 'cluesmash.html'; return; }
+  const CSV = SOURCES[currentSource];
   const proxy = "https://corsproxy.io/?";
   card.style.display='block'; card.textContent='Loading…';
-  Papa.parse(proxy + WORDS_CSV, {
+  Papa.parse(proxy + CSV, {
     download: true,
     header: true,
     complete: res => {
-      items = res.data
+      let list = res.data
         .map(r => Object.values(r)[0])
         .filter(Boolean)
         .map(w => ({ Word: String(w).trim(), Note: '', Assessment: '', Timestamp: '' }));
-      const saved = localStorage.getItem('cluestormProgress_v2');
-      if(saved){
-        try { const s = JSON.parse(saved); if(Array.isArray(s.items) && s.items.length){ items = s.items; current = s.current || 0; } } catch(e){}
+
+      if(currentSource==='random' && !loadPersist()){
+        list = shuffle(list); items = list; current = 0;
+      } else if(!loadPersist()){
+        items = list; current = 0;
       }
-      showWord();
-      updateCounts();
+      showWord(); updateCounts();
     },
     error: err => alert("Error loading words: " + err.message)
   });
@@ -218,10 +269,14 @@ function showWord(){
     document.getElementById('buttons').style.display = 'none';
     return;
   }
+  document.getElementById('buttons').style.display = 'flex';
   const w = (items[current].Word||'').toUpperCase();
   card.innerHTML = `<p id="wordText">${w}</p>`;
   card.style.display="block"; card.className=''; void card.offsetWidth; card.classList.add('enter');
   updateProgress();
+  // Keep overlay header in sync if it’s open
+  const overlay = document.getElementById('noteOverlay');
+  if(overlay.style.display==='block'){ setOverlayWord(w); }
 }
 function updateProgress(){
   const total = items.length || 0;
@@ -273,12 +328,20 @@ function undoAssessment(){
   updateCounts();
   showWord();
 }
+
+/* Notes */
+function setOverlayWord(w){
+  document.getElementById('overlayWord').textContent = w;
+  document.getElementById('lookupField').value = w;
+}
 function openNote(){
   buzz(10);
-  const noteOverlay = document.getElementById('noteOverlay');
+  const overlay = document.getElementById('noteOverlay');
   const noteText = document.getElementById('noteText');
+  const w = (items[current]?.Word || '').toUpperCase();
+  setOverlayWord(w);
   noteText.value = items[current]?.Note || '';
-  noteOverlay.style.display = 'block';
+  overlay.style.display = 'block';
 }
 function saveNote(){
   buzz(15);
@@ -286,6 +349,34 @@ function saveNote(){
   if(items[current]) items[current].Note = noteText.value;
   document.getElementById('noteOverlay').style.display = 'none';
   persist();
+}
+
+/* Overlay tool actions */
+function openAnagrams(){
+  const w = (items[current]?.Word || '').toUpperCase().replace(/\s+/g,'');
+  if(!w) return;
+  const url = "https://new.wordsmith.org/anagram/anagram.cgi?anagram=" + encodeURIComponent(w) + "&t=500&a=n";
+  window.open(url, "_blank", "noopener");
+}
+function lookupWord(){
+  // Select the word so iOS/Android long-press shows "Look Up"
+  const fld = document.getElementById('lookupField');
+  fld.focus();
+  fld.select();
+  // Some browsers hide selection alert; this hint helps on mobile
+  setTimeout(()=>{ alert('Long-press the highlighted word and tap “Look Up”.'); }, 50);
+}
+async function copyWord(){
+  const w = (items[current]?.Word || '').toUpperCase();
+  if(!w) return;
+  try{
+    await navigator.clipboard.writeText(w);
+    buzz(10);
+  }catch(e){
+    // Fallback: select the field so the user can copy manually
+    const fld = document.getElementById('lookupField');
+    fld.focus(); fld.select();
+  }
 }
 
 /* Export only assessed rows */
@@ -306,14 +397,21 @@ function exportCSV(){
   a.click();
 }
 
-/* Storage */
-function persist(){ localStorage.setItem('cluestormProgress_v2', JSON.stringify({ current, items })); }
-function resetAll(){ if(confirm('Reset all cluestorm progress?')){ localStorage.removeItem('cluestormProgress_v2'); location.reload(); } }
+/* Storage reset */
+function resetAll(){ if(confirm('Reset all cluestorm progress for this tab?')){ localStorage.removeItem('cluestormProgress_'+currentSource); location.reload(); } }
 
-/* Wire emoji buttons EXACTLY like cluesmash */
+/* Wire buttons */
 document.getElementById('exportBtn').onclick = exportCSV;
 document.getElementById('resetBtn').onclick = resetAll;
 document.getElementById('overlaySave').onclick = saveNote;
+
+/* Overlay tool buttons */
+document.getElementById('btnAnagram').onclick = openAnagrams;
+document.getElementById('btnLookup').onclick = lookupWord;
+document.getElementById('btnCopy').onclick = copyWord;
+
+/* Tap the card to open notes (your request) */
+card.addEventListener('click', openNote);
 
 /* Swipes (directions match the emojis above) */
 const mc = new Hammer(document.body);
@@ -329,7 +427,20 @@ document.querySelectorAll('.emoji-btn').forEach(el=>{
   });
 });
 
-window.onload = loadWords;
+/* Tabs behavior */
+document.querySelectorAll('#tabs .tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const src = tab.dataset.source;
+    if(src==='appraise'){ window.location.href = 'cluesmash.html'; return; }
+    currentSource = src;
+    loadWords();
+  });
+});
+
+/* Init */
+loadWords();
 </script>
 </body>
 </html>
