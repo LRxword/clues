@@ -23,6 +23,19 @@ body {
   color:#111;
 }
 
+/* Prevent creeping on mobile */
+body { min-height: 100dvh; }
+@supports not (height: 100dvh) {
+  body { min-height: 100vh; }
+}
+/* Lock scroll when Notes is open */
+body.modal-open {
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+  top: var(--scroll-lock, 0);
+}
+  
 /* Title image (match cluesmash) */
 #title-wrapper {
   display: flex;
@@ -336,18 +349,31 @@ function setOverlayWord(w){
 }
 function openNote(){
   buzz(10);
-  const overlay = document.getElementById('noteOverlay');
+  const noteOverlay = document.getElementById('noteOverlay');
   const noteText = document.getElementById('noteText');
-  const w = (items[current]?.Word || '').toUpperCase();
-  setOverlayWord(w);
   noteText.value = items[current]?.Note || '';
-  overlay.style.display = 'block';
+
+  // lock background scroll (prevents upward creep)
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.style.setProperty('--scroll-lock', `-${y}px`);
+  document.body.classList.add('modal-open');
+
+  noteOverlay.style.display = 'block';
 }
+
 function saveNote(){
   buzz(15);
   const noteText = document.getElementById('noteText');
-  if(items[current]) items[current].Note = noteText.value;
+  if (items[current]) items[current].Note = noteText.value;
   document.getElementById('noteOverlay').style.display = 'none';
+
+  // unlock and restore scroll
+  const lock = getComputedStyle(document.body).getPropertyValue('--scroll-lock');
+  const y = Math.abs(parseInt(lock, 10)) || 0;
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('--scroll-lock');
+  window.scrollTo(0, y);
+
   persist();
 }
 
