@@ -497,17 +497,32 @@ function resetProgress(){
 /* Notes */
 function openNote(){ 
   buzz(10);
-  const noteOverlay=document.getElementById("noteOverlay"); 
-  const noteText=document.getElementById("noteText"); 
-  const clue=clues[current]; 
-  noteText.value=(clue && clue.Note) || ""; 
-  noteOverlay.style.display="block"; 
+  const noteOverlay = document.getElementById("noteOverlay");
+  const noteText = document.getElementById("noteText"); 
+  const clue = clues[current]; 
+  noteText.value = (clue && clue.Note) || ""; 
+
+  // --- lock body scroll (prevents UI creeping on mobile) ---
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.style.setProperty('--scroll-lock', `-${y}px`);
+  document.body.classList.add('modal-open');
+
+  noteOverlay.style.display = "block";
 }
+
 function saveNote(){
   buzz(15);
-  const noteText=document.getElementById("noteText"); 
-  if(clues[current]) clues[current].Note=noteText.value; 
-  document.getElementById("noteOverlay").style.display="none"; 
+  const noteText = document.getElementById("noteText"); 
+  if (clues[current]) clues[current].Note = noteText.value; 
+  document.getElementById("noteOverlay").style.display = "none"; 
+
+  // --- unlock body scroll and restore position ---
+  const lock = getComputedStyle(document.body).getPropertyValue('--scroll-lock');
+  const y = Math.abs(parseInt(lock, 10)) || 0;
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('--scroll-lock');
+  window.scrollTo(0, y);
+
   saveProgress();
 }
 
