@@ -23,7 +23,18 @@ body {
   color: white;
   user-select: none;
 }
-
+/* Use dynamic viewport height on mobile */
+body { min-height: 100dvh; }
+@supports not (height: 100dvh) {
+  body { min-height: 100vh; }
+}
+/* Scroll lock when Notes is open */
+body.modal-open {
+  position: fixed;          /* freeze layout */
+  width: 100%;
+  overflow: hidden;         /* prevent background scroll */
+  top: var(--scroll-lock, 0); /* we store scrollY here as a negative px value */
+}  
 /* Top-right pill to cluestorm */
 #app-switch{
   position: fixed;
