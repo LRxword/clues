@@ -106,30 +106,57 @@ body.modal-open {
 }
 #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
 
-/* Note overlay */
-#noteOverlay {
-  display: none; position: fixed; top: 10%; left: 50%;
-  transform: translateX(-50%);
-  width: 90%; max-width: 360px; background: #fff; color: #222;
-  border-radius: 20px; padding: 1.2rem;
-  border: 2px solid #000; box-shadow: 6px 6px 0 #000;
-  z-index: 1000;
-}
+<!-- Note overlay -->
+<div id="noteOverlay" aria-modal="true" role="dialog">
+  <div id="overlayHeader">
+    <div id="overlayWord">WORD</div>
+    <div id="overlayTools">
+      <button class="tool-btn" id="btnAnagram" title="Open Wordsmith anagrams">🔀</button>
+      <button class="tool-btn" id="btnLookup" title="Focus word for Look Up">🔎</button>
+    </div>
+  </div>
+  <input id="lookupField" type="text" readonly value="" />
+  <textarea id="noteText" placeholder="Write your clue draft..."></textarea>
+  <button id="overlaySave">OK</button>
+</div>
+
 #overlayHeader {
-  display:flex; align-items:center; justify-content:space-between; gap:.6rem; margin-bottom:.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .6rem;
+  margin-bottom: .6rem;
 }
+
 #overlayWord {
-  font-weight:800; font-size:1.1rem; padding:.35rem .6rem; background:#fff2b3;
-  border:2px solid #000; border-radius:12px; box-shadow:3px 3px 0 #000;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: .35rem .6rem;
+  background: #fff;
+  border: 2px dashed #000;   /* broken border */
+  border-radius: 12px;
 }
+
 #overlayTools {
-  display:flex; gap:.5rem;
+  display: flex;
+  gap: .5rem;
 }
+
 .tool-btn {
-  padding:.4rem .55rem; font-size:1.1rem; background:#fff; color:#000; border:2px solid #000; border-radius:12px;
-  box-shadow:3px 3px 0 #000; cursor:pointer; user-select:none;
+  padding: .4rem .55rem;
+  font-size: 1.1rem;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 #000;
+  cursor: pointer;
+  user-select: none;
 }
-.tool-btn:active { transform: translate(2px,2px); box-shadow:1px 1px 0 #000; }
+.tool-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}
 
 #lookupField {
   width:100%; margin:.3rem 0 .6rem 0;
