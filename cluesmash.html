@@ -30,11 +30,11 @@ body { min-height: 100dvh; }
 }
 /* Scroll lock when Notes is open */
 body.modal-open {
-  position: fixed;          /* freeze layout */
+  position: fixed;
   width: 100%;
-  overflow: hidden;         /* prevent background scroll */
-  top: var(--scroll-lock, 0); /* we store scrollY here as a negative px value */
-}  
+  overflow: hidden;
+  top: var(--scroll-lock, 0);
+}
 /* Top-right pill to cluestorm */
 #app-switch{
   position: fixed;
@@ -46,13 +46,13 @@ body.modal-open {
 }
 #app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
 
-/* Title: image-only wrapper */
+/* Title */
 #title-wrapper {
   display: flex;
   justify-content: center;
   margin-bottom: 0.5rem;
 }
-h1 { /* kept in case you revert to text */
+h1 {
   font-family: 'Sansita Black';
   font-style: italic;
   font-weight: 900;
@@ -69,7 +69,7 @@ h1 { /* kept in case you revert to text */
   margin-bottom: 1rem;
 }
 
-/* Tab buttons with black depth */
+/* Tab buttons */
 .tab {
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
@@ -246,7 +246,7 @@ h1 { /* kept in case you revert to text */
   cursor: pointer;
 }
 
-/* --- React palette (long-press on ❌) --- */
+/* React palette (long-press on ❌) */
 #reactPalette{
   position: fixed;
   display: none;
@@ -343,7 +343,7 @@ const sheetUrls = {
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
 };
 
-/* ---------- helpers (plain functions, NOT another <script>) ---------- */
+/* ---------- helpers ---------- */
 function normalizeRow(r, cols){
   const g = (obj, key) => (obj && key && obj[key]) || '';
   return {
@@ -357,7 +357,7 @@ function normalizeRow(r, cols){
 }
 function makeKey(r){ return [r.Clue, r.Answer, r.Writer].join('§'); }
 
-/* ---------- robust loader (replaces old loadSheet) ---------- */
+/* ---------- robust loader ---------- */
 function loadSheet() {
   const proxy = "https://corsproxy.io/?";
   card.style.display = 'block';
@@ -369,7 +369,7 @@ function loadSheet() {
     complete: results => {
       const rows = Array.isArray(results.data) ? results.data : [];
 
-      // Detect header names (case/space tolerant)
+      // Detect header names
       let clueCol='Clue', answerCol='Answer', writerCol='Writer';
       if (rows.length) {
         const keys = Object.keys(rows[0] || {});
@@ -392,7 +392,7 @@ function loadSheet() {
         return;
       }
 
-      // Read saved (if any) but only merge Assessment/Note/React
+      // Merge saved Assessment/Note/React
       let saved = null;
       try {
         const raw = localStorage.getItem("clueMatchProgress_" + currentSource);
@@ -464,7 +464,6 @@ function showNext() {
   card.style.display="block"; 
   card.className=''; void card.offsetWidth; card.classList.add('enter');
 
-  // Close any open palette on card render
   if (paletteOpen) closeReactPalette();
 
   updateProgress();
@@ -520,7 +519,7 @@ function undoAssessment(){
   updateCounts();
 }
 
-/* Export (with UTF-8 BOM for emojis) */
+/* Export (UTF-8 BOM for emoji) */
 function exportCSV(){
   buzz(15);
   const filtered = clues.filter(c=>c.Assessment);
@@ -561,21 +560,18 @@ function openNote(){
   const clue = clues[current]; 
   noteText.value = (clue && clue.Note) || ""; 
 
-  // --- lock body scroll (prevents UI creeping on mobile) ---
   const y = window.scrollY || window.pageYOffset || 0;
   document.body.style.setProperty('--scroll-lock', `-${y}px`);
   document.body.classList.add('modal-open');
 
   noteOverlay.style.display = "block";
 }
-
 function saveNote(){
   buzz(15);
   const noteText = document.getElementById("noteText"); 
   if (clues[current]) clues[current].Note = noteText.value; 
   document.getElementById("noteOverlay").style.display = "none"; 
 
-  // --- unlock body scroll and restore position ---
   const lock = getComputedStyle(document.body).getPropertyValue('--scroll-lock');
   const y = Math.abs(parseInt(lock, 10)) || 0;
   document.body.classList.remove('modal-open');
@@ -590,13 +586,9 @@ document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",()=>{
     const link = tab.dataset.link;
     if (link) {
-      // Navigate to cluestorm (write mode)
-      window.location.href = link;           // same tab
-      // window.open(link, "_blank");        // use this instead if you want a new tab
+      window.location.href = link;
       return;
     }
-
-    // Regular data-source tabs
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     tab.classList.add("active");
     currentSource = tab.dataset.source;
@@ -619,7 +611,7 @@ document.querySelectorAll('.emoji-btn').forEach(el=>{
   });
 });
 
-/* --- React palette functions --- */
+/* React palette */
 function openReactPalette(anchorEl){
   const clue = clues[current]; if(!clue) return;
   const selected = clue.React || '';
@@ -628,7 +620,6 @@ function openReactPalette(anchorEl){
   ).join('');
 
   const r = anchorEl.getBoundingClientRect();
-  // position slightly above and left-aligned with the anchor
   reactPalette.style.left = r.left + 'px';
   reactPalette.style.top  = (r.top - 56) + 'px';
   reactPalette.style.display = 'flex';
@@ -638,10 +629,7 @@ function openReactPalette(anchorEl){
   reactPalette.querySelectorAll('.rp').forEach(el=>{
     el.addEventListener('click', ()=>{
       const e = el.dataset.emoji;
-      setReact(e);
-      reactPalette.querySelectorAll('.rp').forEach(x=>x.classList.remove('active'));
-      el.classList.add('active');
-      setTimeout(closeReactPalette, 120);
+      setReact(e); // will animate & advance
     });
   });
 
@@ -665,20 +653,23 @@ function setReact(emoji){
   const c = clues[current]; if(!c) return;
   c.React = emoji;
   saveProgress();
+  closeReactPalette();
+
+  // Swipe-away animation, then record No (preserves chosen React)
+  animateSwipe('left', () => recordAssessment('No'));
 }
 
-/* --- Long-press on ❌ (No) to open palette; short tap still rejects --- */
+/* Long-press on ❌ (No) to open palette; short tap still rejects */
 const noBtn = Array.from(document.querySelectorAll('#buttons .emoji-btn'))
   .find(el => el.getAttribute('aria-label') === 'No');
 
 if (noBtn) {
   const hm = new Hammer(noBtn);
-  hm.add(new Hammer.Press({ time: 450 })); // long-press duration
+  hm.add(new Hammer.Press({ time: 450 }));
 
   let pressed = false;
   hm.on('press', () => { pressed = true; buzz(12); openReactPalette(noBtn); });
 
-  // If the long-press triggered, suppress the click that would fire reject
   noBtn.addEventListener('click', (e) => {
     if (pressed) {
       e.preventDefault();
@@ -687,7 +678,6 @@ if (noBtn) {
     }
   });
 
-  // Safety: close palette when switching cards
   const _showNext = showNext;
   showNext = function(){
     if (paletteOpen) closeReactPalette();
