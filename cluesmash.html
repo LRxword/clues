@@ -245,6 +245,31 @@ h1 { /* kept in case you revert to text */
   color: white;
   cursor: pointer;
 }
+
+/* --- React palette (long-press on ❌) --- */
+#reactPalette{
+  position: fixed;
+  display: none;
+  background:#fff;
+  color:#000;
+  border:2px solid #000;
+  border-radius:14px;
+  padding:.35rem .5rem;
+  box-shadow:6px 6px 0 #000;
+  z-index:1100;
+  font-size:1.6rem;
+  gap:.5rem;
+}
+#reactPalette .rp{
+  cursor:pointer;
+  padding:.1rem .3rem;
+  border-radius:10px;
+  border:2px solid transparent;
+}
+#reactPalette .rp.active{
+  background:#fff2b3;
+  border-color:#000;
+}
 </style>
 </head>
 <body>
@@ -275,6 +300,9 @@ h1 { /* kept in case you revert to text */
   <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
 </div>
 
+<!-- Long-press React palette (opens from ❌) -->
+<div id="reactPalette" role="dialog" aria-hidden="true"></div>
+
 <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
 <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
 
@@ -300,6 +328,14 @@ const progressCount = document.getElementById("progressCount");
 const assessmentCounts = document.getElementById("assessmentCounts");
 let currentSource = "members";
 
+/* React config */
+const REACT_CHOICES = ['😂','🤯','🤭','😜'];          // palette on long-press of ❌
+const DEFAULT_REACT = { No:'❤️', Workshop:'🔧', Perfect:'⭐' }; // defaults per assessment
+
+/* React palette state */
+const reactPalette = document.getElementById('reactPalette');
+let paletteOpen = false;
+
 /* Sources */
 const sheetUrls = {
   members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
@@ -315,7 +351,8 @@ function normalizeRow(r, cols){
     Answer: String(g(r, cols.answer)).trim(),
     Writer: String(g(r, cols.writer)).trim(),
     Assessment: String(r?.Assessment || '').trim(),
-    Note: String(r?.Note || '').trim()
+    Note: String(r?.Note || '').trim(),
+    React: String(r?.React || '').trim()
   };
 }
 function makeKey(r){ return [r.Clue, r.Answer, r.Writer].join('§'); }
@@ -355,7 +392,7 @@ function loadSheet() {
         return;
       }
 
-      // Read saved (if any) but only merge Assessment/Note
+      // Read saved (if any) but only merge Assessment/Note/React
       let saved = null;
       try {
         const raw = localStorage.getItem("clueMatchProgress_" + currentSource);
@@ -366,12 +403,20 @@ function loadSheet() {
       if (saved && Array.isArray(saved.clues)) {
         for (const s of saved.clues) {
           const k = makeKey(s || {});
-          if (k) savedMap.set(k, { Assessment: s.Assessment || '', Note: s.Note || '' });
+          if (k) savedMap.set(k, {
+            Assessment: s.Assessment || '',
+            Note: s.Note || '',
+            React: s.React || ''
+          });
         }
       }
       fresh = fresh.map(r => {
         const sv = savedMap.get(makeKey(r));
-        if (sv) { r.Assessment = sv.Assessment || r.Assessment; r.Note = sv.Note || r.Note; }
+        if (sv) {
+          r.Assessment = sv.Assessment || r.Assessment;
+          r.Note = sv.Note || r.Note;
+          r.React = sv.React || r.React;
+        }
         return r;
       });
 
@@ -418,6 +463,10 @@ function showNext() {
   `;
   card.style.display="block"; 
   card.className=''; void card.offsetWidth; card.classList.add('enter');
+
+  // Close any open palette on card render
+  if (paletteOpen) closeReactPalette();
+
   updateProgress();
 }
 
@@ -448,7 +497,14 @@ function animateSwipe(direction,callback){
 /* Record / undo */
 function recordAssessment(value){
   if(current>=clues.length) return;
-  clues[current].Assessment=value;
+  const c = clues[current];
+  c.Assessment = value;
+
+  // Apply default React if not already set
+  if (!c.React && DEFAULT_REACT[value]) {
+    c.React = DEFAULT_REACT[value];
+  }
+
   saveProgress();
   history.push(current);
   current++;
@@ -464,18 +520,21 @@ function undoAssessment(){
   updateCounts();
 }
 
-/* Export */
+/* Export (with UTF-8 BOM for emojis) */
 function exportCSV(){
   buzz(15);
   const filtered = clues.filter(c=>c.Assessment);
-  const csv = Papa.unparse(filtered.map(c=>({
+  const rows = filtered.map(c=>({
     Clue: c.Clue || "",
     Answer: c.Answer || "",
     Writer: c.Writer || "",
     Assessment: c.Assessment || "",
-    Note: c.Note || ""
-  })));
-  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); 
+    Note: c.Note || "",
+    React: c.React || ""
+  }));
+  const csv = Papa.unparse(rows);
+  const bom = '\ufeff';
+  const blob = new Blob([bom + csv],{type:"text/csv;charset=utf-8;"}); 
   const link=document.createElement("a");
   link.href=URL.createObjectURL(blob); 
   link.download="reviewed_clues.csv"; 
@@ -559,6 +618,82 @@ document.querySelectorAll('.emoji-btn').forEach(el=>{
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
   });
 });
+
+/* --- React palette functions --- */
+function openReactPalette(anchorEl){
+  const clue = clues[current]; if(!clue) return;
+  const selected = clue.React || '';
+  reactPalette.innerHTML = REACT_CHOICES.map(e =>
+    `<span class="rp ${e===selected?'active':''}" data-emoji="${e}" title="React">${e}</span>`
+  ).join('');
+
+  const r = anchorEl.getBoundingClientRect();
+  // position slightly above and left-aligned with the anchor
+  reactPalette.style.left = r.left + 'px';
+  reactPalette.style.top  = (r.top - 56) + 'px';
+  reactPalette.style.display = 'flex';
+  reactPalette.setAttribute('aria-hidden','false');
+  paletteOpen = true;
+
+  reactPalette.querySelectorAll('.rp').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const e = el.dataset.emoji;
+      setReact(e);
+      reactPalette.querySelectorAll('.rp').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      setTimeout(closeReactPalette, 120);
+    });
+  });
+
+  const outside = (ev)=>{
+    if (!reactPalette.contains(ev.target) && ev.target !== anchorEl){
+      closeReactPalette();
+      document.removeEventListener('mousedown', outside);
+      document.removeEventListener('touchstart', outside);
+    }
+  };
+  document.addEventListener('mousedown', outside);
+  document.addEventListener('touchstart', outside);
+}
+function closeReactPalette(){
+  reactPalette.style.display = 'none';
+  reactPalette.setAttribute('aria-hidden','true');
+  paletteOpen = false;
+}
+function setReact(emoji){
+  buzz(8);
+  const c = clues[current]; if(!c) return;
+  c.React = emoji;
+  saveProgress();
+}
+
+/* --- Long-press on ❌ (No) to open palette; short tap still rejects --- */
+const noBtn = Array.from(document.querySelectorAll('#buttons .emoji-btn'))
+  .find(el => el.getAttribute('aria-label') === 'No');
+
+if (noBtn) {
+  const hm = new Hammer(noBtn);
+  hm.add(new Hammer.Press({ time: 450 })); // long-press duration
+
+  let pressed = false;
+  hm.on('press', () => { pressed = true; buzz(12); openReactPalette(noBtn); });
+
+  // If the long-press triggered, suppress the click that would fire reject
+  noBtn.addEventListener('click', (e) => {
+    if (pressed) {
+      e.preventDefault();
+      e.stopPropagation();
+      setTimeout(()=>{ pressed=false; }, 0);
+    }
+  });
+
+  // Safety: close palette when switching cards
+  const _showNext = showNext;
+  showNext = function(){
+    if (paletteOpen) closeReactPalette();
+    _showNext();
+  };
+}
 
 /* Init */
 window.onload=loadSheet;
