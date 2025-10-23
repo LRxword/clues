@@ -166,7 +166,7 @@ h1 {
 <!-- Emoji controls -->
 <div id="buttons">
   <span class="emoji-btn" onclick="animateSwipe('left', () => recordAssessment('No'))" aria-label="No" role="button" tabindex="0">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop" role="button" tabindex="0">🔧</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => recordAssessment('Workshop'))" aria-label="Workshop" role="button" tabindex="0">💡</span>
   <span class="emoji-btn" onclick="animateSwipe('down', () => recordAssessment('Perfect'))" aria-label="Perfect" role="button" tabindex="0">⭐</span>
   <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
   <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
@@ -200,9 +200,9 @@ const progressCount = document.getElementById("progressCount");
 const assessmentCounts = document.getElementById("assessmentCounts");
 let currentSource = "members";
 
-/* React config */
-const REACT_CHOICES = ['😂','🤯','🤭','😜'];          // palette on long-press of ❌
-const DEFAULT_REACT = { No:'❤️', Workshop:'🔧', Perfect:'⭐' }; // defaults per assessment
+/* React config (updated palette + lightbulb for Workshop) */
+const REACT_CHOICES = ['👏','😂','🤯','🤭','😜'];          // palette on long-press of ❌
+const DEFAULT_REACT = { No:'❤️', Workshop:'💡', Perfect:'⭐' }; // defaults per assessment
 
 /* React palette state */
 const reactPalette = document.getElementById('reactPalette');
@@ -222,7 +222,8 @@ function normalizeRow(r, cols){
     Clue:   String(g(r, cols.clue)).trim(),
     Answer: String(g(r, cols.answer)).trim(),
     Writer: String(g(r, cols.writer)).trim(),
-    Email:  String(g(r, cols.email)).trim(),     // <-- NEW (optional)
+    Email:  String(g(r, cols.email)).trim(),     // optional
+    Id:     String(g(r, cols.id)).trim(),        // optional
     Assessment: String(r?.Assessment || '').trim(),
     Note: String(r?.Note || '').trim(),
     React: String(r?.React || '').trim()
@@ -243,7 +244,7 @@ function loadSheet() {
       const rows = Array.isArray(results.data) ? results.data : [];
 
       // Detect header names (case/space tolerant)
-      let clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='';
+      let clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', idCol='';
       if (rows.length) {
         const keys = Object.keys(rows[0] || {});
         const keyMap = {};
@@ -253,13 +254,13 @@ function loadSheet() {
         clueCol   = keyMap[pick(['clue','clues','cluetext'])]            || clueCol;
         answerCol = keyMap[pick(['answer','answers','solution'])]        || answerCol;
         writerCol = keyMap[pick(['writer','setter','author'])]           || writerCol;
-        // Try common email header variants
         emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
+        idCol     = keyMap[pick(['id','Id','ID','uid','uniqueid','unique_id'])] || '';
       }
 
       // Fresh parse
       let fresh = rows
-        .map(r => normalizeRow(r, {clue: clueCol, answer: answerCol, writer: writerCol, email: emailCol}))
+        .map(r => normalizeRow(r, {clue: clueCol, answer: answerCol, writer: writerCol, email: emailCol, id: idCol}))
         .filter(r => r.Clue && r.Answer && r.Writer);
 
       if (!fresh.length) {
@@ -355,9 +356,9 @@ function toggleAnswer(el){
   }
 }
 
-/* Flash + swipe */
+/* Flash + swipe (updated flash for Workshop -> 💡) */
 function flashMessage(direction){
-  const emojiMap={ right:"🔧", left:"❌", down:"⭐" };
+  const emojiMap={ right:"💡", left:"❌", down:"⭐" };
   flash.textContent=emojiMap[direction]||"";
   flash.classList.add("show");
   setTimeout(()=>flash.classList.remove("show"),600);
@@ -395,7 +396,7 @@ function undoAssessment(){
   updateCounts();
 }
 
-/* Export (UTF-8 BOM for emoji) */
+/* Export (UTF-8 BOM for emoji) — includes Email + Id when present */
 function exportCSV(){
   buzz(15);
   const filtered = clues.filter(c=>c.Assessment);
@@ -403,7 +404,8 @@ function exportCSV(){
     Clue: c.Clue || "",
     Answer: c.Answer || "",
     Writer: c.Writer || "",
-    Email: c.Email || "",                  // <-- NEW in export
+    Email: c.Email || "",
+    Id: c.Id || "",
     Assessment: c.Assessment || "",
     Note: c.Note || "",
     React: c.React || ""
