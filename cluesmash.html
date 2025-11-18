@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Sansita+Black:ital,wght@1,900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script src="="https://hammerjs.github.io/dist/hammer.min.js"></script>
+<script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
 /* Base */
@@ -35,6 +35,17 @@ body.modal-open {
   top: var(--scroll-lock, 0);
 }
 
+/* Top-right pill (unused but leaving style) */
+#app-switch{
+  position: fixed;
+  top: 10px; right: 10px;
+  background: #fff; color: #000;
+  border: 2px solid #000; border-radius: 999px;
+  padding: .45rem .7rem; font-size: .9rem; text-decoration: none;
+  box-shadow: 4px 4px 0 #000; z-index: 1200;
+}
+#app-switch:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+
 /* Title */
 #title-wrapper { display: flex; justify-content: center; margin-bottom: 0.5rem; }
 #title-wrapper img { height: 40px; width: auto; }
@@ -45,4 +56,642 @@ body.modal-open {
 /* Tab buttons */
 .tab {
   padding: 0.6rem 1.2rem; font-size: 1rem; font-weight: 700;
-  border-radius: 16px; cursor: pointer; background: #fff
+  border-radius: 16px; cursor: pointer; background: #fff; color: #000;
+  border: 2px solid #000; box-shadow: 4px 4px 0 #000;
+  transition: transform 0.1s ease-in-out, background 0.2s ease;
+}
+.tab:hover { transform: translateY(-1px); }
+.tab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+.tab.active { background: #fff2b3; color: #000; }
+
+/* Counts & progress */
+#assessmentCounts { font-size: 1.2rem; margin-bottom: 0.5rem; color: #222; }
+#progress {
+  width: 90vw; max-width: 500px; height: 6px;
+  background: rgba(255,255,255,0.3); border-radius: 3px;
+  margin-bottom: 0.3rem; overflow: hidden;
+}
+#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
+#progressCount { font-size: 1.4rem; margin-bottom: 1.5rem; text-align: center; color: #222; }
+
+/* Clue pane */
+#card {
+  background: white; color: #222; border: 3px solid #000; border-radius: 20px;
+  padding: 2rem 1.5rem; font-size: 2.2rem; line-height: 1.4;
+  box-shadow: 6px 6px 0 #000; text-align: center; width: 80vw; max-width: 380px;
+  margin-bottom: 2rem; transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+/* Swipe animations */
+#card.enter { transform: translateX(0) scale(1); opacity: 1; }
+#card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+#card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+
+/* Answer block */
+#answer {
+  cursor: pointer; padding: 0 0.4em; border-radius: 6px; font-size: 2.2rem; font-weight: 700;
+  display: inline-block; background: black; color: black; letter-spacing: 0.2em;
+  font-family: 'Montserrat', sans-serif; transition: background-color 0.3s ease, color 0.3s ease;
+}
+#answer.revealed { background: none; color: #222; letter-spacing: normal; }
+
+#writer { font-size: 1.3rem; color: #555; margin-top: 1rem; }
+
+/* Emoji controls */
+#buttons {
+  display: flex; justify-content: center; gap: 2.2rem; width: auto; margin-bottom: 2rem; font-size: 2.5rem;
+}
+.emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000, 4px 4px 0 #000; }
+.emoji-btn:hover, .emoji-btn:active { transform: scale(1.3); text-shadow: 3px 3px 0 #000, 6px 6px 0 #000; }
+
+/* Bottom fixed buttons container */
+#bottomButtons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  z-index: 1200;
+}
+#bottomButtons button {
+  flex: 1;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 0;
+  background-color: #444;
+  color: white;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+#resetBtn { background-color: #bb0000; }
+
+/* Flash emoji */
+#flashMessage {
+  position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+  font-size: 5rem; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none; z-index: 999; text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
+}
+#flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+
+/* Note overlay */
+#noteOverlay {
+  display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
+  width: 75%; max-width: 300px; background: white; color: #222; border-radius: 20px;
+  padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000;
+}
+#noteText {
+  width: 85%; height: 120px; font-size: 2.2rem; padding: 1rem; border-radius: 12px;
+  border: 2px solid #222; resize: none; background: white; color: #222; line-height: 1.4;
+}
+#noteOverlay button {
+  margin-top: 1rem; padding: 0.6rem 1rem; font-weight: 700; border-radius: 16px;
+  border: none; background: #222; color: white; cursor: pointer;
+}
+
+/* React palette (long-press on ❌) */
+#reactPalette{
+  position: fixed; display: none; background:#fff; color:#000; border:2px solid #000;
+  border-radius:14px; padding:.35rem .5rem; box-shadow:6px 6px 0 #000; z-index:1100; font-size:1.6rem; gap:.5rem;
+}
+#reactPalette .rp{ cursor:pointer; padding:.1rem .3rem; border-radius:10px; border:2px solid transparent; }
+#reactPalette .rp.active{ background:#fff2b3; border-color:#000; }
+</style>
+</head>
+<body>
+<div id="title-wrapper">
+  <img src="https://i.imgur.com/3cTvC1h.png" alt="cluesmash logo">
+</div>
+
+<div id="tabs">
+  <div class="tab" data-source="members">Liam</div>
+  <div class="tab" data-source="setters">Cory</div>
+  <div class="tab" data-source="book">Other</div>
+</div>
+
+<div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
+<div id="progress"><div id="progressBar"></div></div>
+<div id="progressCount"></div>
+<div id="flashMessage"></div>
+
+<div id="card" style="display:none;"></div>
+
+<!-- Emoji controls -->
+<div id="buttons">
+  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('left', () => recordAssessment('No')))()" aria-label="No" role="button" tabindex="0">❌</span>
+  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('right', () => recordAssessment('Workshop')))()" aria-label="Workshop" role="button" tabindex="0">💡</span>
+  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('down', () => recordAssessment('Perfect')))()" aria-label="Perfect" role="button" tabindex="0">⭐</span>
+  <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
+  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
+</div>
+
+<!-- Long-press React palette (opens from ❌) -->
+<div id="reactPalette" role="dialog" aria-hidden="true"></div>
+
+<!-- Bottom buttons -->
+<div id="bottomButtons">
+  <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
+  <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
+</div>
+
+<div id="noteOverlay">
+  <textarea id="noteText" placeholder="Write here..."></textarea>
+  <button onclick="saveNote()">OK</button>
+</div>
+
+<script>
+/* Haptics */
+function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* Data & state */
+let clues = [];
+let current = 0;
+const history = [];
+const counts = { No:0, Workshop:0, Perfect:0 };
+
+const card = document.getElementById("card");
+const flash = document.getElementById("flashMessage");
+const progressBar = document.getElementById("progressBar");
+const progressCount = document.getElementById("progressCount");
+const assessmentCounts = document.getElementById("assessmentCounts");
+
+/* which tab (source) – persist last used */
+let currentSource = localStorage.getItem("clueMatchLastTab") || "members";
+
+/* UI locks for modal/palette safety */
+let uiLocked = false;
+let noteOpen = false;
+let noteTargetIndex = null;
+
+/* React config */
+const REACT_CHOICES = ['👏','😂','🤯','🤭','😜'];
+const DEFAULT_REACT = { No:'❤️', Workshop:'💡', Perfect:'⭐' };
+
+/* React palette state */
+const reactPalette = document.getElementById('reactPalette');
+let paletteOpen = false;
+
+/* Sources */
+const sheetUrls = {
+  members: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv",
+  setters: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTehLOvfLYgi1hKeHIP9z9MamhTvO4g0fSFFN9u4RTxmbYzeHBpan9AX8qS4A_UCBmZIHHCDUAZZpkT/pub?output=csv",
+  book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
+};
+
+/* Assessor mapping per source (for export only) */
+const assessorNames = {
+  members: "Liam",
+  setters: "Cory",
+  book: "Other"
+};
+
+/* ---------- helpers ---------- */
+function lockUI(){
+  uiLocked = true;
+  document.getElementById('buttons').style.pointerEvents = 'none';
+  card.style.pointerEvents = 'none';
+}
+function unlockUI(){
+  uiLocked = false;
+  document.getElementById('buttons').style.pointerEvents = '';
+  card.style.pointerEvents = '';
+}
+const guardUI = (fn)=> (...args)=>{ if(!uiLocked && !noteOpen) fn(...args); };
+
+function normalizeRow(r, cols){
+  const g = (obj, key) => (obj && key && obj[key]) || '';
+  return {
+    Clue:   String(g(r, cols.clue)).trim(),
+    Answer: String(g(r, cols.answer)).trim(),
+    Writer: String(g(r, cols.writer)).trim(),
+    Email:  String(g(r, cols.email)).trim(),
+    Id:     String(g(r, cols.id)).trim(),
+    Assessment: String(g(r, cols.assess) || r?.Assessment || '').trim(),
+    Note:       String(g(r, cols.note)   || r?.Note       || '').trim(),
+    React:      String(g(r, cols.react)  || r?.React      || '').trim()
+  };
+}
+function makeKey(r){
+  const id = (r.Id||'').trim();
+  if (id) return `ID§${id}`;
+  const s = [r.Clue||'', r.Answer||'', r.Writer||''].join('§');
+  let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
+  return `H§${h}`;
+}
+
+/* ---------- robust loader ---------- */
+function loadSheet() {
+  const proxy = "https://corsproxy.io/?";
+  card.style.display = 'block';
+  card.textContent = 'Loading…';
+
+  Papa.parse(proxy + sheetUrls[currentSource], {
+    download: true,
+    header: true,
+    complete: results => {
+      const rows = Array.isArray(results.data) ? results.data : [];
+
+      // Detect header names (case/space tolerant)
+      let clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', idCol='';
+      let noteCol='', assessCol='', reactCol='';
+      if (rows.length) {
+        const keys = Object.keys(rows[0] || {});
+        const keyMap = {};
+        keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
+
+        const pick = (cands) => cands.find(c => keyMap[c.toLowerCase().replace(/\s+/g,'')]) || '';
+
+        clueCol   = keyMap[pick(['clue','clues','cluetext'])]            || clueCol;
+        answerCol = keyMap[pick(['answer','answers','solution'])]        || answerCol;
+        writerCol = keyMap[pick(['writer','setter','author'])]           || writerCol;
+        emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
+        idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || '';
+
+        // normalize note/assess/react
+        noteCol   = keyMap[pick(['note','notes'])] || '';
+        assessCol = keyMap[pick(['assessment','assess'])] || '';
+        reactCol  = keyMap[pick(['react','reaction','emoji'])] || '';
+      }
+
+      // Fresh parse
+      let fresh = rows
+        .map(r => normalizeRow(r, {
+          clue: clueCol, answer: answerCol, writer: writerCol,
+          email: emailCol, id: idCol,
+          note: noteCol, assess: assessCol, react: reactCol
+        }))
+        .filter(r => r.Clue && r.Answer && r.Writer);
+
+      if (!fresh.length) {
+        card.textContent = 'No rows found.';
+        clues = []; current = 0; history.length=0; updateCounts(); updateProgress();
+        return;
+      }
+
+      // Merge saved Assessment/Note/React
+      let saved = null;
+      try {
+        const raw = localStorage.getItem("clueMatchProgress_" + currentSource);
+        if (raw) saved = JSON.parse(raw);
+      } catch {}
+
+      const savedMap = new Map();
+      if (saved && Array.isArray(saved.clues)) {
+        for (const s of saved.clues) {
+          const k = makeKey(s || {});
+          if (k) savedMap.set(k, {
+            Assessment: s.Assessment || '',
+            Note: s.Note || '',
+            React: s.React || ''
+          });
+        }
+      }
+      fresh = fresh.map(r => {
+        const sv = savedMap.get(makeKey(r));
+        if (sv) {
+          r.Assessment = sv.Assessment || r.Assessment;
+          r.Note = sv.Note || r.Note;
+          r.React = sv.React || r.React;
+        }
+        return r;
+      });
+
+      const idx = (saved && Number.isInteger(saved.current)) ? saved.current : 0;
+      current = (idx >= 0 && idx < fresh.length) ? idx : 0;
+
+      clues = fresh;
+      history.length = 0;
+      updateCounts();
+      updateProgress();
+      showNext();
+    },
+    error: err => alert("Error loading sheet: " + err.message)
+  });
+}
+
+/* UI updates */
+function updateCounts() {
+  counts.No=counts.Workshop=counts.Perfect=0;
+  clues.forEach(c=>{ if(c.Assessment){ counts[c.Assessment] = (counts[c.Assessment]||0)+1; }});
+  assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
+}
+function updateProgress() {
+  const percent = (clues.length ? (current / clues.length) * 100 : 0);
+  progressBar.style.width = percent + "%";
+  progressCount.textContent = clues.length ? `${Math.min(current + 1, clues.length)}/${clues.length}` : `0/0`;
+}
+function _renderCard(){
+  if(current>=clues.length){
+    card.innerHTML="<strong>All done!</strong>";
+    card.style.display="block";
+    document.getElementById("buttons").style.display="none";
+    progressBar.style.width="100%";
+    progressCount.textContent=`${clues.length}/${clues.length}`;
+    return;
+  }
+  const clue = clues[current];
+  card.innerHTML = `
+    <p>${clue.Clue}</p>
+    <p><strong>Answer:</strong> 
+      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
+    </p>
+    <p id="writer">${clue.Writer}</p>
+  `;
+  card.style.display="block"; 
+  card.className=''; void card.offsetWidth; card.classList.add('enter');
+
+  if (paletteOpen) closeReactPalette();
+
+  updateProgress();
+}
+let showNext = _renderCard;
+
+/* Answer reveal */
+function toggleAnswer(el){
+  buzz(10);
+  if(el.classList.contains('revealed')){
+    el.classList.remove('revealed'); el.textContent="████████";
+  } else {
+    el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer');
+  }
+}
+
+/* Flash + swipe */
+function flashMessage(direction){
+  const emojiMap={ right:"💡", left:"❌", down:"⭐" };
+  flash.textContent=emojiMap[direction]||"";
+  flash.classList.add("show");
+  setTimeout(()=>flash.classList.remove("show"),600);
+}
+function animateSwipe(direction,callback){
+  buzz(20);
+  card.classList.add(`swipe-${direction}`);
+  flashMessage(direction);
+  setTimeout(()=>{ card.className=''; callback(); },400);
+}
+
+/* Record / undo */
+function recordAssessment(value){
+  if(current>=clues.length) return;
+  const c = clues[current];
+  c.Assessment = value;
+
+  if (!c.React && DEFAULT_REACT[value]) {
+    c.React = DEFAULT_REACT[value];
+  }
+
+  saveProgress();
+  history.push(current);
+  current++;
+  updateCounts();
+  showNext();
+}
+function undoAssessment(){
+  if(history.length===0) return;
+  buzz(20);
+  current=history.pop();
+  updateCounts();
+  saveProgress();
+  showNext();
+}
+
+/* Export (UTF-8 BOM for emoji) — includes Email + Id when present + Assessor */
+function exportCSV(){
+  buzz(15);
+  const filtered = clues.filter(c=> c.Assessment || c.Note); // include note-only rows
+  const rows = filtered.map(c=>({
+    Clue: c.Clue || "",
+    Answer: c.Answer || "",
+    Writer: c.Writer || "",
+    Email: c.Email || "",
+    Id: c.Id || "",
+    Assessment: c.Assessment || "",
+    Note: c.Note || "",
+    React: c.React || "",
+    Assessor: assessorNames[currentSource] || ""
+  }));
+  const csv = Papa.unparse(rows);
+  const bom = '\ufeff';
+  const blob = new Blob([bom + csv],{type:"text/csv;charset=utf-8;"}); 
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob); 
+  link.download="reviewed_clues.csv"; 
+  link.click();
+}
+
+/* Persistence */
+function saveProgress(){ 
+  try{
+    localStorage.setItem("clueMatchProgress_"+currentSource, JSON.stringify({current, clues}));
+  }catch(e){
+    console.warn('saveProgress failed', e);
+  }
+}
+function resetProgress(){ 
+  if(confirm("Are you sure you want to reset all progress for this tab?")){
+    buzz(25);
+    localStorage.removeItem("clueMatchProgress_"+currentSource);
+    history.length = 0;
+    current = 0;
+    loadSheet();           // stay on same tab
+  }
+}
+
+/* Notes */
+function openNote(){ 
+  buzz(10);
+  noteOpen = true;
+  noteTargetIndex = current;  // freeze
+  lockUI();
+
+  const noteOverlay = document.getElementById("noteOverlay");
+  const noteText = document.getElementById("noteText"); 
+  const clue = clues[noteTargetIndex]; 
+  noteText.value = (clue && clue.Note) || ""; 
+
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.style.setProperty('--scroll-lock', `-${y}px`);
+  document.body.classList.add('modal-open');
+
+  noteOverlay.style.display = "block";
+  noteText.focus();
+
+  // auto-save on blur
+  noteText.addEventListener('blur', noteBlurSave, { once: true });
+
+  // Esc to close & save
+  noteOverlay.addEventListener('keydown', escToSaveNote);
+}
+function noteBlurSave(){
+  if (noteOpen && noteTargetIndex!=null && clues[noteTargetIndex]) {
+    const noteText = document.getElementById("noteText");
+    clues[noteTargetIndex].Note = noteText.value;
+    saveProgress();
+  }
+}
+function escToSaveNote(e){
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    saveNote();
+  }
+}
+function saveNote(){
+  buzz(15);
+  const noteText = document.getElementById("noteText"); 
+  if (noteTargetIndex != null && clues[noteTargetIndex]) {
+    clues[noteTargetIndex].Note = noteText.value; 
+    saveProgress();
+    console.info('Note saved', makeKey(clues[noteTargetIndex]), noteText.value);
+  }
+  document.getElementById("noteOverlay").style.display = "none"; 
+
+  const lock = getComputedStyle(document.body).getPropertyValue('--scroll-lock');
+  const y = Math.abs(parseInt(lock, 10)) || 0;
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('--scroll-lock');
+  window.scrollTo(0, y);
+
+  // cleanup
+  const noteOverlay = document.getElementById("noteOverlay");
+  noteOverlay.removeEventListener('keydown', escToSaveNote);
+  noteOpen = false;
+  noteTargetIndex = null;
+  unlockUI();
+}
+
+/* Tabs */
+function syncTabActiveClasses(){
+  document.querySelectorAll(".tab").forEach(tab=>{
+    if(tab.dataset.source === currentSource) tab.classList.add("active");
+    else tab.classList.remove("active");
+  });
+}
+syncTabActiveClasses();
+
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    currentSource = tab.dataset.source;
+    localStorage.setItem("clueMatchLastTab", currentSource);
+    loadSheet();
+    document.getElementById("buttons").style.display = "flex";
+  });
+});
+
+/* Swipe gestures */
+const mc=new Hammer(document.body);
+mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
+mc.on("swipeleft",  guardUI(()=>animateSwipe("left",  ()=>recordAssessment("No"))));
+mc.on("swiperight", guardUI(()=>animateSwipe("right", ()=>recordAssessment("Workshop"))));
+mc.on("swipedown",  guardUI(()=>animateSwipe("down",  ()=>recordAssessment("Perfect"))));
+
+/* Keyboard accessibility for emoji */
+document.querySelectorAll('.emoji-btn').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
+  });
+});
+
+/* React palette */
+function openReactPalette(anchorEl){
+  const clue = clues[current]; if(!clue) return;
+
+  lockUI();
+  const selected = clue.React || '';
+  reactPalette.innerHTML = REACT_CHOICES.map(e =>
+    `<span class="rp ${e===selected?'active':''}" data-emoji="${e}" title="React">${e}</span>`
+  ).join('');
+
+  const r = anchorEl.getBoundingClientRect();
+  reactPalette.style.left = r.left + 'px';
+  reactPalette.style.top  = (r.top - 56) + 'px';
+  reactPalette.style.display = 'flex';
+  reactPalette.setAttribute('aria-hidden','false');
+  paletteOpen = true;
+
+  reactPalette.querySelectorAll('.rp').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const e = el.dataset.emoji;
+      setReact(e); // will animate & advance
+    });
+  });
+
+  const outside = (ev)=>{
+    if (!reactPalette.contains(ev.target) && ev.target !== anchorEl){
+      closeReactPalette();
+      document.removeEventListener('mousedown', outside);
+      document.removeEventListener('touchstart', outside);
+    }
+  };
+  document.addEventListener('mousedown', outside);
+  document.addEventListener('touchstart', outside);
+}
+function closeReactPalette(){
+  reactPalette.style.display = 'none';
+  reactPalette.setAttribute('aria-hidden','true');
+  paletteOpen = false;
+  unlockUI();
+}
+function setReact(emoji){
+  buzz(8);
+  const c = clues[current]; if(!c) return;
+  c.React = emoji;
+  saveProgress();
+  closeReactPalette();
+
+  // Swipe-away animation, then record No (preserves chosen React)
+  animateSwipe('left', () => recordAssessment('No'));
+}
+
+/* Long-press on ❌ (No) to open palette; short tap still rejects */
+const noBtn = Array.from(document.querySelectorAll('#buttons .emoji-btn'))
+  .find(el => el.getAttribute('aria-label') === 'No');
+
+if (noBtn) {
+  const hm = new Hammer(noBtn);
+  hm.add(new Hammer.Press({ time: 450 }));
+
+  let pressed = false;
+  hm.on('press', () => { pressed = true; buzz(12); openReactPalette(noBtn); });
+
+  noBtn.addEventListener('click', (e) => {
+    if (pressed) {
+      e.preventDefault();
+      e.stopPropagation();
+      setTimeout(()=>{ pressed=false; }, 0);
+    }
+  });
+
+  const _showNext = showNext;
+  showNext = function(){
+    if (paletteOpen) closeReactPalette();
+    _showNext();
+  };
+}
+
+/* --- Debug/audit helper to spot unsaved notes on unload --- */
+function auditNotes(){
+  try{
+    const savedRaw = localStorage.getItem("clueMatchProgress_"+currentSource);
+    let saved = null; try{ saved = JSON.parse(savedRaw); }catch{}
+    const mem = new Map((saved?.clues||[]).map(c=>[makeKey(c), c.Note||'']));
+    const now = new Map(clues.map(c=>[makeKey(c), c.Note||'']));
+    let missing=0;
+    for (const [k, v] of now){
+      const sv = mem.get(k)||'';
+      if ((v||'') && sv===''){ missing++; console.warn('Note present in RAM but not saved', k, v); }
+    }
+    if (missing>0){
+      console.warn('auditNotes: some notes not persisted yet', {missing});
+    }
+  }catch(e){}
+}
+window.addEventListener('beforeunload', auditNotes);
+
+/* Init */
+window.onload=loadSheet;
+</script>
+</body>
+</html>
