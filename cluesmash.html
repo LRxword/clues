@@ -51,7 +51,14 @@ h1 {
 }
 
 /* Tabs row */
-#tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
+#tabs { display: flex; gap: 1rem; margin-bottom: 0.25rem; }
+
+/* Assessor label */
+#assessorLabel {
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  color: #222;
+}
 
 /* Tab buttons */
 .tab {
@@ -150,11 +157,12 @@ h1 {
 </div>
 
 <div id="tabs">
-  <div class="tab active" data-source="members">Members</div>
-  <div class="tab" data-source="setters">Setters</div>
-  <div class="tab" data-source="book">Book</div>
-  <div class="tab" data-link="cluestorm.html">Write</div>
+  <div class="tab active" data-source="members">Liam</div>
+  <div class="tab" data-source="setters">Cory</div>
+  <div class="tab" data-source="book">Other</div>
 </div>
+
+<div id="assessorLabel"></div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
@@ -220,6 +228,19 @@ const sheetUrls = {
   book: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQkx8S8wEjszf103yOxaKlP7ZgBwKkaGfvDDR0dAzFsVslo1bRGVC-gYYZ9-mn-v7f6Sz4PoKhvgswo/pub?output=csv"
 };
 
+/* Assessor mapping per source */
+const assessorNames = {
+  members: "Liam",
+  setters: "Cory",
+  book: "Other"
+};
+
+function updateAssessorLabel() {
+  const label = document.getElementById("assessorLabel");
+  const name = assessorNames[currentSource] || "";
+  label.textContent = name ? `Assessor: ${name}` : "";
+}
+
 /* ---------- helpers ---------- */
 function lockUI(){
   uiLocked = true;
@@ -282,7 +303,7 @@ function loadSheet() {
         emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
         idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || '';
 
-        // NEW: normalize note/assess/react
+        // normalize note/assess/react
         noteCol   = keyMap[pick(['note','notes'])] || '';
         assessCol = keyMap[pick(['assessment','assess'])] || '';
         reactCol  = keyMap[pick(['react','reaction','emoji'])] || '';
@@ -430,7 +451,7 @@ function undoAssessment(){
   showNext();
 }
 
-/* Export (UTF-8 BOM for emoji) — includes Email + Id when present */
+/* Export (UTF-8 BOM for emoji) — includes Email + Id when present + Assessor */
 function exportCSV(){
   buzz(15);
   const filtered = clues.filter(c=> c.Assessment || c.Note); // include note-only rows
@@ -442,7 +463,8 @@ function exportCSV(){
     Id: c.Id || "",
     Assessment: c.Assessment || "",
     Note: c.Note || "",
-    React: c.React || ""
+    React: c.React || "",
+    Assessor: assessorNames[currentSource] || ""
   }));
   const csv = Papa.unparse(rows);
   const bom = '\ufeff';
@@ -542,6 +564,7 @@ document.querySelectorAll(".tab").forEach(tab=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     tab.classList.add("active");
     currentSource = tab.dataset.source;
+    updateAssessorLabel();
     loadSheet();
     document.getElementById("buttons").style.display = "flex";
   });
@@ -658,6 +681,7 @@ function auditNotes(){
 window.addEventListener('beforeunload', auditNotes);
 
 /* Init */
+updateAssessorLabel();
 window.onload=loadSheet;
 </script>
 </body>
