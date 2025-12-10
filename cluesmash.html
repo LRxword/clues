@@ -212,8 +212,8 @@ function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 
 /* Data & state */
 let clues = [];
-let current = 0;
-const history = [];
+let current = 0;                // index of clue being shown
+const history = [];            // stack of { key, prevAssessment, prevReact, prevIndex }
 const counts = { No:0, Workshop:0, Perfect:0 };
 
 const card = document.getElementById("card");
@@ -317,6 +317,13 @@ function makeKey(r){
   let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return `H§${h}`;
 }
+function findClueIndexByKey(key) {
+  if (!key) return -1;
+  for (let i = 0; i < clues.length; i++) {
+    if (makeKey(clues[i]) === key) return i;
+  }
+  return -1;
+}
 
 /* Skip already-appraised clues */
 function skipAppraised() {
@@ -334,13 +341,6 @@ function sortByTalent(arr) {
     if (A === B) return 0;
     return A ? -1 : 1;
   });
-}
-
-/* Reorder current clues array by talent and skip appraised */
-function reorderCurrentClues() {
-  if (!Array.isArray(clues) || !clues.length) return;
-  sortByTalent(clues);
-  skipAppraised();
 }
 
 /* ---------- robust loader ---------- */
@@ -422,15 +422,12 @@ function loadSheet() {
 
       // Sort by talented writers first
       sortByTalent(fresh);
-
-      // Restore current if saved, else 0
-      let idx = 0;
-      if (saved && Number.isInteger(saved.current)) {
-        idx = saved.current;
-      }
-      current = (idx >= 0 && idx < fresh.length) ? idx : 0;
       clues = fresh;
       history.length = 0;
+
+      // Start at first unrated clue
+      current = clues.findIndex(c => !c.Assessment);
+      if (current === -1) current = clues.length;
 
       updateCounts();
       updateProgress();
@@ -447,12 +444,14 @@ function updateCounts() {
   assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
 function updateProgress() {
-  const percent = (clues.length ? (current / clues.length) * 100 : 0);
+  const reviewed = clues.filter(c => c.Assessment).length;
+  const total = clues.length;
+  const percent = (total ? (reviewed / total) * 100 : 0);
   progressBar.style.width = percent + "%";
-  progressCount.textContent = clues.length ? `${Math.min(current + 1, clues.length)}/${clues.length}` : `0/0`;
+  progressCount.textContent = `${reviewed}/${total}`;
 }
+
 function _renderCard(){
-  // Skip any already-appraised items
   skipAppraised();
 
   if(current>=clues.length){
@@ -501,6 +500,7 @@ let showNext = _renderCard;
 function toggleTalent(writer) {
   if (!writer) return;
 
+  // Remember current clue by key so we can stay on it
   const currentClue = clues[current];
   const key = currentClue ? makeKey(currentClue) : null;
 
@@ -513,17 +513,15 @@ function toggleTalent(writer) {
 
   saveTalentedWriters();
 
-  // Reorder clues so diamond setters float to the top,
-  // but keep us on the same clue (using key).
-  reorderCurrentClues();
-
+  // Resort by talent, but keep us on the same clue
+  sortByTalent(clues);
   if (key) {
-    const newIndex = clues.findIndex(c => makeKey(c) === key);
+    const newIndex = findClueIndexByKey(key);
     if (newIndex >= 0) current = newIndex;
   }
 
   saveProgress();
-  showNext(); // re-render current card with updated diamond
+  showNext(); // re-render current card with updated diamond + new queue
 }
 
 /* Answer reveal */
@@ -550,28 +548,54 @@ function animateSwipe(direction,callback){
   setTimeout(()=>{ card.className=''; callback(); },400);
 }
 
-/* Record / undo */
+/* Record / undo using stable keys */
 function recordAssessment(value){
   if(current>=clues.length) return;
   const c = clues[current];
-  c.Assessment = value;
+  const key = makeKey(c);
 
+  history.push({
+    key,
+    prevAssessment: c.Assessment || "",
+    prevReact: c.React || "",
+    prevIndex: current
+  });
+
+  c.Assessment = value;
   if (!c.React && DEFAULT_REACT[value]) {
     c.React = DEFAULT_REACT[value];
   }
 
   saveProgress();
-  history.push(current);
-  current++;
   updateCounts();
+
+  current++;            // move forward
+  skipAppraised();      // skip any already-rated
   showNext();
 }
 function undoAssessment(){
   if(history.length===0) return;
   buzz(20);
-  current=history.pop();
-  updateCounts();
+
+  const last = history.pop();
+  const idx = findClueIndexByKey(last.key);
+  if (idx === -1) {
+    // Clue not found (e.g. sheet changed) – just recompute from scratch
+    saveProgress();
+    updateCounts();
+    updateProgress();
+    showNext();
+    return;
+  }
+
+  const clue = clues[idx];
+  clue.Assessment = last.prevAssessment;
+  clue.React = last.prevReact;
+
+  current = idx;  // go back to this clue
   saveProgress();
+  updateCounts();
+  updateProgress();
   showNext();
 }
 
@@ -613,7 +637,7 @@ function resetProgress(){
     localStorage.removeItem("clueMatchProgress_"+currentSource);
     history.length = 0;
     current = 0;
-    loadSheet();           // stay on same tab
+    loadSheet();           // stay on same tab; diamonds are preserved
   }
 }
 
@@ -661,7 +685,6 @@ function saveNote(){
   if (noteTargetIndex != null && clues[noteTargetIndex]) {
     clues[noteTargetIndex].Note = noteText.value; 
     saveProgress();
-    console.info('Note saved', makeKey(clues[noteTargetIndex]), noteText.value);
   }
   document.getElementById("noteOverlay").style.display = "none"; 
 
@@ -698,7 +721,7 @@ document.querySelectorAll(".tab").forEach(tab=>{
   });
 });
 
-/* Swipe gestures */
+/* Swipe gestures (global) */
 const mc=new Hammer(document.body);
 mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
 mc.on("swipeleft",  guardUI(()=>animateSwipe("left",  ()=>recordAssessment("No"))));
