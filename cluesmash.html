@@ -250,19 +250,8 @@ function saveTalentedWriters() {
     console.warn("Failed to save talentedWriters", e);
   }
 }
-
 function isTalentedWriter(name) {
   return talentedWriters.includes(name);
-}
-
-function sortByTalent(arr) {
-  if (!Array.isArray(arr)) return;
-  arr.sort((a, b) => {
-    const A = isTalentedWriter(a.Writer);
-    const B = isTalentedWriter(b.Writer);
-    if (A === B) return 0;
-    return A ? -1 : 1;
-  });
 }
 
 /* which tab (source) – persist last used */
@@ -334,6 +323,17 @@ function skipAppraised() {
   while (current < clues.length && clues[current].Assessment) {
     current++;
   }
+}
+
+/* Sort by talented writers first */
+function sortByTalent(arr) {
+  if (!Array.isArray(arr)) return;
+  arr.sort((a, b) => {
+    const A = isTalentedWriter(a.Writer);
+    const B = isTalentedWriter(b.Writer);
+    if (A === B) return 0;
+    return A ? -1 : 1;
+  });
 }
 
 /* Reorder current clues array by talent and skip appraised */
@@ -423,10 +423,15 @@ function loadSheet() {
       // Sort by talented writers first
       sortByTalent(fresh);
 
-      // Start from beginning, but we'll skip appraised ones
-      current = 0;
+      // Restore current if saved, else 0
+      let idx = 0;
+      if (saved && Number.isInteger(saved.current)) {
+        idx = saved.current;
+      }
+      current = (idx >= 0 && idx < fresh.length) ? idx : 0;
       clues = fresh;
       history.length = 0;
+
       updateCounts();
       updateProgress();
       showNext();
@@ -469,7 +474,7 @@ function _renderCard(){
     </p>
     <p id="writer">
       ${clue.Writer}
-      <span class="talent-toggle" style="cursor:pointer; margin-left:10px; font-size:1.6rem;" data-writer="${encodeURIComponent(clue.Writer)}">
+      <span class="talent-toggle" style="cursor:pointer; margin-left:10px; font-size:1.6rem;" data-writer="${encodeURIComponent(clue.Writer)}" title="Toggle diamond setter">
         ${diamond}
       </span>
     </p>
@@ -495,19 +500,30 @@ let showNext = _renderCard;
 /* Toggle diamond status for a writer */
 function toggleTalent(writer) {
   if (!writer) return;
+
+  const currentClue = clues[current];
+  const key = currentClue ? makeKey(currentClue) : null;
+
   const idx = talentedWriters.indexOf(writer);
   if (idx >= 0) {
-    talentedWriters.splice(idx, 1);
+    talentedWriters.splice(idx, 1);    // remove diamond
   } else {
-    talentedWriters.push(writer);
+    talentedWriters.push(writer);      // add diamond
   }
+
   saveTalentedWriters();
 
-  // Reorder current clues, restart from beginning, and show next un-appraised
+  // Reorder clues so diamond setters float to the top,
+  // but keep us on the same clue (using key).
   reorderCurrentClues();
-  current = 0;
-  updateCounts();
-  showNext();
+
+  if (key) {
+    const newIndex = clues.findIndex(c => makeKey(c) === key);
+    if (newIndex >= 0) current = newIndex;
+  }
+
+  saveProgress();
+  showNext(); // re-render current card with updated diamond
 }
 
 /* Answer reveal */
@@ -655,7 +671,6 @@ function saveNote(){
   document.body.style.removeProperty('--scroll-lock');
   window.scrollTo(0, y);
 
-  // cleanup
   const noteOverlay = document.getElementById("noteOverlay");
   noteOverlay.removeEventListener('keydown', escToSaveNote);
   noteOpen = false;
