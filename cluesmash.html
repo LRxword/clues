@@ -222,6 +222,49 @@ const progressBar = document.getElementById("progressBar");
 const progressCount = document.getElementById("progressCount");
 const assessmentCounts = document.getElementById("assessmentCounts");
 
+/* Talented writers (diamond setters) */
+let talentedWriters = JSON.parse(localStorage.getItem("talentedWriters") || "[]");
+
+// Preload initial diamond setters if none saved yet
+if (talentedWriters.length === 0) {
+  talentedWriters = [
+    "Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Arbel Feldman",
+    "Ayylexis","B N Z","Bill Lash","Billy Frank","Campbell H","Campsite","Cole Baron",
+    "Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S",
+    "Emilia D","Emily C","Ethan R","Eulerian","Gabriel K.","Gregory Lewis","hattie",
+    "hevorius","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T",
+    "Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","jojo!","jvsn89","Kelly Hicks","Lee Hoe",
+    "Lucy","Luminoid","Mattasdqwe","mattLOLd","NatalyBenderskyShalem","Nate Mizelle",
+    "Nixfriarr","null","Óin Stoch","Oren","Pete Craw","Peter Green","Phil McLean",
+    "Rob D","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Seivad","sngpretzel",
+    "Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","ventimony",
+    "Waxon","vaughn"
+  ];
+  localStorage.setItem("talentedWriters", JSON.stringify(talentedWriters));
+}
+
+function saveTalentedWriters() {
+  try {
+    localStorage.setItem("talentedWriters", JSON.stringify(talentedWriters));
+  } catch(e) {
+    console.warn("Failed to save talentedWriters", e);
+  }
+}
+
+function isTalentedWriter(name) {
+  return talentedWriters.includes(name);
+}
+
+function sortByTalent(arr) {
+  if (!Array.isArray(arr)) return;
+  arr.sort((a, b) => {
+    const A = isTalentedWriter(a.Writer);
+    const B = isTalentedWriter(b.Writer);
+    if (A === B) return 0;
+    return A ? -1 : 1;
+  });
+}
+
 /* which tab (source) – persist last used */
 let currentSource = localStorage.getItem("clueMatchLastTab") || "members";
 
@@ -284,6 +327,20 @@ function makeKey(r){
   const s = [r.Clue||'', r.Answer||'', r.Writer||''].join('§');
   let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return `H§${h}`;
+}
+
+/* Skip already-appraised clues */
+function skipAppraised() {
+  while (current < clues.length && clues[current].Assessment) {
+    current++;
+  }
+}
+
+/* Reorder current clues array by talent and skip appraised */
+function reorderCurrentClues() {
+  if (!Array.isArray(clues) || !clues.length) return;
+  sortByTalent(clues);
+  skipAppraised();
 }
 
 /* ---------- robust loader ---------- */
@@ -363,9 +420,11 @@ function loadSheet() {
         return r;
       });
 
-      const idx = (saved && Number.isInteger(saved.current)) ? saved.current : 0;
-      current = (idx >= 0 && idx < fresh.length) ? idx : 0;
+      // Sort by talented writers first
+      sortByTalent(fresh);
 
+      // Start from beginning, but we'll skip appraised ones
+      current = 0;
       clues = fresh;
       history.length = 0;
       updateCounts();
@@ -388,6 +447,9 @@ function updateProgress() {
   progressCount.textContent = clues.length ? `${Math.min(current + 1, clues.length)}/${clues.length}` : `0/0`;
 }
 function _renderCard(){
+  // Skip any already-appraised items
+  skipAppraised();
+
   if(current>=clues.length){
     card.innerHTML="<strong>All done!</strong>";
     card.style.display="block";
@@ -397,21 +459,56 @@ function _renderCard(){
     return;
   }
   const clue = clues[current];
+  const isTalented = isTalentedWriter(clue.Writer);
+  const diamond = isTalented ? "💎" : "◻️";
+
   card.innerHTML = `
     <p>${clue.Clue}</p>
     <p><strong>Answer:</strong> 
       <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
     </p>
-    <p id="writer">${clue.Writer}</p>
+    <p id="writer">
+      ${clue.Writer}
+      <span class="talent-toggle" style="cursor:pointer; margin-left:10px; font-size:1.6rem;" data-writer="${encodeURIComponent(clue.Writer)}">
+        ${diamond}
+      </span>
+    </p>
   `;
   card.style.display="block"; 
   card.className=''; void card.offsetWidth; card.classList.add('enter');
+
+  // Attach handler for diamond toggle
+  const talentSpan = card.querySelector('.talent-toggle');
+  if (talentSpan) {
+    talentSpan.addEventListener('click', () => {
+      const writer = decodeURIComponent(talentSpan.getAttribute('data-writer') || '');
+      toggleTalent(writer);
+    });
+  }
 
   if (paletteOpen) closeReactPalette();
 
   updateProgress();
 }
 let showNext = _renderCard;
+
+/* Toggle diamond status for a writer */
+function toggleTalent(writer) {
+  if (!writer) return;
+  const idx = talentedWriters.indexOf(writer);
+  if (idx >= 0) {
+    talentedWriters.splice(idx, 1);
+  } else {
+    talentedWriters.push(writer);
+  }
+  saveTalentedWriters();
+
+  // Reorder current clues, restart from beginning, and show next un-appraised
+  reorderCurrentClues();
+  current = 0;
+  updateCounts();
+  showNext();
+}
 
 /* Answer reveal */
 function toggleAnswer(el){
