@@ -287,12 +287,13 @@ function makeKey(r){
 }
 
 /* ---------- robust loader ---------- */
-function loadSheet() {
+function loadSheet(forceFresh=false) { // FIX: add forceFresh param
   const proxy = "https://corsproxy.io/?";
+  const cacheBust = forceFresh ? `&_=${Date.now()}` : ""; // FIX: cache-bust on demand
   card.style.display = 'block';
   card.textContent = 'Loading…';
 
-  Papa.parse(proxy + sheetUrls[currentSource], {
+  Papa.parse(proxy + sheetUrls[currentSource] + cacheBust, { // FIX: append cacheBust
     download: true,
     header: true,
     complete: results => {
@@ -353,12 +354,15 @@ function loadSheet() {
           });
         }
       }
+
+      // FIX: safer merge — only apply saved values if any exist for that row.
+      // (Prevents empty/old localStorage entries from overriding fresh CSV edits.)
       fresh = fresh.map(r => {
         const sv = savedMap.get(makeKey(r));
-        if (sv) {
-          r.Assessment = sv.Assessment || r.Assessment;
-          r.Note = sv.Note || r.Note;
-          r.React = sv.React || r.React;
+        if (sv && (sv.Assessment || sv.Note || sv.React)) { // FIX
+          r.Assessment = sv.Assessment || ''; // FIX: override with saved (only when meaningful)
+          r.Note = sv.Note || '';             // FIX
+          r.React = sv.React || '';           // FIX
         }
         return r;
       });
@@ -495,12 +499,25 @@ function saveProgress(){
   }
 }
 function resetProgress(){ 
+  // FIX: Reset Progress should wipe everything (for this tab) and force fresh CSV reload
   if(confirm("Are you sure you want to reset all progress for this tab?")){
     buzz(25);
+
+    // FIX: remove progress for this tab
     localStorage.removeItem("clueMatchProgress_"+currentSource);
+
+    // Optional “wipe all tabs” (leave commented unless you want it)
+    // Object.keys(localStorage)
+    //   .filter(k => k.startsWith("clueMatchProgress_"))
+    //   .forEach(k => localStorage.removeItem(k));
+
+    // FIX: wipe runtime state
     history.length = 0;
     current = 0;
-    loadSheet();           // stay on same tab
+    counts.No = counts.Workshop = counts.Perfect = 0;
+
+    // FIX: force a fresh fetch of the source CSV
+    loadSheet(true);
   }
 }
 
@@ -581,7 +598,7 @@ document.querySelectorAll(".tab").forEach(tab=>{
     tab.classList.add("active");
     currentSource = tab.dataset.source;
     localStorage.setItem("clueMatchLastTab", currentSource);
-    loadSheet();
+    loadSheet(); // normal load (no cache bust)
     document.getElementById("buttons").style.display = "flex";
   });
 });
@@ -697,7 +714,8 @@ function auditNotes(){
 window.addEventListener('beforeunload', auditNotes);
 
 /* Init */
-window.onload=loadSheet;
+// FIX: wrap onload so the event object isn't treated as forceFresh=true
+window.onload = () => loadSheet(false); // FIX
 </script>
 </body>
 </html>
