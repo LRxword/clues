@@ -592,10 +592,13 @@ document.querySelectorAll(".tab").forEach(tab=>{
     tab.classList.add("active");
     currentSource = tab.dataset.source;
     localStorage.setItem("clueMatchLastTab", currentSource);
-    loadSheet(); // normal load (no cache bust)
+
+    loadSheet(true); // 🔥 force fresh CSV on tab switch
+
     document.getElementById("buttons").style.display = "flex";
   });
 });
+
 
 /* Swipe gestures */
 const mc=new Hammer(document.body);
