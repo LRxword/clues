@@ -499,24 +499,18 @@ function saveProgress(){
   }
 }
 function resetProgress(){ 
-  // FIX: Reset Progress should wipe everything (for this tab) and force fresh CSV reload
-  if(confirm("Are you sure you want to reset all progress for this tab?")){
+  if(confirm("Are you sure you want to reset all progress for ALL tabs?")){
     buzz(25);
 
-    // FIX: remove progress for this tab
-    localStorage.removeItem("clueMatchProgress_"+currentSource);
+    // 🔥 WIPE ALL TABS, NOT JUST CURRENT
+    Object.keys(localStorage)
+      .filter(k => k.startsWith("clueMatchProgress_"))
+      .forEach(k => localStorage.removeItem(k));
 
-    // Optional “wipe all tabs” (leave commented unless you want it)
-    // Object.keys(localStorage)
-    //   .filter(k => k.startsWith("clueMatchProgress_"))
-    //   .forEach(k => localStorage.removeItem(k));
-
-    // FIX: wipe runtime state
     history.length = 0;
     current = 0;
     counts.No = counts.Workshop = counts.Perfect = 0;
 
-    // FIX: force a fresh fetch of the source CSV
     loadSheet(true);
   }
 }
