@@ -63,6 +63,14 @@ body.modal-open {
 #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
 #progressCount { font-size: 1.4rem; margin-bottom: 1.5rem; text-align: center; color: #222; }
 
+/* Subtle fade on count change */
+@keyframes countFade {
+  0%   { opacity: 1; transform: translateY(0); }
+  35%  { opacity: 0.35; transform: translateY(1px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#progressCount.count-fade { animation: countFade 240ms ease-out; }
+
 /* Clue pane */
 #card {
   background: white; color: #222; border: 3px solid #000; border-radius: 20px;
@@ -220,6 +228,10 @@ let currentKey = "";      // anchor key for robustness
 let viewMode = localStorage.getItem(VIEW_KEY) || "all"; // default
 let pendingQueueRebuild = false; // when stars change in All view, apply reordering after next assessment
 
+// For "X left" display + bar fill
+let queueStartSize = 0;
+let lastRemainingShown = null;
+
 const historyKeys = [];   // undo stack: clue keys (assessment undo)
 const counts = { No:0, Workshop:0, Perfect:0 };
 
@@ -302,100 +314,24 @@ function isStarredWriter(writerName){
 function toggleStarWriter(writerName){
   const k = getWriterKey(writerName);
   if (!k) return false;
-  // store explicit booleans so unstars persist and won't be re-seeded
   setterStars[k] = !setterStars[k];
   saveSetterStars();
   return setterStars[k];
 }
 
-/* ---------- initial seed list (adds missing only; never re-stars a user-unstarred key) ---------- */
+/* ---------- initial seed list ---------- */
 const INITIAL_STAR_SETTERS = [
-  "Adam Boyd",
-  "Adrian Paris",
-  "Adrián París",
-  "Alex Ritter",
-  "Amanda C",
-  "Andrew Phelps",
-  "Annie R",
-  "Arbel Feldman",
-  "Ayylexis",
-  "B N Z",
-  "Bill Lash",
-  "Billy Frank",
-  "CactusKex",
-  "Campbell H",
-  "Campsite",
-  "Cole Baron",
-  "Dan Heath",
-  "David Hassine",
-  "Dean Harding",
-  "Doug Thompson",
-  "Dr W",
-  "Dr_H",
-  "Eamonn S",
-  "Emilia D",
-  "Emily C",
-  "Ethan R",
-  "Eulerian",
-  "Felix H :)",
-  "Gabriel K.",
-  "Gregory Lewis",
-  "hattie",
-  "hevorius",
-  "HFGO",
-  "Holypeanut",
-  "Jack Porter",
-  "jaimen",
-  "Jake Burrow",
-  "James & Ollie",
-  "Jamie T",
-  "Jasel",
-  "Jay",
-  "JimbieP",
-  "Jo J",
-  "Jo O",
-  "Jody O",
-  "Johnny Quarrie",
-  "jojo!",
-  "jvsn89",
-  "Kelly Hicks",
-  "Lee Hoe",
-  "Lucy",
-  "Luminoid",
-  "Martin",
-  "Mattasdqwe",
-  "mattLOLd",
-  "maya00",
-  "mayasibul00",
-  "NatalyBenderskyShalem",
-  "Nate Mizelle",
-  "NateMiz",
-  "Nixfriarr",
-  "null",
-  "Óin Stoch",
-  "Oren",
-  "Pete Bowdon",
-  "Pete Craw",
-  "Peter Green",
-  "Phil McLean",
-  "Rob D",
-  "Rusty",
-  "Ryan Gittins",
-  "saintmark_w",
-  "Sam Mount (Kaldar)",
-  "Schrödie’s Cat",
-  "Seivad",
-  "sngpretzel",
-  "Stevie Reed",
-  "Supware",
-  "Tanner Burton",
-  "That Observer",
-  "Tyler Hopp",
-  "Tyr",
-  "vaughn",
-  "ventimony",
-  "Bluejay",
-  "hurblub"
+  "Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R",
+  "Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite",
+  "Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S",
+  "Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie",
+  "hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T",
+  "Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks",
+  "Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00",
+  "NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren",
+  "Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w",
+  "Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton",
+  "That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"
 ];
 
 function seedInitialStars(){
@@ -405,8 +341,6 @@ function seedInitialStars(){
   for (const name of INITIAL_STAR_SETTERS){
     const k = getWriterKey(name);
     if (!k) continue;
-
-    // only add if key doesn't exist at all (so user unstars remain respected)
     if (!(k in setterStars)){
       setterStars[k] = true;
       changed = true;
@@ -417,12 +351,6 @@ function seedInitialStars(){
 }
 
 /* ---------- queue rebuild ---------- */
-/*
-  We only work through UNASSESSED clues (Assessment empty).
-  View modes:
-   - all:    include all unassessed, but sort starred writers first (stable).
-   - stars:  include only unassessed where writer is starred.
-*/
 function rebuildQueue(keepKey=""){
   const unassessed = allClues.filter(c => !c.Assessment);
 
@@ -445,13 +373,11 @@ function rebuildQueue(keepKey=""){
 
   clues = next;
 
-  // Anchor: try keep the current clue if it still exists in this queue.
   if (keepKey){
     const i = clues.findIndex(c => makeKey(c) === keepKey);
     if (i >= 0) { currentIndex = i; currentKey = keepKey; return; }
   }
 
-  // Otherwise, keep currentIndex within bounds.
   if (currentIndex < 0) currentIndex = 0;
   if (currentIndex >= clues.length) currentIndex = Math.max(0, clues.length - 1);
   currentKey = clues[currentIndex] ? makeKey(clues[currentIndex]) : "";
@@ -503,6 +429,8 @@ function loadSheet(forceFresh=false) {
       if (!fresh.length) {
         card.textContent = 'No rows found.';
         allClues = []; clues = []; currentIndex = 0; currentKey = "";
+        queueStartSize = 0;
+        lastRemainingShown = null;
         updateCounts(); updateProgress();
         return;
       }
@@ -543,10 +471,12 @@ function loadSheet(forceFresh=false) {
       if (saved && typeof saved.currentKey === 'string') currentKey = saved.currentKey;
       else currentKey = "";
 
-      // Build queue + anchor
       rebuildQueue(currentKey);
 
-      // If we had a saved currentKey but it doesn't exist in this view, start at top.
+      // Start-of-run sizing for "X left"
+      queueStartSize = clues.length;
+      lastRemainingShown = null;
+
       if (currentKey && !clues.find(c => makeKey(c) === currentKey)) {
         currentIndex = 0;
         currentKey = clues[0] ? makeKey(clues[0]) : "";
@@ -566,13 +496,29 @@ function updateCounts() {
   allClues.forEach(c=>{ if(c.Assessment){ counts[c.Assessment] = (counts[c.Assessment]||0)+1; }});
   assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
+
+function bumpProgressFade(){
+  // retrigger animation even if called rapidly
+  progressCount.classList.remove('count-fade');
+  void progressCount.offsetWidth;
+  progressCount.classList.add('count-fade');
+}
+
 function updateProgress() {
-  // progress reflects queue position (unassessed in current view)
-  const total = clues.length;
-  const idx = Math.min(currentIndex + 1, total);
-  const percent = (total ? (currentIndex / total) * 100 : 0);
+  const remaining = clues.length;
+
+  if (!queueStartSize) queueStartSize = remaining;
+
+  const done = Math.max(0, queueStartSize - remaining);
+  const percent = queueStartSize ? (done / queueStartSize) * 100 : 0;
+
   progressBar.style.width = percent + "%";
-  progressCount.textContent = total ? `${idx}/${total}` : `0/0`;
+  progressCount.textContent = remaining === 1 ? "1 left" : `${remaining} left`;
+
+  if (lastRemainingShown === null || lastRemainingShown !== remaining){
+    bumpProgressFade();
+    lastRemainingShown = remaining;
+  }
 }
 
 /* Rendering */
@@ -584,7 +530,8 @@ function _renderCard(){
     card.style.display="block";
     document.getElementById("buttons").style.display="none";
     progressBar.style.width="100%";
-    progressCount.textContent = `0/0`;
+    progressCount.textContent = "0 left";
+    bumpProgressFade();
     return;
   }
 
@@ -658,8 +605,7 @@ function recordAssessment(value){
   historyKeys.push(key);
   saveProgress();
 
-  // Apply any pending star-order change in All view AFTER a swipe.
-  // In stars view, queue always rebuilds immediately anyway.
+  // After any swipe, rebuild queue (this will apply star ordering if it changed while in All view)
   rebuildQueue("");
   pendingQueueRebuild = false;
 
@@ -675,12 +621,10 @@ function undoAssessment(){
   const master = findInAllByKey(key);
   if (!master) return;
 
-  // True undo: clear assessment (keep react as-is)
   master.Assessment = "";
 
   saveProgress();
 
-  // Rebuild queue and jump back to the undone clue
   rebuildQueue(key);
   updateCounts();
   showNext();
@@ -732,6 +676,9 @@ function resetProgress(){
     currentIndex = 0;
     currentKey = "";
     pendingQueueRebuild = false;
+
+    queueStartSize = 0;
+    lastRemainingShown = null;
 
     // keep setterStars intact
     loadSheet(true);
@@ -816,10 +763,14 @@ function setViewMode(nextMode){
   localStorage.setItem(VIEW_KEY, viewMode);
   syncViewActiveClasses();
 
-  // switching views should apply ordering/filtering immediately
   pendingQueueRebuild = false;
 
   rebuildQueue(currentKey);
+
+  // new "run" sizing for this view
+  queueStartSize = clues.length;
+  lastRemainingShown = null;
+
   document.getElementById("buttons").style.display = "flex";
   updateProgress();
   showNext();
@@ -930,7 +881,6 @@ function attachWriterLongPress(){
   const wEl = document.getElementById('writer');
   if (!wEl) return;
 
-  // cleanup old hammer
   try{ writerPressHammer && writerPressHammer.destroy(); }catch{}
   writerPressHammer = new Hammer(wEl);
   writerPressHammer.add(new Hammer.Press({ time: 450 }));
@@ -940,6 +890,7 @@ function attachWriterLongPress(){
   writerPressHammer.on('press', ()=>{
     pressed = true;
     buzz(12);
+
     const clue = clues[currentIndex];
     if (!clue) { setTimeout(()=>{ pressed=false; }, 0); return; }
 
@@ -958,9 +909,7 @@ function attachWriterLongPress(){
     flash.classList.add("show");
     setTimeout(()=>flash.classList.remove("show"),450);
 
-    // re-render current card (badge changes); does not jump in All view
     showNext();
-
     setTimeout(()=>{ pressed=false; }, 0);
   });
 
