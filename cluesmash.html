@@ -87,16 +87,13 @@ body.modal-open {
 
 #writer {
   font-size: 1.3rem; color: #555; margin-top: 1rem;
-  display: inline-flex; gap: .45rem; align-items: center; justify-content: center;
+  display: inline-flex; gap: .35rem; align-items: center; justify-content: center;
 }
-#writerBadge{
-  font-size: 1.1rem;
-  border: 2px solid #000;
-  border-radius: 999px;
-  padding: .05rem .45rem;
-  background: #fff2b3;
-  color:#000;
-  box-shadow: 2px 2px 0 #000;
+
+/* Star badge is now plain (no pill/tablet) */
+#writerStar {
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 /* Emoji controls */
@@ -125,8 +122,6 @@ body.modal-open {
   border: none;
   cursor: pointer;
 }
-
-/* Make the two bases clearly different */
 #exportBtn { background-color: #222; }
 #resetBtn  { background-color: #e53935; }
 
@@ -223,6 +218,7 @@ let clues = [];           // current working queue (unassessed, filtered/sorted 
 let currentIndex = 0;     // index into `clues`
 let currentKey = "";      // anchor key for robustness
 let viewMode = localStorage.getItem(VIEW_KEY) || "all"; // default
+let pendingQueueRebuild = false; // when stars change in All view, apply reordering after next assessment
 
 const historyKeys = [];   // undo stack: clue keys (assessment undo)
 const counts = { No:0, Workshop:0, Perfect:0 };
@@ -596,14 +592,14 @@ function _renderCard(){
   currentKey = makeKey(clue);
 
   const starred = isStarredWriter(clue.Writer);
-  const badge = starred ? `<span id="writerBadge">⭐</span>` : "";
+  const star = starred ? `<span id="writerStar">⭐</span>` : "";
 
   card.innerHTML = `
     <p>${clue.Clue}</p>
     <p><strong>Answer:</strong>
       <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
     </p>
-    <p id="writer" title="Long-press to star/unstar setter">${clue.Writer} ${badge}</p>
+    <p id="writer" title="Long-press to star/unstar setter">${clue.Writer} ${star}</p>
   `;
   card.style.display="block";
   card.className=''; void card.offsetWidth; card.classList.add('enter');
@@ -662,8 +658,11 @@ function recordAssessment(value){
   historyKeys.push(key);
   saveProgress();
 
-  // current clue will drop out of the queue (now assessed). Keep index steady.
-  rebuildQueue(/*keepKey*/ "");
+  // Apply any pending star-order change in All view AFTER a swipe.
+  // In stars view, queue always rebuilds immediately anyway.
+  rebuildQueue("");
+  pendingQueueRebuild = false;
+
   updateCounts();
   showNext();
 }
@@ -732,6 +731,7 @@ function resetProgress(){
     historyKeys.length = 0;
     currentIndex = 0;
     currentKey = "";
+    pendingQueueRebuild = false;
 
     // keep setterStars intact
     loadSheet(true);
@@ -816,7 +816,9 @@ function setViewMode(nextMode){
   localStorage.setItem(VIEW_KEY, viewMode);
   syncViewActiveClasses();
 
-  // rebuild queue with anchor if possible
+  // switching views should apply ordering/filtering immediately
+  pendingQueueRebuild = false;
+
   rebuildQueue(currentKey);
   document.getElementById("buttons").style.display = "flex";
   updateProgress();
@@ -922,7 +924,7 @@ if (noBtn) {
   };
 }
 
-/* Writer long-press to star/unstar */
+/* Writer long-press to star/unstar (no queue jump in All view) */
 let writerPressHammer = null;
 function attachWriterLongPress(){
   const wEl = document.getElementById('writer');
@@ -939,28 +941,36 @@ function attachWriterLongPress(){
     pressed = true;
     buzz(12);
     const clue = clues[currentIndex];
-    if (!clue) return;
+    if (!clue) { setTimeout(()=>{ pressed=false; }, 0); return; }
 
     const newState = toggleStarWriter(clue.Writer);
 
-    // Rebuild queue; if current card becomes ineligible (star view + unstar), it will drop out.
-    rebuildQueue(currentKey);
+    if (viewMode === "stars") {
+      // in Star Setters view, eligibility changes immediately
+      rebuildQueue(currentKey);
+    } else {
+      // in All view, avoid reordering/jumping mid-card
+      pendingQueueRebuild = true;
+      // no rebuildQueue() here
+    }
 
-    // Tiny visual feedback by flashing the badge emoji
     flash.textContent = newState ? "⭐" : "☆";
     flash.classList.add("show");
     setTimeout(()=>flash.classList.remove("show"),450);
 
+    // re-render current card (badge changes); does not jump in All view
     showNext();
+
+    setTimeout(()=>{ pressed=false; }, 0);
   });
 
+  // suppress click after a press (no {once:true})
   wEl.addEventListener('click', (e)=>{
     if (pressed){
       e.preventDefault();
       e.stopPropagation();
-      setTimeout(()=>{ pressed=false; }, 0);
     }
-  }, { once: true });
+  });
 }
 
 /* Debug/audit helper */
