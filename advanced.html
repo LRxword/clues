@@ -20,7 +20,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem 7rem; /* bottom padding so buttons don't cover content */
+  padding: 2rem 1rem 7rem;
   color: white;
   user-select: none;
 }
@@ -39,10 +39,10 @@ body.modal-open {
 #title-wrapper { display: flex; justify-content: center; margin-bottom: 0.5rem; }
 #title-wrapper img { height: 40px; width: auto; }
 
-/* Tabs row */
+/* View toggle row */
 #tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
 
-/* Tab buttons */
+/* Toggle buttons */
 .tab {
   padding: 0.6rem 1.2rem; font-size: 1rem; font-weight: 700;
   border-radius: 16px; cursor: pointer; background: #fff; color: #000;
@@ -98,11 +98,8 @@ body.modal-open {
   display: inline-flex; gap: .35rem; align-items: center; justify-content: center;
 }
 
-/* Star badge is plain */
-#writerStar {
-  font-size: 1.25rem;
-  line-height: 1;
-}
+/* Plain star */
+#writerStar { font-size: 1.25rem; line-height: 1; }
 
 /* Emoji controls */
 #buttons {
@@ -222,12 +219,11 @@ let clues = [];
 let currentIndex = 0;
 let currentKey = "";
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
-let pendingQueueRebuild = false;
 
 let queueStartSize = 0;
 let lastRemainingShown = null;
 
-const historyKeys = [];
+const historyKeys = [];   // stores clue keys for undo
 const counts = { No:0, Workshop:0, Perfect:0 };
 
 /* UI */
@@ -269,19 +265,23 @@ function normalizeRow(r, cols){
     Answer: String(g(r, cols.answer)).trim(),
     Writer: String(g(r, cols.writer)).trim(),
     Email:  String(g(r, cols.email)).trim(),
-    Id:     String(g(r, cols.id)).trim(),
+    Id:     String(g(r, cols.id)).trim(),      // IMPORTANT: you now have Id in column A
     Assessment: String(g(r, cols.assess) || r?.Assessment || '').trim(),
     Note:       String(g(r, cols.note)   || r?.Note       || '').trim(),
     React:      String(g(r, cols.react)  || r?.React      || '').trim()
   };
 }
+
+/* With Ids present, this is now stable and undo-safe */
 function makeKey(r){
-  const id = (r.Id||'').trim();
+  const id = (r?.Id || '').trim();
   if (id) return `ID§${id}`;
-  const s = [r.Clue||'', r.Answer||'', r.Writer||''].join('§');
+  // emergency fallback (shouldn't be needed now)
+  const s = [r?.Clue||'', r?.Answer||'', r?.Writer||''].join('§');
   let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return `H§${h}`;
 }
+
 function getWriterKey(name){
   return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
 }
@@ -324,7 +324,6 @@ const INITIAL_STAR_SETTERS = [
   "Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton",
   "That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"
 ];
-
 function seedInitialStars(){
   if (!setterStars || typeof setterStars !== 'object') setterStars = {};
   let changed = false;
@@ -383,30 +382,29 @@ function loadSheet(forceFresh=false) {
     complete: results => {
       const rows = Array.isArray(results.data) ? results.data : [];
 
-      let clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', idCol='';
-      let noteCol='', assessCol='', reactCol='';
+      // Detect columns (case/space tolerant)
+      let idCol='Id', clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', noteCol='', assessCol='', reactCol='';
       if (rows.length) {
         const keys = Object.keys(rows[0] || {});
         const keyMap = {};
         keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
         const pick = (cands) => cands.find(c => keyMap[c.toLowerCase().replace(/\s+/g,'')]) || '';
 
-        clueCol   = keyMap[pick(['clue','clues','cluetext'])]            || clueCol;
-        answerCol = keyMap[pick(['answer','answers','solution'])]        || answerCol;
-        writerCol = keyMap[pick(['writer','setter','author'])]           || writerCol;
+        idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || idCol;
+        clueCol   = keyMap[pick(['clue','clues','cluetext'])]           || clueCol;
+        answerCol = keyMap[pick(['answer','answers','solution'])]       || answerCol;
+        writerCol = keyMap[pick(['writer','setter','author'])]          || writerCol;
         emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
-        idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || '';
-
         noteCol   = keyMap[pick(['note','notes'])] || '';
         assessCol = keyMap[pick(['assessment','assess'])] || '';
         reactCol  = keyMap[pick(['react','reaction','emoji'])] || '';
       }
 
+      // Parse
       let fresh = rows
         .map(r => normalizeRow(r, {
-          clue: clueCol, answer: answerCol, writer: writerCol,
-          email: emailCol, id: idCol,
-          note: noteCol, assess: assessCol, react: reactCol
+          id: idCol, clue: clueCol, answer: answerCol, writer: writerCol,
+          email: emailCol, note: noteCol, assess: assessCol, react: reactCol
         }))
         .filter(r => r.Clue && r.Answer && r.Writer);
 
@@ -419,6 +417,7 @@ function loadSheet(forceFresh=false) {
         return;
       }
 
+      // Load saved clue progress
       let saved = null;
       try {
         const raw = localStorage.getItem(PROGRESS_KEY);
@@ -437,6 +436,7 @@ function loadSheet(forceFresh=false) {
         }
       }
 
+      // Merge saved fields (only when meaningful)
       fresh = fresh.map(r => {
         const sv = savedMap.get(makeKey(r));
         if (sv && (sv.Assessment || sv.Note || sv.React)) {
@@ -449,11 +449,12 @@ function loadSheet(forceFresh=false) {
 
       allClues = fresh;
 
-      if (saved && typeof saved.currentKey === 'string') currentKey = saved.currentKey;
-      else currentKey = "";
+      // restore anchor
+      currentKey = (saved && typeof saved.currentKey === 'string') ? saved.currentKey : "";
 
       rebuildQueue(currentKey);
 
+      // new run sizing for "X left"
       queueStartSize = clues.length;
       lastRemainingShown = null;
 
@@ -525,7 +526,7 @@ function _renderCard(){
   if (paletteOpen) closeReactPalette();
 
   attachWriterLongPress();
-  saveProgress();
+  saveProgress();      // keep currentKey fresh
   updateProgress();
 }
 let showNext = _renderCard;
@@ -554,61 +555,61 @@ function animateSwipe(direction,callback){
   setTimeout(()=>{ card.className=''; callback(); },400);
 }
 
+/* ---- Key lookup (now reliable because Id exists) ---- */
+function findInAllByKey(key){
+  return allClues.find(c => makeKey(c) === key) || null;
+}
+
 /* Record / undo */
 function recordAssessment(value){
   if(currentIndex >= clues.length) return;
 
+  // mutate the current clue object (same reference as in allClues)
   const clue = clues[currentIndex];
-  if (!clue) return;
-
   const key = makeKey(clue);
 
-  // FIX: write directly onto the current clue object (no fragile lookup)
   clue.Assessment = value;
-
-  if (!clue.React && DEFAULT_REACT[value]) {
-    clue.React = DEFAULT_REACT[value];
-  }
+  if (!clue.React && DEFAULT_REACT[value]) clue.React = DEFAULT_REACT[value];
 
   historyKeys.push(key);
   saveProgress();
 
+  // remove assessed clue from queue and re-sort remaining (stars first in All)
   rebuildQueue("");
-  pendingQueueRebuild = false;
-
   updateCounts();
   showNext();
 }
 
+/* UNDO BUG FIX:
+   Undo now targets a unique ID-backed key, clears assessment, and re-anchors queue to that key.
+   With real Ids, this does NOT jump to the first clue anymore. */
 function undoAssessment(){
   if(historyKeys.length===0) return;
   buzz(20);
 
   const key = historyKeys.pop();
-
-  // Clear assessment on the master record (safe; even if key collision, this is the best we can do)
-  const master = allClues.find(c => makeKey(c) === key);
+  const master = findInAllByKey(key);
   if (!master) return;
 
   master.Assessment = "";
 
   saveProgress();
 
-  rebuildQueue(key);
+  rebuildQueue(key);      // anchor back to the undone clue
   updateCounts();
   showNext();
 }
 
-/* Export (UTF-8 BOM for emoji) — includes Email + Id when present */
+/* Export (UTF-8 BOM for emoji) */
 function exportCSV(){
   buzz(15);
   const filtered = allClues.filter(c=> c.Assessment || c.Note);
   const rows = filtered.map(c=>({
+    Id: c.Id || "",
     Clue: c.Clue || "",
     Answer: c.Answer || "",
     Writer: c.Writer || "",
     Email: c.Email || "",
-    Id: c.Id || "",
     Assessment: c.Assessment || "",
     Note: c.Note || "",
     React: c.React || ""
@@ -622,7 +623,7 @@ function exportCSV(){
   link.click();
 }
 
-/* Persistence */
+/* Persistence (clue progress only) */
 function saveProgress(){
   try{
     localStorage.setItem(PROGRESS_KEY, JSON.stringify({
@@ -634,6 +635,7 @@ function saveProgress(){
   }
 }
 
+/* Reset progress (does NOT touch stars) */
 function resetProgress(){
   if(confirm("Are you sure you want to reset clue progress? (Assessments, notes, reactions)")){
     buzz(25);
@@ -642,7 +644,6 @@ function resetProgress(){
     historyKeys.length = 0;
     currentIndex = 0;
     currentKey = "";
-    pendingQueueRebuild = false;
 
     queueStartSize = 0;
     lastRemainingShown = null;
@@ -663,8 +664,6 @@ function openNote(){
 
   const noteOverlay = document.getElementById("noteOverlay");
   const noteText = document.getElementById("noteText");
-
-  // Prefer direct object (current clue) — safe reference
   noteText.value = clue.Note || "";
 
   const y = window.scrollY || window.pageYOffset || 0;
@@ -680,7 +679,7 @@ function openNote(){
 function noteBlurSave(){
   if (noteOpen && noteTargetKey){
     const noteText = document.getElementById("noteText");
-    const master = allClues.find(c => makeKey(c) === noteTargetKey);
+    const master = findInAllByKey(noteTargetKey);
     if (master){
       master.Note = noteText.value;
       saveProgress();
@@ -696,7 +695,7 @@ function escToSaveNote(e){
 function saveNote(){
   buzz(15);
   const noteText = document.getElementById("noteText");
-  const master = allClues.find(c => makeKey(c) === noteTargetKey);
+  const master = findInAllByKey(noteTargetKey);
   if (master){
     master.Note = noteText.value;
     saveProgress();
@@ -730,8 +729,6 @@ function setViewMode(nextMode){
   localStorage.setItem(VIEW_KEY, viewMode);
   syncViewActiveClasses();
 
-  pendingQueueRebuild = false;
-
   rebuildQueue(currentKey);
 
   queueStartSize = clues.length;
@@ -742,9 +739,7 @@ function setViewMode(nextMode){
   showNext();
 }
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click",()=>{
-    setViewMode(tab.dataset.view);
-  });
+  tab.addEventListener("click",()=> setViewMode(tab.dataset.view));
 });
 syncViewActiveClasses();
 
@@ -806,7 +801,6 @@ function setReact(emoji){
   buzz(8);
   const clue = clues[currentIndex]; if(!clue) return;
 
-  // FIX: write directly (no lookup)
   clue.React = emoji;
   saveProgress();
   closeReactPalette();
@@ -814,7 +808,7 @@ function setReact(emoji){
   animateSwipe('left', () => recordAssessment('No'));
 }
 
-/* Long-press on ❌ opens react palette */
+/* Long-press on ❌ opens react palette; short tap still rejects */
 const noBtn = Array.from(document.querySelectorAll('#buttons .emoji-btn'))
   .find(el => el.getAttribute('aria-label') === 'No');
 
@@ -862,9 +856,8 @@ function attachWriterLongPress(){
     const newState = toggleStarWriter(clue.Writer);
 
     if (viewMode === "stars") {
+      // eligibility changes immediately
       rebuildQueue(currentKey);
-    } else {
-      pendingQueueRebuild = true;
     }
 
     flash.textContent = newState ? "⭐" : "☆";
@@ -883,7 +876,7 @@ function attachWriterLongPress(){
   });
 }
 
-/* Debug/audit helper */
+/* Audit helper */
 function auditNotes(){
   try{
     const savedRaw = localStorage.getItem(PROGRESS_KEY);
