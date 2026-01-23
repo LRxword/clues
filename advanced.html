@@ -286,6 +286,73 @@ function getWriterKey(name){
   return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
 }
 
+/* -------------------- AUTO FILTER RULESET --------------------
+   Includes:
+   1) Hard answer length rule: <3 letters OR >10 letters (letters-only, ignoring spaces/punct)
+   2) Hard answer character rule: answer contains anything other than letters/spaces
+   3) Hard clue rule: clue contains the full answer contiguously (normalised)
+   All auto-filtered clues are marked Assessment="Filtered" with NO note.
+-------------------------------------------------------------- */
+
+function answerLetterCount(ans){
+  // letters only; ignore spaces/punctuation/hyphens/etc.
+  return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
+}
+function answerHasOnlyLettersAndSpaces(ans){
+  // allow letters + spaces only (no hyphens, apostrophes, digits)
+  return /^[A-Za-z ]+$/.test(String(ans || "").trim());
+}
+function normForContainment(s){
+  // lower + strip diacritics + remove non-alnum (spaces collapsed)
+  return String(s || "")
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+function normAnswerForContainment(ans){
+  // like above but remove spaces entirely for more robust containment matching
+  return normForContainment(ans).replace(/\s+/g, '');
+}
+
+function applyHardFilters(clueList){
+  for (const c of clueList){
+    // Never override any existing human assessment (or earlier filters)
+    if (c.Assessment) continue;
+
+    const ans = String(c.Answer || "").trim();
+    const clue = String(c.Clue || "").trim();
+
+    // Rule A: Answer must be letters/spaces only
+    if (ans && !answerHasOnlyLettersAndSpaces(ans)){
+      c.Assessment = "Filtered";
+      continue;
+    }
+
+    // Rule B: Answer letter count must be 3..10 inclusive
+    const n = answerLetterCount(ans);
+    if (n > 0 && n < 3){
+      c.Assessment = "Filtered";
+      continue;
+    }
+    if (n > 10){
+      c.Assessment = "Filtered";
+      continue;
+    }
+
+    // Rule C: Clue contains the entire answer contiguously (normalised)
+    // (Very effective "too easy" filter)
+    const clueN = normForContainment(clue).replace(/\s+/g,'');
+    const ansN  = normAnswerForContainment(ans);
+    if (ansN && clueN.includes(ansN)){
+      c.Assessment = "Filtered";
+      continue;
+    }
+  }
+}
+/* ------------------ END AUTO FILTER RULESET ------------------ */
+
 /* ---------- setter stars ---------- */
 let setterStars = {};
 function loadSetterStars(){
@@ -449,6 +516,9 @@ function loadSheet(forceFresh=false) {
 
       allClues = fresh;
 
+      // Apply hard filters AFTER merge so "Filtered" persists and never re-enters queue
+      applyHardFilters(allClues);
+
       // restore anchor
       currentKey = (saved && typeof saved.currentKey === 'string') ? saved.currentKey : "";
 
@@ -564,7 +634,6 @@ function findInAllByKey(key){
 function recordAssessment(value){
   if(currentIndex >= clues.length) return;
 
-  // mutate the current clue object (same reference as in allClues)
   const clue = clues[currentIndex];
   const key = makeKey(clue);
 
@@ -574,15 +643,11 @@ function recordAssessment(value){
   historyKeys.push(key);
   saveProgress();
 
-  // remove assessed clue from queue and re-sort remaining (stars first in All)
   rebuildQueue("");
   updateCounts();
   showNext();
 }
 
-/* UNDO BUG FIX:
-   Undo now targets a unique ID-backed key, clears assessment, and re-anchors queue to that key.
-   With real Ids, this does NOT jump to the first clue anymore. */
 function undoAssessment(){
   if(historyKeys.length===0) return;
   buzz(20);
@@ -595,7 +660,7 @@ function undoAssessment(){
 
   saveProgress();
 
-  rebuildQueue(key);      // anchor back to the undone clue
+  rebuildQueue(key);
   updateCounts();
   showNext();
 }
@@ -856,7 +921,6 @@ function attachWriterLongPress(){
     const newState = toggleStarWriter(clue.Writer);
 
     if (viewMode === "stars") {
-      // eligibility changes immediately
       rebuildQueue(currentKey);
     }
 
