@@ -265,7 +265,7 @@ function normalizeRow(r, cols){
     Answer: String(g(r, cols.answer)).trim(),
     Writer: String(g(r, cols.writer)).trim(),
     Email:  String(g(r, cols.email)).trim(),
-    Id:     String(g(r, cols.id)).trim(),      // IMPORTANT: you now have Id in column A
+    Id:     String(g(r, cols.id)).trim(),
     Assessment: String(g(r, cols.assess) || r?.Assessment || '').trim(),
     Note:       String(g(r, cols.note)   || r?.Note       || '').trim(),
     React:      String(g(r, cols.react)  || r?.React      || '').trim()
@@ -276,7 +276,6 @@ function normalizeRow(r, cols){
 function makeKey(r){
   const id = (r?.Id || '').trim();
   if (id) return `ID§${id}`;
-  // emergency fallback (shouldn't be needed now)
   const s = [r?.Clue||'', r?.Answer||'', r?.Writer||''].join('§');
   let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return `H§${h}`;
@@ -286,24 +285,61 @@ function getWriterKey(name){
   return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
 }
 
+/* -------------------- ENUMERATION APPENDER --------------------
+   Requirement: clue column has no enumeration. We compute from Answer:
+   - Spaces => commas between word lengths: (3,7,3)
+   - Hyphens => hyphen separators inside the enum: (6-2-3)
+   - Letters counted only; ignore punctuation/apostrophes etc.
+-------------------------------------------------------------- */
+
+function computeEnumeration(answer){
+  const a = String(answer || "").trim();
+  if (!a) return "";
+
+  // split into "words" by spaces, but preserve hyphenated subparts
+  const words = a.split(/\s+/).filter(Boolean);
+  if (!words.length) return "";
+
+  const wordPartsEnums = words.map(w => {
+    // split by hyphen (one or more), keep only non-empty
+    const parts = w.split(/-+/).filter(Boolean);
+
+    const partLens = parts.map(p => (p.match(/[A-Za-z]/g) || []).length).filter(n => n > 0);
+
+    // if the word had no letters at all (weird), treat as 0-length and later filtered out
+    if (!partLens.length) return "";
+
+    // join with hyphen inside a word: 6-2-3
+    return partLens.join("-");
+  }).filter(Boolean);
+
+  if (!wordPartsEnums.length) return "";
+
+  // join words with commas: 3,7,3
+  return `(${wordPartsEnums.join(",")})`;
+}
+
+function clueWithEnum(clueText, answer){
+  const clue = String(clueText || "").trim();
+  const en = computeEnumeration(answer);
+  if (!en) return clue;
+  // avoid double-appending if clue already ends with something like "(3,7)"
+  if (/\(\s*\d[\d,\-\s]*\)\s*$/.test(clue)) return clue;
+  return `${clue} ${en}`;
+}
+/* ------------------ END ENUMERATION APPENDER ------------------ */
+
 /* -------------------- AUTO FILTER RULESET --------------------
    Includes:
    1) Hard answer length rule: <3 letters OR >10 letters (letters-only, ignoring spaces/punct)
-   2) Hard answer character rule: answer contains anything other than letters/spaces
-   3) Hard clue rule: clue contains the full answer contiguously (normalised)
+   5) (From earlier) clue contains the full answer contiguously (normalised)
    All auto-filtered clues are marked Assessment="Filtered" with NO note.
 -------------------------------------------------------------- */
 
 function answerLetterCount(ans){
-  // letters only; ignore spaces/punctuation/hyphens/etc.
   return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
 }
-function answerHasOnlyLettersAndSpaces(ans){
-  // allow letters + spaces only (no hyphens, apostrophes, digits)
-  return /^[A-Za-z ]+$/.test(String(ans || "").trim());
-}
 function normForContainment(s){
-  // lower + strip diacritics + remove non-alnum (spaces collapsed)
   return String(s || "")
     .toLowerCase()
     .normalize('NFKD')
@@ -312,7 +348,6 @@ function normForContainment(s){
     .trim();
 }
 function normAnswerForContainment(ans){
-  // like above but remove spaces entirely for more robust containment matching
   return normForContainment(ans).replace(/\s+/g, '');
 }
 
@@ -324,13 +359,7 @@ function applyHardFilters(clueList){
     const ans = String(c.Answer || "").trim();
     const clue = String(c.Clue || "").trim();
 
-    // Rule A: Answer must be letters/spaces only
-    if (ans && !answerHasOnlyLettersAndSpaces(ans)){
-      c.Assessment = "Filtered";
-      continue;
-    }
-
-    // Rule B: Answer letter count must be 3..10 inclusive
+    // Rule 1: Answer letter count must be 3..10 inclusive
     const n = answerLetterCount(ans);
     if (n > 0 && n < 3){
       c.Assessment = "Filtered";
@@ -341,8 +370,7 @@ function applyHardFilters(clueList){
       continue;
     }
 
-    // Rule C: Clue contains the entire answer contiguously (normalised)
-    // (Very effective "too easy" filter)
+    // Rule 5: Clue contains the entire answer contiguously (normalised)
     const clueN = normForContainment(clue).replace(/\s+/g,'');
     const ansN  = normAnswerForContainment(ans);
     if (ansN && clueN.includes(ansN)){
@@ -583,8 +611,10 @@ function _renderCard(){
   const starred = isStarredWriter(clue.Writer);
   const star = starred ? `<span id="writerStar">⭐</span>` : "";
 
+  const displayClue = clueWithEnum(clue.Clue, clue.Answer);
+
   card.innerHTML = `
-    <p>${clue.Clue}</p>
+    <p>${displayClue}</p>
     <p><strong>Answer:</strong>
       <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
     </p>
