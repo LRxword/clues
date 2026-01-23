@@ -272,7 +272,7 @@ function normalizeRow(r, cols){
   };
 }
 
-/* With Ids present, this is now stable and undo-safe */
+/* With Ids present, this is stable and undo-safe */
 function makeKey(r){
   const id = (r?.Id || '').trim();
   if (id) return `ID§${id}`;
@@ -285,54 +285,10 @@ function getWriterKey(name){
   return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
 }
 
-/* -------------------- ENUMERATION APPENDER --------------------
-   Requirement: clue column has no enumeration. We compute from Answer:
-   - Spaces => commas between word lengths: (3,7,3)
-   - Hyphens => hyphen separators inside the enum: (6-2-3)
-   - Letters counted only; ignore punctuation/apostrophes etc.
--------------------------------------------------------------- */
-
-function computeEnumeration(answer){
-  const a = String(answer || "").trim();
-  if (!a) return "";
-
-  // split into "words" by spaces, but preserve hyphenated subparts
-  const words = a.split(/\s+/).filter(Boolean);
-  if (!words.length) return "";
-
-  const wordPartsEnums = words.map(w => {
-    // split by hyphen (one or more), keep only non-empty
-    const parts = w.split(/-+/).filter(Boolean);
-
-    const partLens = parts.map(p => (p.match(/[A-Za-z]/g) || []).length).filter(n => n > 0);
-
-    // if the word had no letters at all (weird), treat as 0-length and later filtered out
-    if (!partLens.length) return "";
-
-    // join with hyphen inside a word: 6-2-3
-    return partLens.join("-");
-  }).filter(Boolean);
-
-  if (!wordPartsEnums.length) return "";
-
-  // join words with commas: 3,7,3
-  return `(${wordPartsEnums.join(",")})`;
-}
-
-function clueWithEnum(clueText, answer){
-  const clue = String(clueText || "").trim();
-  const en = computeEnumeration(answer);
-  if (!en) return clue;
-  // avoid double-appending if clue already ends with something like "(3,7)"
-  if (/\(\s*\d[\d,\-\s]*\)\s*$/.test(clue)) return clue;
-  return `${clue} ${en}`;
-}
-/* ------------------ END ENUMERATION APPENDER ------------------ */
-
 /* -------------------- AUTO FILTER RULESET --------------------
    Includes:
    1) Hard answer length rule: <3 letters OR >10 letters (letters-only, ignoring spaces/punct)
-   5) (From earlier) clue contains the full answer contiguously (normalised)
+   5) Hard clue rule: clue contains the full answer contiguously (normalised)
    All auto-filtered clues are marked Assessment="Filtered" with NO note.
 -------------------------------------------------------------- */
 
@@ -350,33 +306,20 @@ function normForContainment(s){
 function normAnswerForContainment(ans){
   return normForContainment(ans).replace(/\s+/g, '');
 }
-
 function applyHardFilters(clueList){
   for (const c of clueList){
-    // Never override any existing human assessment (or earlier filters)
     if (c.Assessment) continue;
 
     const ans = String(c.Answer || "").trim();
     const clue = String(c.Clue || "").trim();
 
-    // Rule 1: Answer letter count must be 3..10 inclusive
     const n = answerLetterCount(ans);
-    if (n > 0 && n < 3){
-      c.Assessment = "Filtered";
-      continue;
-    }
-    if (n > 10){
-      c.Assessment = "Filtered";
-      continue;
-    }
+    if (n > 0 && n < 3){ c.Assessment = "Filtered"; continue; }
+    if (n > 10){ c.Assessment = "Filtered"; continue; }
 
-    // Rule 5: Clue contains the entire answer contiguously (normalised)
     const clueN = normForContainment(clue).replace(/\s+/g,'');
     const ansN  = normAnswerForContainment(ans);
-    if (ansN && clueN.includes(ansN)){
-      c.Assessment = "Filtered";
-      continue;
-    }
+    if (ansN && clueN.includes(ansN)){ c.Assessment = "Filtered"; continue; }
   }
 }
 /* ------------------ END AUTO FILTER RULESET ------------------ */
@@ -433,6 +376,40 @@ function seedInitialStars(){
   if (changed) saveSetterStars();
 }
 
+/* ---------- enumeration helpers ---------- */
+function getEnumerationFromAnswer(answer){
+  const s = String(answer || "").trim();
+  if (!s) return "";
+
+  // Words separated by spaces; within each word allow hyphens.
+  const words = s.split(/\s+/).filter(Boolean);
+  const parts = words.map(w => {
+    const hy = w.split('-').filter(Boolean);
+    const segLens = hy.map(seg => (seg.match(/[A-Za-z]/g) || []).length);
+    return segLens.join('-'); // hyphens as requested (6-2-3)
+  });
+
+  // If multiple words, keep commas: (3,7) etc.
+  const enumStr = parts.join(',');
+  if (!enumStr || /^0+$/.test(enumStr.replace(/[^0-9]/g,''))) return "";
+  return ` (${enumStr})`;
+}
+function escapeHTML(s){
+  return String(s ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+function clueWithEnumeration(clue, answer){
+  const c = String(clue || "").trim();
+  const e = getEnumerationFromAnswer(answer);
+  // Avoid double-enumeration if the clue already ends with something like (3,4) or (6-2-3)
+  if (/\(\s*\d+(?:[\s,-]\d+)*\s*\)\s*$/.test(c)) return c;
+  return c + e;
+}
+
 /* ---------- queue rebuild ---------- */
 function rebuildQueue(keepKey=""){
   const unassessed = allClues.filter(c => !c.Assessment);
@@ -478,6 +455,7 @@ function loadSheet(forceFresh=false) {
       const rows = Array.isArray(results.data) ? results.data : [];
 
       // Detect columns (case/space tolerant)
+      // UPDATED: supports new headers: id, clue, answer, setter_name, email
       let idCol='Id', clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', noteCol='', assessCol='', reactCol='';
       if (rows.length) {
         const keys = Object.keys(rows[0] || {});
@@ -488,7 +466,10 @@ function loadSheet(forceFresh=false) {
         idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || idCol;
         clueCol   = keyMap[pick(['clue','clues','cluetext'])]           || clueCol;
         answerCol = keyMap[pick(['answer','answers','solution'])]       || answerCol;
-        writerCol = keyMap[pick(['writer','setter','author'])]          || writerCol;
+
+        // ✅ FIX: accept setter_name (new export format)
+        writerCol = keyMap[pick(['setter_name','settername','writer','setter','author'])] || writerCol;
+
         emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
         noteCol   = keyMap[pick(['note','notes'])] || '';
         assessCol = keyMap[pick(['assessment','assess'])] || '';
@@ -611,14 +592,14 @@ function _renderCard(){
   const starred = isStarredWriter(clue.Writer);
   const star = starred ? `<span id="writerStar">⭐</span>` : "";
 
-  const displayClue = clueWithEnum(clue.Clue, clue.Answer);
+  const clueText = clueWithEnumeration(clue.Clue, clue.Answer);
 
   card.innerHTML = `
-    <p>${displayClue}</p>
+    <p>${escapeHTML(clueText)}</p>
     <p><strong>Answer:</strong>
-      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${clue.Answer}">████████</span>
+      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${escapeHTML(clue.Answer)}">████████</span>
     </p>
-    <p id="writer" title="Long-press to star/unstar setter">${clue.Writer} ${star}</p>
+    <p id="writer" title="Long-press to star/unstar setter">${escapeHTML(clue.Writer)} ${star}</p>
   `;
   card.style.display="block";
   card.className=''; void card.offsetWidth; card.classList.add('enter');
@@ -626,7 +607,7 @@ function _renderCard(){
   if (paletteOpen) closeReactPalette();
 
   attachWriterLongPress();
-  saveProgress();      // keep currentKey fresh
+  saveProgress();
   updateProgress();
 }
 let showNext = _renderCard;
@@ -655,7 +636,7 @@ function animateSwipe(direction,callback){
   setTimeout(()=>{ card.className=''; callback(); },400);
 }
 
-/* ---- Key lookup (now reliable because Id exists) ---- */
+/* Key lookup */
 function findInAllByKey(key){
   return allClues.find(c => makeKey(c) === key) || null;
 }
