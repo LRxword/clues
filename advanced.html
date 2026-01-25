@@ -14,6 +14,7 @@
     min-height: 100dvh; display: flex; flex-direction: column; align-items: center; 
     padding: 2rem 1rem 7rem; color: white; user-select: none; overflow-x: hidden;
   }
+  body.modal-open { position: fixed; width: 100%; overflow: hidden; }
   #title-wrapper { margin-bottom: 0.5rem; }
   #title-wrapper img { height: 40px; }
   #tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
@@ -38,7 +39,7 @@
   #answer { cursor: pointer; padding: 0 0.4em; border-radius: 6px; background: black; color: black; transition: 0.3s; }
   #answer.revealed { background: none; color: #222; }
   #writer { font-size: 1.2rem; color: #555; margin-top: 1rem; }
-  #buttons { display: flex; gap: 2.2rem; font-size: 2.5rem; }
+  #buttons { display: flex; gap: 1.8rem; font-size: 2.5rem; align-items: center; }
   .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
   .emoji-btn:active { transform: scale(1.3); }
   #bottomButtons { position: fixed; bottom: 0; width: 100%; display: flex; z-index: 10; }
@@ -47,6 +48,21 @@
   #resetBtn { background: #e53935; }
   #flashMessage { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; opacity: 0; transition: 0.4s; pointer-events: none; }
   #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  
+  /* Note Overlay */
+  #noteOverlay {
+    display: none; position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 80%; max-width: 320px; background: white; border-radius: 20px;
+    padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000; border: 3px solid #000;
+  }
+  #noteText {
+    width: 90%; height: 100px; font-size: 1.2rem; padding: 0.5rem; border: 2px solid #000; 
+    border-radius: 10px; resize: none; font-family: inherit;
+  }
+  #noteOverlay button {
+    margin-top: 1rem; width: 100%; padding: 0.7rem; background: #222; color: #fff; 
+    border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -66,6 +82,7 @@
   <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))">❌</span>
   <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))">💡</span>
   <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))">⭐</span>
+  <span class="emoji-btn" onclick="openNote()">✏️</span>
   <span class="emoji-btn" onclick="undo()">↩️</span>
 </div>
 
@@ -74,13 +91,18 @@
   <button id="resetBtn" onclick="resetProgress()">Reset</button>
 </div>
 
+<div id="noteOverlay">
+  <textarea id="noteText" placeholder="Add a note..."></textarea>
+  <button onclick="saveNote()">Save</button>
+</div>
+
 <script>
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchStars";
 
-let allClues = [], clues = [], currentIndex = 0, currentKey = "";
+let allClues = [], clues = [], currentIndex = 0;
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
 let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}');
 let setterStars = JSON.parse(localStorage.getItem(STARS_KEY) || '{}');
@@ -88,6 +110,8 @@ const history = [];
 
 const card = document.getElementById("card");
 const flash = document.getElementById("flashMessage");
+const noteOverlay = document.getElementById("noteOverlay");
+const noteText = document.getElementById("noteText");
 
 function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 function makeKey(r){ return r.Id ? `ID§${r.Id}` : `H§${r.Clue}${r.Answer}`; }
@@ -104,7 +128,8 @@ async function loadSheet() {
       Clue: r.clue || r.Clue || "",
       Answer: r.answer || r.Answer || "",
       Writer: r.setter_name || r.Writer || "",
-      Assessment: progress.byId[r.id || r.Id]?.Assessment || ""
+      Assessment: progress.byId[r.id || r.Id]?.Assessment || "",
+      Note: progress.byId[r.id || r.Id]?.Note || ""
     })).filter(r => r.Clue && r.Answer);
 
     rebuild();
@@ -114,9 +139,7 @@ async function loadSheet() {
 function rebuild(keepKey = "") {
   clues = allClues.filter(c => !c.Assessment);
   if (viewMode === "stars") clues = clues.filter(c => setterStars[c.Writer.toLowerCase().trim()]);
-  
-  currentIndex = keepKey ? clues.findIndex(c => makeKey(c) === keepKey) : 0;
-  if (currentIndex < 0) currentIndex = 0;
+  currentIndex = 0;
   render();
 }
 
@@ -130,26 +153,45 @@ function render() {
   const isStarred = setterStars[c.Writer.toLowerCase().trim()];
   card.innerHTML = `<p>${c.Clue}</p><p><strong>Ans:</strong> <span id="answer" onclick="this.classList.toggle('revealed')">${c.Answer}</span></p><p id="writer">${c.Writer} ${isStarred?'⭐':''}</p>`;
   card.style.display = "block";
+  document.getElementById("buttons").style.display = "flex";
   updateUI();
 }
 
 function record(val) {
   const c = clues[currentIndex];
   c.Assessment = val;
-  progress.byId[c.Id] = { Assessment: val };
-  history.push(makeKey(c));
+  progress.byId[c.Id] = { Assessment: val, Note: c.Note || "" };
+  history.push(c.Id);
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
   rebuild();
 }
 
 function undo() {
-  const key = history.pop();
-  if (!key) return;
-  const id = key.replace("ID§","");
-  const c = allClues.find(cl => cl.Id === id);
-  if (c) { c.Assessment = ""; delete progress.byId[id]; }
+  const lastId = history.pop();
+  if (!lastId) return;
+  const c = allClues.find(cl => cl.Id === lastId);
+  if (c) { c.Assessment = ""; delete progress.byId[lastId].Assessment; }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-  rebuild(key);
+  rebuild();
+}
+
+function openNote() {
+  if (currentIndex >= clues.length) return;
+  noteText.value = clues[currentIndex].Note || "";
+  noteOverlay.style.display = "block";
+  document.body.classList.add("modal-open");
+  noteText.focus();
+}
+
+function saveNote() {
+  const c = clues[currentIndex];
+  c.Note = noteText.value;
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
+  progress.byId[c.Id].Note = c.Note;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  noteOverlay.style.display = "none";
+  document.body.classList.remove("modal-open");
+  buzz(15);
 }
 
 function updateUI() {
@@ -169,7 +211,9 @@ function animateSwipe(dir, cb) {
 }
 
 function exportCSV() {
-  const data = allClues.filter(c => c.Assessment).map(c => ({ id: c.Id, clue: c.Clue, answer: c.Answer, setter: c.Writer, result: c.Assessment }));
+  const data = allClues.filter(c => c.Assessment || c.Note).map(c => ({ 
+    id: c.Id, clue: c.Clue, answer: c.Answer, setter: c.Writer, result: c.Assessment, note: c.Note 
+  }));
   const blob = new Blob(['\ufeff' + Papa.unparse(data)], { type: "text/csv" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
