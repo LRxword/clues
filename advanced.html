@@ -208,14 +208,18 @@ function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
-/* Persistence keys */
-const PROGRESS_KEY = "clueMatchProgress_main";
+/* Persistence keys
+   HARDENING CHANGE:
+   - We no longer store the entire clue list in localStorage.
+   - We store ONLY a compact map: { id -> {Assessment, Note, React} } + currentKey.
+*/
+const PROGRESS_KEY = "clueMatchProgress_compact_v1";
 const VIEW_KEY     = "clueMatchViewMode";
 const STARS_KEY    = "clueMatchSetterStars";
 
 /* Data & state */
-let allClues = [];
-let clues = [];
+let allClues = [];   // full dataset in memory only (fresh each load)
+let clues = [];      // queue (unassessed & not Filtered)
 let currentIndex = 0;
 let currentKey = "";
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
@@ -223,7 +227,7 @@ let viewMode = localStorage.getItem(VIEW_KEY) || "all";
 let queueStartSize = 0;
 let lastRemainingShown = null;
 
-const historyKeys = [];   // stores clue keys for undo
+const historyKeys = [];   // undo stack (session only)
 const counts = { No:0, Workshop:0, Perfect:0 };
 
 /* UI */
@@ -258,40 +262,129 @@ function unlockUI(){
 }
 const guardUI = (fn)=> (...args)=>{ if(!uiLocked && !noteOpen) fn(...args); };
 
-function normalizeRow(r, cols){
-  const g = (obj, key) => (obj && key && obj[key]) || '';
-  return {
-    Clue:   String(g(r, cols.clue)).trim(),
-    Answer: String(g(r, cols.answer)).trim(),
-    Writer: String(g(r, cols.writer)).trim(),
-    Email:  String(g(r, cols.email)).trim(),
-    Id:     String(g(r, cols.id)).trim(),
-    Assessment: String(g(r, cols.assess) || r?.Assessment || '').trim(),
-    Note:       String(g(r, cols.note)   || r?.Note       || '').trim(),
-    React:      String(g(r, cols.react)  || r?.React      || '').trim()
-  };
+function getWriterKey(name){
+  return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
 }
 
-/* With Ids present, this is stable and undo-safe */
+/* Id is authoritative (your new CSV has id) */
 function makeKey(r){
-  const id = (r?.Id || '').trim();
+  const id = String(r?.Id || r?.id || "").trim();
   if (id) return `ID§${id}`;
   const s = [r?.Clue||'', r?.Answer||'', r?.Writer||''].join('§');
   let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
   return `H§${h}`;
 }
 
-function getWriterKey(name){
-  return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
+/* Flexible column getter */
+function pickFirst(row, candidates){
+  for (const c of candidates){
+    if (row && Object.prototype.hasOwnProperty.call(row, c)) return row[c];
+  }
+  return "";
+}
+function normalizeRow(raw, cols){
+  const get = (obj, key) => (key && obj && obj[key] != null) ? obj[key] : "";
+  return {
+    // canonical fields
+    Id:     String(get(raw, cols.id)).trim(),
+    Clue:   String(get(raw, cols.clue)).trim(),
+    Answer: String(get(raw, cols.answer)).trim(),
+    Writer: String(get(raw, cols.writer)).trim(),
+    Email:  String(get(raw, cols.email)).trim(),
+
+    // app fields
+    Assessment: "",
+    Note: "",
+    React: "",
+
+    // keep the raw row around so export can include extra fields later if you want
+    _raw: raw
+  };
+}
+
+/* ---------- enumeration append for display ---------- */
+/* Examples:
+   "OLD COLLEGE TRY" -> (3,7,3)
+   "ANSWER" -> (6)
+   "SIX-TWO-THREE" -> (3-3-5)
+   "FOO-BAR BAZ" -> (3-3,3)
+*/
+function answerToEnumeration(answer){
+  const ans = String(answer || "").trim();
+  if (!ans) return "";
+
+  // Split on spaces into "words"
+  const words = ans.split(/\s+/).filter(Boolean).map(word => {
+    // Within each word, split on hyphens
+    const hyParts = word.split('-').filter(Boolean).map(part => {
+      const letters = (part.match(/[A-Za-z]/g) || []).length;
+      return letters > 0 ? String(letters) : "";
+    }).filter(Boolean);
+
+    if (!hyParts.length) return "";
+    return hyParts.join('-');
+  }).filter(Boolean);
+
+  if (!words.length) return "";
+  return `(${words.join(',')})`;
+}
+
+/* ---------- compact progress store ---------- */
+let progress = { currentKey:"", byId:{} };
+
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object'){
+      progress.currentKey = typeof parsed.currentKey === 'string' ? parsed.currentKey : "";
+      progress.byId = parsed.byId && typeof parsed.byId === 'object' ? parsed.byId : {};
+    }
+  }catch{}
+}
+function saveProgress(){
+  try{
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+      currentKey,
+      byId: progress.byId || {}
+    }));
+  }catch(e){
+    console.warn('saveProgress failed', e);
+  }
+}
+function getIdFromKey(key){
+  if (!key) return "";
+  const m = String(key).match(/^ID§(.+)$/);
+  return m ? m[1] : "";
+}
+function applyProgressToClue(c){
+  const id = String(c.Id || "").trim();
+  if (!id) return;
+  const entry = progress.byId[id];
+  if (!entry) return;
+  c.Assessment = entry.Assessment || "";
+  c.Note = entry.Note || "";
+  c.React = entry.React || "";
+}
+function writeClueToProgress(c){
+  const id = String(c.Id || "").trim();
+  if (!id) return;
+  progress.byId[id] = {
+    Assessment: c.Assessment || "",
+    Note: c.Note || "",
+    React: c.React || ""
+  };
 }
 
 /* -------------------- AUTO FILTER RULESET --------------------
    Includes:
    1) Hard answer length rule: <3 letters OR >10 letters (letters-only, ignoring spaces/punct)
    5) Hard clue rule: clue contains the full answer contiguously (normalised)
-   All auto-filtered clues are marked Assessment="Filtered" with NO note.
+   Also:
+   - Mark Assessment="Filtered" (no note)
+   - Never override a human assessment (No/Workshop/Perfect), or a saved assessment already present.
 -------------------------------------------------------------- */
-
 function answerLetterCount(ans){
   return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
 }
@@ -308,15 +401,18 @@ function normAnswerForContainment(ans){
 }
 function applyHardFilters(clueList){
   for (const c of clueList){
+    // Never override any existing assessment (including previously Filtered)
     if (c.Assessment) continue;
 
     const ans = String(c.Answer || "").trim();
     const clue = String(c.Clue || "").trim();
 
+    // Rule 1: Answer letter count must be 3..10 inclusive (letters only)
     const n = answerLetterCount(ans);
     if (n > 0 && n < 3){ c.Assessment = "Filtered"; continue; }
     if (n > 10){ c.Assessment = "Filtered"; continue; }
 
+    // Rule 5: Clue contains the whole answer contiguously (normalised)
     const clueN = normForContainment(clue).replace(/\s+/g,'');
     const ansN  = normAnswerForContainment(ans);
     if (ansN && clueN.includes(ansN)){ c.Assessment = "Filtered"; continue; }
@@ -376,43 +472,11 @@ function seedInitialStars(){
   if (changed) saveSetterStars();
 }
 
-/* ---------- enumeration helpers ---------- */
-function getEnumerationFromAnswer(answer){
-  const s = String(answer || "").trim();
-  if (!s) return "";
-
-  // Words separated by spaces; within each word allow hyphens.
-  const words = s.split(/\s+/).filter(Boolean);
-  const parts = words.map(w => {
-    const hy = w.split('-').filter(Boolean);
-    const segLens = hy.map(seg => (seg.match(/[A-Za-z]/g) || []).length);
-    return segLens.join('-'); // hyphens as requested (6-2-3)
-  });
-
-  // If multiple words, keep commas: (3,7) etc.
-  const enumStr = parts.join(',');
-  if (!enumStr || /^0+$/.test(enumStr.replace(/[^0-9]/g,''))) return "";
-  return ` (${enumStr})`;
-}
-function escapeHTML(s){
-  return String(s ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
-function clueWithEnumeration(clue, answer){
-  const c = String(clue || "").trim();
-  const e = getEnumerationFromAnswer(answer);
-  // Avoid double-enumeration if the clue already ends with something like (3,4) or (6-2-3)
-  if (/\(\s*\d+(?:[\s,-]\d+)*\s*\)\s*$/.test(c)) return c;
-  return c + e;
-}
-
 /* ---------- queue rebuild ---------- */
 function rebuildQueue(keepKey=""){
+  // IMPORTANT: Exclude anything assessed, including "Filtered"
   const unassessed = allClues.filter(c => !c.Assessment);
+
   let next = unassessed;
 
   if (viewMode === "stars"){
@@ -440,115 +504,114 @@ function rebuildQueue(keepKey=""){
   currentKey = clues[0] ? makeKey(clues[0]) : "";
 }
 
-/* ---------- loader ---------- */
-function loadSheet(forceFresh=false) {
+/* ---------- loading (fetch + no-store so it actually refreshes) ---------- */
+async function fetchCSVText(forceFresh=false){
   const proxy = "https://corsproxy.io/?";
-  const cacheBust = forceFresh ? `&_=${Date.now()}` : "";
+  const cacheBust = `&_=${Date.now()}`; // always bust
 
+  // Use no-store to bypass browser cache
+  const res = await fetch(proxy + encodeURIComponent(SHEET_URL + cacheBust), {
+    cache: "no-store",
+    headers: { "pragma": "no-cache", "cache-control": "no-cache" }
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
+async function loadSheet(forceFresh=false){
   card.style.display = 'block';
   card.textContent = 'Loading…';
 
-  Papa.parse(proxy + SHEET_URL + cacheBust, {
-    download: true,
+  let text = "";
+  try{
+    text = await fetchCSVText(forceFresh);
+  }catch(e){
+    alert("Error loading sheet: " + (e?.message || e));
+    return;
+  }
+
+  const parsed = Papa.parse(text, {
     header: true,
-    complete: results => {
-      const rows = Array.isArray(results.data) ? results.data : [];
-
-      // Detect columns (case/space tolerant)
-      // UPDATED: supports new headers: id, clue, answer, setter_name, email
-      let idCol='Id', clueCol='Clue', answerCol='Answer', writerCol='Writer', emailCol='', noteCol='', assessCol='', reactCol='';
-      if (rows.length) {
-        const keys = Object.keys(rows[0] || {});
-        const keyMap = {};
-        keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
-        const pick = (cands) => cands.find(c => keyMap[c.toLowerCase().replace(/\s+/g,'')]) || '';
-
-        idCol     = keyMap[pick(['id','uid','uniqueid','unique_id'])]   || idCol;
-        clueCol   = keyMap[pick(['clue','clues','cluetext'])]           || clueCol;
-        answerCol = keyMap[pick(['answer','answers','solution'])]       || answerCol;
-
-        // ✅ FIX: accept setter_name (new export format)
-        writerCol = keyMap[pick(['setter_name','settername','writer','setter','author'])] || writerCol;
-
-        emailCol  = keyMap[pick(['email','writeremail','writer_email','writer e-mail','emailaddress','e-mail','contact','contactemail'])] || '';
-        noteCol   = keyMap[pick(['note','notes'])] || '';
-        assessCol = keyMap[pick(['assessment','assess'])] || '';
-        reactCol  = keyMap[pick(['react','reaction','emoji'])] || '';
-      }
-
-      // Parse
-      let fresh = rows
-        .map(r => normalizeRow(r, {
-          id: idCol, clue: clueCol, answer: answerCol, writer: writerCol,
-          email: emailCol, note: noteCol, assess: assessCol, react: reactCol
-        }))
-        .filter(r => r.Clue && r.Answer && r.Writer);
-
-      if (!fresh.length) {
-        card.textContent = 'No rows found.';
-        allClues = []; clues = []; currentIndex = 0; currentKey = "";
-        queueStartSize = 0;
-        lastRemainingShown = null;
-        updateCounts(); updateProgress();
-        return;
-      }
-
-      // Load saved clue progress
-      let saved = null;
-      try {
-        const raw = localStorage.getItem(PROGRESS_KEY);
-        if (raw) saved = JSON.parse(raw);
-      } catch {}
-
-      const savedMap = new Map();
-      if (saved && Array.isArray(saved.clues)) {
-        for (const s of saved.clues) {
-          const k = makeKey(s || {});
-          if (k) savedMap.set(k, {
-            Assessment: s.Assessment || '',
-            Note: s.Note || '',
-            React: s.React || ''
-          });
-        }
-      }
-
-      // Merge saved fields (only when meaningful)
-      fresh = fresh.map(r => {
-        const sv = savedMap.get(makeKey(r));
-        if (sv && (sv.Assessment || sv.Note || sv.React)) {
-          r.Assessment = sv.Assessment || '';
-          r.Note = sv.Note || '';
-          r.React = sv.React || '';
-        }
-        return r;
-      });
-
-      allClues = fresh;
-
-      // Apply hard filters AFTER merge so "Filtered" persists and never re-enters queue
-      applyHardFilters(allClues);
-
-      // restore anchor
-      currentKey = (saved && typeof saved.currentKey === 'string') ? saved.currentKey : "";
-
-      rebuildQueue(currentKey);
-
-      // new run sizing for "X left"
-      queueStartSize = clues.length;
-      lastRemainingShown = null;
-
-      updateCounts();
-      updateProgress();
-      showNext();
-    },
-    error: err => alert("Error loading sheet: " + err.message)
+    skipEmptyLines: true
   });
+
+  const rows = Array.isArray(parsed.data) ? parsed.data : [];
+
+  if (!rows.length){
+    card.textContent = 'No rows found.';
+    allClues = []; clues = []; currentIndex = 0; currentKey = "";
+    queueStartSize = 0;
+    lastRemainingShown = null;
+    updateCounts(); updateProgress();
+    return;
+  }
+
+  // Detect columns (case/space tolerant) AND support new schema
+  const keys = Object.keys(rows[0] || {});
+  const keyMap = {};
+  keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
+
+  const pick = (cands) => {
+    for (const c of cands){
+      const norm = c.toLowerCase().replace(/\s+/g,'');
+      if (keyMap[norm]) return keyMap[norm];
+    }
+    return '';
+  };
+
+  const cols = {
+    id:     pick(['id','uid','uniqueid','unique_id']) || 'id',
+    clue:   pick(['clue','clues','cluetext']) || 'clue',
+    answer: pick(['answer','answers','solution']) || 'answer',
+    writer: pick(['writer','setter','author','setter_name','settername']) || 'setter_name',
+    email:  pick(['email','writeremail','writer_email','emailaddress','contactemail']) || 'email'
+  };
+
+  // Build fresh list
+  let fresh = rows
+    .map(r => normalizeRow(r, cols))
+    .filter(r => r.Id && r.Clue && r.Answer && r.Writer);
+
+  if (!fresh.length){
+    card.textContent = 'No rows found.';
+    allClues = []; clues = []; currentIndex = 0; currentKey = "";
+    queueStartSize = 0;
+    lastRemainingShown = null;
+    updateCounts(); updateProgress();
+    return;
+  }
+
+  // Apply saved compact progress
+  for (const c of fresh) applyProgressToClue(c);
+
+  allClues = fresh;
+
+  // Apply hard filters AFTER progress merge so filtered persists & never re-enters queue
+  applyHardFilters(allClues);
+
+  // Restore anchor
+  currentKey = progress.currentKey || "";
+
+  rebuildQueue(currentKey);
+
+  // New run sizing for "X left"
+  queueStartSize = clues.length;
+  lastRemainingShown = null;
+
+  updateCounts();
+  updateProgress();
+  showNext();
 }
 
 /* UI updates */
 function updateCounts() {
   counts.No=counts.Workshop=counts.Perfect=0;
-  allClues.forEach(c=>{ if(c.Assessment){ counts[c.Assessment] = (counts[c.Assessment]||0)+1; }});
+  allClues.forEach(c=>{
+    if(c.Assessment){
+      counts[c.Assessment] = (counts[c.Assessment]||0)+1;
+    }
+  });
   assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 }
 function bumpProgressFade(){
@@ -588,18 +651,21 @@ function _renderCard(){
 
   const clue = clues[currentIndex];
   currentKey = makeKey(clue);
+  progress.currentKey = currentKey;
+  saveProgress();
 
   const starred = isStarredWriter(clue.Writer);
   const star = starred ? `<span id="writerStar">⭐</span>` : "";
 
-  const clueText = clueWithEnumeration(clue.Clue, clue.Answer);
+  const enumText = answerToEnumeration(clue.Answer);
+  const clueText = enumText ? `${clue.Clue} <span style="color:#777;font-weight:700">${enumText}</span>` : clue.Clue;
 
   card.innerHTML = `
-    <p>${escapeHTML(clueText)}</p>
+    <p>${clueText}</p>
     <p><strong>Answer:</strong>
-      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${escapeHTML(clue.Answer)}">████████</span>
+      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${escapeHtml(clue.Answer)}">████████</span>
     </p>
-    <p id="writer" title="Long-press to star/unstar setter">${escapeHTML(clue.Writer)} ${star}</p>
+    <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(clue.Writer)} ${star}</p>
   `;
   card.style.display="block";
   card.className=''; void card.offsetWidth; card.classList.add('enter');
@@ -607,10 +673,18 @@ function _renderCard(){
   if (paletteOpen) closeReactPalette();
 
   attachWriterLongPress();
-  saveProgress();
   updateProgress();
 }
 let showNext = _renderCard;
+
+function escapeHtml(s){
+  return String(s ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
 
 /* Answer reveal */
 function toggleAnswer(el){
@@ -636,11 +710,6 @@ function animateSwipe(direction,callback){
   setTimeout(()=>{ card.className=''; callback(); },400);
 }
 
-/* Key lookup */
-function findInAllByKey(key){
-  return allClues.find(c => makeKey(c) === key) || null;
-}
-
 /* Record / undo */
 function recordAssessment(value){
   if(currentIndex >= clues.length) return;
@@ -651,6 +720,8 @@ function recordAssessment(value){
   clue.Assessment = value;
   if (!clue.React && DEFAULT_REACT[value]) clue.React = DEFAULT_REACT[value];
 
+  // persist compact
+  writeClueToProgress(clue);
   historyKeys.push(key);
   saveProgress();
 
@@ -664,11 +735,16 @@ function undoAssessment(){
   buzz(20);
 
   const key = historyKeys.pop();
-  const master = findInAllByKey(key);
+  const id = getIdFromKey(key);
+  if (!id) return;
+
+  // find in allClues
+  const master = allClues.find(c => String(c.Id||"").trim() === id);
   if (!master) return;
 
   master.Assessment = "";
-
+  // keep React/Note as-is (undo only affects assessment)
+  writeClueToProgress(master);
   saveProgress();
 
   rebuildQueue(key);
@@ -676,20 +752,27 @@ function undoAssessment(){
   showNext();
 }
 
-/* Export (UTF-8 BOM for emoji) */
+/* Export (UTF-8 BOM for emoji)
+   Includes "Filtered" rows too (because Assessment is set) */
 function exportCSV(){
   buzz(15);
-  const filtered = allClues.filter(c=> c.Assessment || c.Note);
+  const filtered = allClues.filter(c=> c.Assessment || c.Note || c.React);
+
   const rows = filtered.map(c=>({
-    Id: c.Id || "",
-    Clue: c.Clue || "",
-    Answer: c.Answer || "",
-    Writer: c.Writer || "",
-    Email: c.Email || "",
-    Assessment: c.Assessment || "",
-    Note: c.Note || "",
-    React: c.React || ""
+    id: c.Id || "",
+    created_at: (c._raw && (c._raw.created_at || c._raw.Created_at || c._raw.CREATED_AT)) || "",
+    clue: c.Clue || "",
+    answer: c.Answer || "",
+    hints: (c._raw && (c._raw.hints || c._raw.Hints)) || "",
+    setter_name: c.Writer || "",
+    email: c.Email || "",
+    setter_social_handles: (c._raw && (c._raw.setter_social_handles || c._raw.Setter_social_handles)) || "",
+    user_id: (c._raw && (c._raw.user_id || c._raw.User_id)) || "",
+    assessment: c.Assessment || "",
+    react: c.React || "",
+    note: c.Note || ""
   }));
+
   const csv = Papa.unparse(rows);
   const bom = '\ufeff';
   const blob = new Blob([bom + csv],{type:"text/csv;charset=utf-8;"});
@@ -699,31 +782,26 @@ function exportCSV(){
   link.click();
 }
 
-/* Persistence (clue progress only) */
-function saveProgress(){
-  try{
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
-      currentKey,
-      clues: allClues
-    }));
-  }catch(e){
-    console.warn('saveProgress failed', e);
-  }
-}
-
-/* Reset progress (does NOT touch stars) */
+/* Reset progress
+   IMPORTANT: must reflect most recent CSV output:
+   - clear local progress
+   - reload from network using fetch(no-store) + cache-bust
+*/
 function resetProgress(){
   if(confirm("Are you sure you want to reset clue progress? (Assessments, notes, reactions)")){
     buzz(25);
-    localStorage.removeItem(PROGRESS_KEY);
 
+    localStorage.removeItem(PROGRESS_KEY);
+    progress = { currentKey:"", byId:{} };
     historyKeys.length = 0;
+
     currentIndex = 0;
     currentKey = "";
 
     queueStartSize = 0;
     lastRemainingShown = null;
 
+    // always force a fresh fetch
     loadSheet(true);
   }
 }
@@ -755,9 +833,11 @@ function openNote(){
 function noteBlurSave(){
   if (noteOpen && noteTargetKey){
     const noteText = document.getElementById("noteText");
-    const master = findInAllByKey(noteTargetKey);
+    const id = getIdFromKey(noteTargetKey);
+    const master = allClues.find(c => String(c.Id||"").trim() === id);
     if (master){
       master.Note = noteText.value;
+      writeClueToProgress(master);
       saveProgress();
     }
   }
@@ -771,9 +851,11 @@ function escToSaveNote(e){
 function saveNote(){
   buzz(15);
   const noteText = document.getElementById("noteText");
-  const master = findInAllByKey(noteTargetKey);
+  const id = getIdFromKey(noteTargetKey);
+  const master = allClues.find(c => String(c.Id||"").trim() === id);
   if (master){
     master.Note = noteText.value;
+    writeClueToProgress(master);
     saveProgress();
   }
 
@@ -878,6 +960,7 @@ function setReact(emoji){
   const clue = clues[currentIndex]; if(!clue) return;
 
   clue.React = emoji;
+  writeClueToProgress(clue);
   saveProgress();
   closeReactPalette();
 
@@ -933,6 +1016,9 @@ function attachWriterLongPress(){
 
     if (viewMode === "stars") {
       rebuildQueue(currentKey);
+      // resetting run sizing makes progress % sane in stars view after eligibility change
+      queueStartSize = clues.length;
+      lastRemainingShown = null;
     }
 
     flash.textContent = newState ? "⭐" : "☆";
@@ -951,26 +1037,8 @@ function attachWriterLongPress(){
   });
 }
 
-/* Audit helper */
-function auditNotes(){
-  try{
-    const savedRaw = localStorage.getItem(PROGRESS_KEY);
-    let saved = null; try{ saved = JSON.parse(savedRaw); }catch{}
-    const mem = new Map((saved?.clues||[]).map(c=>[makeKey(c), c.Note||'']));
-    const now = new Map(allClues.map(c=>[makeKey(c), c.Note||'']));
-    let missing=0;
-    for (const [k, v] of now){
-      const sv = mem.get(k)||'';
-      if ((v||'') && sv===''){ missing++; console.warn('Note present in RAM but not saved', k, v); }
-    }
-    if (missing>0){
-      console.warn('auditNotes: some notes not persisted yet', {missing});
-    }
-  }catch(e){}
-}
-window.addEventListener('beforeunload', auditNotes);
-
 /* Init */
+loadProgress();
 loadSetterStars();
 seedInitialStars();
 syncViewActiveClasses();
