@@ -5,1044 +5,196 @@
 <title>cluesmash</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Sansita+Black:ital,wght@1,900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
-/* Base */
-body {
-  margin: 0;
-  font-family: 'Montserrat', sans-serif;
-  background: #cce7ff;
-  min-height: 100vh;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1rem 7rem;
-  color: white;
-  user-select: none;
-}
-body { min-height: 100dvh; }
-@supports not (height: 100dvh) { body { min-height: 100vh; } }
-
-/* Scroll lock when Notes is open */
-body.modal-open {
-  position: fixed;
-  width: 100%;
-  overflow: hidden;
-  top: var(--scroll-lock, 0);
-}
-
-/* Title */
-#title-wrapper { display: flex; justify-content: center; margin-bottom: 0.5rem; }
-#title-wrapper img { height: 40px; width: auto; }
-
-/* View toggle row */
-#tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
-
-/* Toggle buttons */
-.tab {
-  padding: 0.6rem 1.2rem; font-size: 1rem; font-weight: 700;
-  border-radius: 16px; cursor: pointer; background: #fff; color: #000;
-  border: 2px solid #000; box-shadow: 4px 4px 0 #000;
-  transition: transform 0.1s ease-in-out, background 0.2s ease;
-}
-.tab:hover { transform: translateY(-1px); }
-.tab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
-.tab.active { background: #fff2b3; color: #000; }
-
-/* Counts & progress */
-#assessmentCounts { font-size: 1.2rem; margin-bottom: 0.5rem; color: #222; }
-#progress {
-  width: 90vw; max-width: 500px; height: 6px;
-  background: rgba(255,255,255,0.3); border-radius: 3px;
-  margin-bottom: 0.3rem; overflow: hidden;
-}
-#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
-#progressCount { font-size: 1.4rem; margin-bottom: 1.5rem; text-align: center; color: #222; }
-
-/* Subtle fade on count change */
-@keyframes countFade {
-  0%   { opacity: 1; transform: translateY(0); }
-  35%  { opacity: 0.35; transform: translateY(1px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-#progressCount.count-fade { animation: countFade 240ms ease-out; }
-
-/* Clue pane */
-#card {
-  background: white; color: #222; border: 3px solid #000; border-radius: 20px;
-  padding: 2rem 1.5rem; font-size: 2.2rem; line-height: 1.4;
-  box-shadow: 6px 6px 0 #000; text-align: center; width: 80vw; max-width: 380px;
-  margin-bottom: 2rem; transition: transform 0.4s ease, opacity 0.4s ease;
-}
-
-/* Swipe animations */
-#card.enter { transform: translateX(0) scale(1); opacity: 1; }
-#card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-#card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-
-/* Answer block */
-#answer {
-  cursor: pointer; padding: 0 0.4em; border-radius: 6px; font-size: 2.2rem; font-weight: 700;
-  display: inline-block; background: black; color: black; letter-spacing: 0.2em;
-  font-family: 'Montserrat', sans-serif; transition: background-color 0.3s ease, color 0.3s ease;
-}
-#answer.revealed { background: none; color: #222; letter-spacing: normal; }
-
-#writer {
-  font-size: 1.3rem; color: #555; margin-top: 1rem;
-  display: inline-flex; gap: .35rem; align-items: center; justify-content: center;
-}
-
-/* Plain star */
-#writerStar { font-size: 1.25rem; line-height: 1; }
-
-/* Emoji controls */
-#buttons {
-  display: flex; justify-content: center; gap: 2.2rem; width: auto; margin-bottom: 2rem; font-size: 2.5rem;
-}
-.emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000, 4px 4px 0 #000; }
-.emoji-btn:hover, .emoji-btn:active { transform: scale(1.3); text-shadow: 3px 3px 0 #000, 6px 6px 0 #000; }
-
-/* Bottom fixed buttons container */
-#bottomButtons {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  z-index: 1200;
-}
-#bottomButtons button {
-  flex: 1;
-  padding: 1rem;
-  font-size: 1.1rem;
-  border-radius: 0;
-  color: white;
-  text-align: center;
-  border: none;
-  cursor: pointer;
-}
-#exportBtn { background-color: #222; }
-#resetBtn  { background-color: #e53935; }
-
-/* Flash emoji */
-#flashMessage {
-  position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
-  font-size: 5rem; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none; z-index: 999; text-shadow: 2px 2px 20px rgba(0,0,0,0.6);
-}
-#flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-
-/* Note overlay */
-#noteOverlay {
-  display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
-  width: 75%; max-width: 300px; background: white; color: #222; border-radius: 20px;
-  padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000;
-}
-#noteText {
-  width: 85%; height: 120px; font-size: 2.2rem; padding: 1rem; border-radius: 12px;
-  border: 2px solid #222; resize: none; background: white; color: #222; line-height: 1.4;
-}
-#noteOverlay button {
-  margin-top: 1rem; padding: 0.6rem 1rem; font-weight: 700; border-radius: 16px;
-  border: none; background: #222; color: white; cursor: pointer;
-}
-
-/* React palette (long-press on ❌) */
-#reactPalette{
-  position: fixed; display: none; background:#fff; color:#000; border:2px solid #000;
-  border-radius:14px; padding:.35rem .5rem; box-shadow:6px 6px 0 #000; z-index:1100; font-size:1.6rem; gap:.5rem;
-}
-#reactPalette .rp{ cursor:pointer; padding:.1rem .3rem; border-radius:10px; border:2px solid transparent; }
-#reactPalette .rp.active{ background:#fff2b3; border-color:#000; }
+  body { 
+    margin: 0; font-family: 'Montserrat', sans-serif; background: #cce7ff; 
+    min-height: 100dvh; display: flex; flex-direction: column; align-items: center; 
+    padding: 2rem 1rem 7rem; color: white; user-select: none; overflow-x: hidden;
+  }
+  #title-wrapper { margin-bottom: 0.5rem; }
+  #title-wrapper img { height: 40px; }
+  #tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
+  .tab {
+    padding: 0.6rem 1.2rem; font-weight: 700; border-radius: 16px; cursor: pointer; 
+    background: #fff; color: #000; border: 2px solid #000; box-shadow: 4px 4px 0 #000;
+  }
+  .tab.active { background: #fff2b3; }
+  #assessmentCounts { font-size: 1.1rem; margin-bottom: 0.5rem; color: #222; }
+  #progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+  #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
+  #progressCount { font-size: 1.3rem; margin-bottom: 1.5rem; color: #222; }
+  #card {
+    background: white; color: #222; border: 3px solid #000; border-radius: 20px;
+    padding: 2rem 1.5rem; font-size: 2rem; line-height: 1.4; box-shadow: 6px 6px 0 #000; 
+    text-align: center; width: 80vw; max-width: 380px; margin-bottom: 2rem;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+  #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+  #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+  #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+  #answer { cursor: pointer; padding: 0 0.4em; border-radius: 6px; background: black; color: black; transition: 0.3s; }
+  #answer.revealed { background: none; color: #222; }
+  #writer { font-size: 1.2rem; color: #555; margin-top: 1rem; }
+  #buttons { display: flex; gap: 2.2rem; font-size: 2.5rem; }
+  .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
+  .emoji-btn:active { transform: scale(1.3); }
+  #bottomButtons { position: fixed; bottom: 0; width: 100%; display: flex; z-index: 10; }
+  #bottomButtons button { flex: 1; padding: 1rem; color: white; border: none; cursor: pointer; }
+  #exportBtn { background: #222; }
+  #resetBtn { background: #e53935; }
+  #flashMessage { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; opacity: 0; transition: 0.4s; pointer-events: none; }
+  #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 </style>
 </head>
-
 <body>
-<div id="title-wrapper">
-  <img src="https://i.imgur.com/3cTvC1h.png" alt="cluesmash logo">
-</div>
 
+<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
 <div id="tabs">
   <div class="tab" data-view="all">All</div>
-  <div class="tab" data-view="stars">Star Setters</div>
+  <div class="tab" data-view="stars">Stars</div>
 </div>
-
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
 <div id="flashMessage"></div>
-
 <div id="card" style="display:none;"></div>
 
 <div id="buttons">
-  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('left', () => recordAssessment('No')))()" aria-label="No" role="button" tabindex="0">❌</span>
-  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('right', () => recordAssessment('Workshop')))()" aria-label="Workshop" role="button" tabindex="0">💡</span>
-  <span class="emoji-btn" onclick="guardUI(()=>animateSwipe('down', () => recordAssessment('Perfect')))()" aria-label="Perfect" role="button" tabindex="0">⭐</span>
-  <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
-  <span class="emoji-btn" onclick="undoAssessment()" aria-label="Undo" role="button" tabindex="0">↩️</span>
+  <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))">❌</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))">💡</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))">⭐</span>
+  <span class="emoji-btn" onclick="undo()">↩️</span>
 </div>
-
-<div id="reactPalette" role="dialog" aria-hidden="true"></div>
 
 <div id="bottomButtons">
-  <button id="exportBtn" onclick="exportCSV()">Download Reviewed CSV</button>
-  <button id="resetBtn" onclick="resetProgress()">Reset Progress</button>
-</div>
-
-<div id="noteOverlay">
-  <textarea id="noteText" placeholder="Write here..."></textarea>
-  <button onclick="saveNote()">OK</button>
+  <button id="exportBtn" onclick="exportCSV()">Download CSV</button>
+  <button id="resetBtn" onclick="resetProgress()">Reset</button>
 </div>
 
 <script>
-/* Haptics */
-function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+const PROGRESS_KEY = "clueMatch_simple_v1";
+const VIEW_KEY = "clueMatchView";
+const STARS_KEY = "clueMatchStars";
 
-/* ---------- One source only ---------- */
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
-
-/* Persistence keys
-   HARDENING CHANGE:
-   - We no longer store the entire clue list in localStorage.
-   - We store ONLY a compact map: { id -> {Assessment, Note, React} } + currentKey.
-*/
-const PROGRESS_KEY = "clueMatchProgress_compact_v1";
-const VIEW_KEY     = "clueMatchViewMode";
-const STARS_KEY    = "clueMatchSetterStars";
-
-/* Data & state */
-let allClues = [];   // full dataset in memory only (fresh each load)
-let clues = [];      // queue (unassessed & not Filtered)
-let currentIndex = 0;
-let currentKey = "";
+let allClues = [], clues = [], currentIndex = 0, currentKey = "";
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
+let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}');
+let setterStars = JSON.parse(localStorage.getItem(STARS_KEY) || '{}');
+const history = [];
 
-let queueStartSize = 0;
-let lastRemainingShown = null;
-
-const historyKeys = [];   // undo stack (session only)
-const counts = { No:0, Workshop:0, Perfect:0 };
-
-/* UI */
 const card = document.getElementById("card");
 const flash = document.getElementById("flashMessage");
-const progressBar = document.getElementById("progressBar");
-const progressCount = document.getElementById("progressCount");
-const assessmentCounts = document.getElementById("assessmentCounts");
 
-/* UI locks */
-let uiLocked = false;
-let noteOpen = false;
-let noteTargetKey = null;
+function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
+function makeKey(r){ return r.Id ? `ID§${r.Id}` : `H§${r.Clue}${r.Answer}`; }
 
-/* React config */
-const REACT_CHOICES = ['👏','😂','🤯','🤭','😜'];
-const DEFAULT_REACT = { No:'❤️', Workshop:'💡', Perfect:'⭐' };
+async function loadSheet() {
+  card.textContent = 'Loading...';
+  try {
+    const res = await fetch("https://corsproxy.io/?" + encodeURIComponent(SHEET_URL + `&_=${Date.now()}`), { cache: "no-store" });
+    const text = await res.text();
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+    
+    allClues = parsed.data.map(r => ({
+      Id: r.id || r.Id || "",
+      Clue: r.clue || r.Clue || "",
+      Answer: r.answer || r.Answer || "",
+      Writer: r.setter_name || r.Writer || "",
+      Assessment: progress.byId[r.id || r.Id]?.Assessment || ""
+    })).filter(r => r.Clue && r.Answer);
 
-const reactPalette = document.getElementById('reactPalette');
-let paletteOpen = false;
-
-/* ---------- helpers ---------- */
-function lockUI(){
-  uiLocked = true;
-  document.getElementById('buttons').style.pointerEvents = 'none';
-  card.style.pointerEvents = 'none';
-}
-function unlockUI(){
-  uiLocked = false;
-  document.getElementById('buttons').style.pointerEvents = '';
-  card.style.pointerEvents = '';
-}
-const guardUI = (fn)=> (...args)=>{ if(!uiLocked && !noteOpen) fn(...args); };
-
-function getWriterKey(name){
-  return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
+    rebuild();
+  } catch(e) { alert("Load error"); }
 }
 
-/* Id is authoritative (your new CSV has id) */
-function makeKey(r){
-  const id = String(r?.Id || r?.id || "").trim();
-  if (id) return `ID§${id}`;
-  const s = [r?.Clue||'', r?.Answer||'', r?.Writer||''].join('§');
-  let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
-  return `H§${h}`;
+function rebuild(keepKey = "") {
+  clues = allClues.filter(c => !c.Assessment);
+  if (viewMode === "stars") clues = clues.filter(c => setterStars[c.Writer.toLowerCase().trim()]);
+  
+  currentIndex = keepKey ? clues.findIndex(c => makeKey(c) === keepKey) : 0;
+  if (currentIndex < 0) currentIndex = 0;
+  render();
 }
 
-/* Flexible column getter */
-function pickFirst(row, candidates){
-  for (const c of candidates){
-    if (row && Object.prototype.hasOwnProperty.call(row, c)) return row[c];
-  }
-  return "";
-}
-function normalizeRow(raw, cols){
-  const get = (obj, key) => (key && obj && obj[key] != null) ? obj[key] : "";
-  return {
-    // canonical fields
-    Id:     String(get(raw, cols.id)).trim(),
-    Clue:   String(get(raw, cols.clue)).trim(),
-    Answer: String(get(raw, cols.answer)).trim(),
-    Writer: String(get(raw, cols.writer)).trim(),
-    Email:  String(get(raw, cols.email)).trim(),
-
-    // app fields
-    Assessment: "",
-    Note: "",
-    React: "",
-
-    // keep the raw row around so export can include extra fields later if you want
-    _raw: raw
-  };
-}
-
-/* ---------- enumeration append for display ---------- */
-/* Examples:
-   "OLD COLLEGE TRY" -> (3,7,3)
-   "ANSWER" -> (6)
-   "SIX-TWO-THREE" -> (3-3-5)
-   "FOO-BAR BAZ" -> (3-3,3)
-*/
-function answerToEnumeration(answer){
-  const ans = String(answer || "").trim();
-  if (!ans) return "";
-
-  // Split on spaces into "words"
-  const words = ans.split(/\s+/).filter(Boolean).map(word => {
-    // Within each word, split on hyphens
-    const hyParts = word.split('-').filter(Boolean).map(part => {
-      const letters = (part.match(/[A-Za-z]/g) || []).length;
-      return letters > 0 ? String(letters) : "";
-    }).filter(Boolean);
-
-    if (!hyParts.length) return "";
-    return hyParts.join('-');
-  }).filter(Boolean);
-
-  if (!words.length) return "";
-  return `(${words.join(',')})`;
-}
-
-/* ---------- compact progress store ---------- */
-let progress = { currentKey:"", byId:{} };
-
-function loadProgress(){
-  try{
-    const raw = localStorage.getItem(PROGRESS_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object'){
-      progress.currentKey = typeof parsed.currentKey === 'string' ? parsed.currentKey : "";
-      progress.byId = parsed.byId && typeof parsed.byId === 'object' ? parsed.byId : {};
-    }
-  }catch{}
-}
-function saveProgress(){
-  try{
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
-      currentKey,
-      byId: progress.byId || {}
-    }));
-  }catch(e){
-    console.warn('saveProgress failed', e);
-  }
-}
-function getIdFromKey(key){
-  if (!key) return "";
-  const m = String(key).match(/^ID§(.+)$/);
-  return m ? m[1] : "";
-}
-function applyProgressToClue(c){
-  const id = String(c.Id || "").trim();
-  if (!id) return;
-  const entry = progress.byId[id];
-  if (!entry) return;
-  c.Assessment = entry.Assessment || "";
-  c.Note = entry.Note || "";
-  c.React = entry.React || "";
-}
-function writeClueToProgress(c){
-  const id = String(c.Id || "").trim();
-  if (!id) return;
-  progress.byId[id] = {
-    Assessment: c.Assessment || "",
-    Note: c.Note || "",
-    React: c.React || ""
-  };
-}
-
-/* -------------------- AUTO FILTER RULESET --------------------
-   Includes:
-   1) Hard answer length rule: <3 letters OR >10 letters (letters-only, ignoring spaces/punct)
-   5) Hard clue rule: clue contains the full answer contiguously (normalised)
-   Also:
-   - Mark Assessment="Filtered" (no note)
-   - Never override a human assessment (No/Workshop/Perfect), or a saved assessment already present.
--------------------------------------------------------------- */
-function answerLetterCount(ans){
-  return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
-}
-function normForContainment(s){
-  return String(s || "")
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-function normAnswerForContainment(ans){
-  return normForContainment(ans).replace(/\s+/g, '');
-}
-function applyHardFilters(clueList){
-  for (const c of clueList){
-    // Never override any existing assessment (including previously Filtered)
-    if (c.Assessment) continue;
-
-    const ans = String(c.Answer || "").trim();
-    const clue = String(c.Clue || "").trim();
-
-    // Rule 1: Answer letter count must be 3..10 inclusive (letters only)
-    const n = answerLetterCount(ans);
-    if (n > 0 && n < 3){ c.Assessment = "Filtered"; continue; }
-    if (n > 10){ c.Assessment = "Filtered"; continue; }
-
-    // Rule 5: Clue contains the whole answer contiguously (normalised)
-    const clueN = normForContainment(clue).replace(/\s+/g,'');
-    const ansN  = normAnswerForContainment(ans);
-    if (ansN && clueN.includes(ansN)){ c.Assessment = "Filtered"; continue; }
-  }
-}
-/* ------------------ END AUTO FILTER RULESET ------------------ */
-
-/* ---------- setter stars ---------- */
-let setterStars = {};
-function loadSetterStars(){
-  try{
-    const raw = localStorage.getItem(STARS_KEY);
-    setterStars = raw ? JSON.parse(raw) : {};
-    if (!setterStars || typeof setterStars !== 'object') setterStars = {};
-  }catch{ setterStars = {}; }
-}
-function saveSetterStars(){
-  try{ localStorage.setItem(STARS_KEY, JSON.stringify(setterStars)); }catch{}
-}
-function isStarredWriter(writerName){
-  const k = getWriterKey(writerName);
-  return !!setterStars[k];
-}
-function toggleStarWriter(writerName){
-  const k = getWriterKey(writerName);
-  if (!k) return false;
-  setterStars[k] = !setterStars[k];
-  saveSetterStars();
-  return setterStars[k];
-}
-
-/* ---------- initial seed list ---------- */
-const INITIAL_STAR_SETTERS = [
-  "Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R",
-  "Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite",
-  "Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S",
-  "Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie",
-  "hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T",
-  "Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks",
-  "Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00",
-  "NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren",
-  "Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w",
-  "Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton",
-  "That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"
-];
-function seedInitialStars(){
-  if (!setterStars || typeof setterStars !== 'object') setterStars = {};
-  let changed = false;
-  for (const name of INITIAL_STAR_SETTERS){
-    const k = getWriterKey(name);
-    if (!k) continue;
-    if (!(k in setterStars)){
-      setterStars[k] = true;
-      changed = true;
-    }
-  }
-  if (changed) saveSetterStars();
-}
-
-/* ---------- queue rebuild ---------- */
-function rebuildQueue(keepKey=""){
-  // IMPORTANT: Exclude anything assessed, including "Filtered"
-  const unassessed = allClues.filter(c => !c.Assessment);
-
-  let next = unassessed;
-
-  if (viewMode === "stars"){
-    next = next.filter(c => isStarredWriter(c.Writer));
-  }
-
-  if (viewMode === "all"){
-    next = next
-      .map((c, idx) => ({c, idx, starred: isStarredWriter(c.Writer)}))
-      .sort((a,b)=>{
-        if (a.starred !== b.starred) return a.starred ? -1 : 1;
-        return a.idx - b.idx;
-      })
-      .map(x=>x.c);
-  }
-
-  clues = next;
-
-  if (keepKey){
-    const i = clues.findIndex(c => makeKey(c) === keepKey);
-    if (i >= 0) { currentIndex = i; currentKey = keepKey; return; }
-  }
-
-  currentIndex = 0;
-  currentKey = clues[0] ? makeKey(clues[0]) : "";
-}
-
-/* ---------- loading (fetch + no-store so it actually refreshes) ---------- */
-async function fetchCSVText(forceFresh=false){
-  const proxy = "https://corsproxy.io/?";
-  const cacheBust = `&_=${Date.now()}`; // always bust
-
-  // Use no-store to bypass browser cache
-  const res = await fetch(proxy + encodeURIComponent(SHEET_URL + cacheBust), {
-    cache: "no-store",
-    headers: { "pragma": "no-cache", "cache-control": "no-cache" }
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.text();
-}
-
-async function loadSheet(forceFresh=false){
-  card.style.display = 'block';
-  card.textContent = 'Loading…';
-
-  let text = "";
-  try{
-    text = await fetchCSVText(forceFresh);
-  }catch(e){
-    alert("Error loading sheet: " + (e?.message || e));
+function render() {
+  if (!clues.length || currentIndex >= clues.length) {
+    card.innerHTML = "<strong>Done!</strong>";
+    document.getElementById("buttons").style.display = "none";
     return;
   }
-
-  const parsed = Papa.parse(text, {
-    header: true,
-    skipEmptyLines: true
-  });
-
-  const rows = Array.isArray(parsed.data) ? parsed.data : [];
-
-  if (!rows.length){
-    card.textContent = 'No rows found.';
-    allClues = []; clues = []; currentIndex = 0; currentKey = "";
-    queueStartSize = 0;
-    lastRemainingShown = null;
-    updateCounts(); updateProgress();
-    return;
-  }
-
-  // Detect columns (case/space tolerant) AND support new schema
-  const keys = Object.keys(rows[0] || {});
-  const keyMap = {};
-  keys.forEach(k => keyMap[k.toLowerCase().replace(/\s+/g,'')] = k);
-
-  const pick = (cands) => {
-    for (const c of cands){
-      const norm = c.toLowerCase().replace(/\s+/g,'');
-      if (keyMap[norm]) return keyMap[norm];
-    }
-    return '';
-  };
-
-  const cols = {
-    id:     pick(['id','uid','uniqueid','unique_id']) || 'id',
-    clue:   pick(['clue','clues','cluetext']) || 'clue',
-    answer: pick(['answer','answers','solution']) || 'answer',
-    writer: pick(['writer','setter','author','setter_name','settername']) || 'setter_name',
-    email:  pick(['email','writeremail','writer_email','emailaddress','contactemail']) || 'email'
-  };
-
-  // Build fresh list
-  let fresh = rows
-    .map(r => normalizeRow(r, cols))
-    .filter(r => r.Id && r.Clue && r.Answer && r.Writer);
-
-  if (!fresh.length){
-    card.textContent = 'No rows found.';
-    allClues = []; clues = []; currentIndex = 0; currentKey = "";
-    queueStartSize = 0;
-    lastRemainingShown = null;
-    updateCounts(); updateProgress();
-    return;
-  }
-
-  // Apply saved compact progress
-  for (const c of fresh) applyProgressToClue(c);
-
-  allClues = fresh;
-
-  // Apply hard filters AFTER progress merge so filtered persists & never re-enters queue
-  applyHardFilters(allClues);
-
-  // Restore anchor
-  currentKey = progress.currentKey || "";
-
-  rebuildQueue(currentKey);
-
-  // New run sizing for "X left"
-  queueStartSize = clues.length;
-  lastRemainingShown = null;
-
-  updateCounts();
-  updateProgress();
-  showNext();
+  const c = clues[currentIndex];
+  const isStarred = setterStars[c.Writer.toLowerCase().trim()];
+  card.innerHTML = `<p>${c.Clue}</p><p><strong>Ans:</strong> <span id="answer" onclick="this.classList.toggle('revealed')">${c.Answer}</span></p><p id="writer">${c.Writer} ${isStarred?'⭐':''}</p>`;
+  card.style.display = "block";
+  updateUI();
 }
 
-/* UI updates */
-function updateCounts() {
-  counts.No=counts.Workshop=counts.Perfect=0;
-  allClues.forEach(c=>{
-    if(c.Assessment){
-      counts[c.Assessment] = (counts[c.Assessment]||0)+1;
-    }
-  });
-  assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
-}
-function bumpProgressFade(){
-  progressCount.classList.remove('count-fade');
-  void progressCount.offsetWidth;
-  progressCount.classList.add('count-fade');
-}
-function updateProgress() {
-  const remaining = clues.length;
-  if (!queueStartSize) queueStartSize = remaining;
-
-  const done = Math.max(0, queueStartSize - remaining);
-  const percent = queueStartSize ? (done / queueStartSize) * 100 : 0;
-
-  progressBar.style.width = percent + "%";
-  progressCount.textContent = remaining === 1 ? "1 left" : `${remaining} left`;
-
-  if (lastRemainingShown === null || lastRemainingShown !== remaining){
-    bumpProgressFade();
-    lastRemainingShown = remaining;
-  }
+function record(val) {
+  const c = clues[currentIndex];
+  c.Assessment = val;
+  progress.byId[c.Id] = { Assessment: val };
+  history.push(makeKey(c));
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  rebuild();
 }
 
-/* Rendering */
-function _renderCard(){
-  if(currentIndex >= clues.length || clues.length === 0){
-    card.innerHTML = (viewMode === "stars")
-      ? "<strong>No starred clues left!</strong><br><span style='font-size:1.2rem;color:#555'>Switch to All to keep going.</span>"
-      : "<strong>All done!</strong>";
-    card.style.display="block";
-    document.getElementById("buttons").style.display="none";
-    progressBar.style.width="100%";
-    progressCount.textContent = "0 left";
-    bumpProgressFade();
-    return;
-  }
-
-  const clue = clues[currentIndex];
-  currentKey = makeKey(clue);
-  progress.currentKey = currentKey;
-  saveProgress();
-
-  const starred = isStarredWriter(clue.Writer);
-  const star = starred ? `<span id="writerStar">⭐</span>` : "";
-
-  const enumText = answerToEnumeration(clue.Answer);
-  const clueText = enumText ? `${clue.Clue} <span style="color:#777;font-weight:700">${enumText}</span>` : clue.Clue;
-
-  card.innerHTML = `
-    <p>${clueText}</p>
-    <p><strong>Answer:</strong>
-      <span id="answer" class="hidden" onclick="toggleAnswer(this)" data-answer="${escapeHtml(clue.Answer)}">████████</span>
-    </p>
-    <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(clue.Writer)} ${star}</p>
-  `;
-  card.style.display="block";
-  card.className=''; void card.offsetWidth; card.classList.add('enter');
-
-  if (paletteOpen) closeReactPalette();
-
-  attachWriterLongPress();
-  updateProgress();
-}
-let showNext = _renderCard;
-
-function escapeHtml(s){
-  return String(s ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+function undo() {
+  const key = history.pop();
+  if (!key) return;
+  const id = key.replace("ID§","");
+  const c = allClues.find(cl => cl.Id === id);
+  if (c) { c.Assessment = ""; delete progress.byId[id]; }
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  rebuild(key);
 }
 
-/* Answer reveal */
-function toggleAnswer(el){
-  buzz(10);
-  if(el.classList.contains('revealed')){
-    el.classList.remove('revealed'); el.textContent="████████";
-  } else {
-    el.classList.add('revealed'); el.textContent=el.getAttribute('data-answer');
-  }
+function updateUI() {
+  const counts = { No:0, Workshop:0, Perfect:0 };
+  allClues.forEach(c => { if(counts[c.Assessment] !== undefined) counts[c.Assessment]++; });
+  document.getElementById("assessmentCounts").textContent = `No: ${counts.No} | Work: ${counts.Workshop} | Star: ${counts.Perfect}`;
+  document.getElementById("progressCount").textContent = `${clues.length} left`;
+  document.getElementById("progressBar").style.width = `${((allClues.length - clues.length)/allClues.length)*100}%`;
 }
 
-/* Flash + swipe */
-function flashMessage(direction){
-  const emojiMap={ right:"💡", left:"❌", down:"⭐" };
-  flash.textContent=emojiMap[direction]||"";
+function animateSwipe(dir, cb) {
+  buzz();
+  card.classList.add(`swipe-${dir}`);
+  flash.textContent = {left:'❌', right:'💡', down:'⭐'}[dir];
   flash.classList.add("show");
-  setTimeout(()=>flash.classList.remove("show"),600);
-}
-function animateSwipe(direction,callback){
-  buzz(20);
-  card.classList.add(`swipe-${direction}`);
-  flashMessage(direction);
-  setTimeout(()=>{ card.className=''; callback(); },400);
+  setTimeout(() => { card.className=''; flash.classList.remove("show"); cb(); }, 400);
 }
 
-/* Record / undo */
-function recordAssessment(value){
-  if(currentIndex >= clues.length) return;
-
-  const clue = clues[currentIndex];
-  const key = makeKey(clue);
-
-  clue.Assessment = value;
-  if (!clue.React && DEFAULT_REACT[value]) clue.React = DEFAULT_REACT[value];
-
-  // persist compact
-  writeClueToProgress(clue);
-  historyKeys.push(key);
-  saveProgress();
-
-  rebuildQueue("");
-  updateCounts();
-  showNext();
+function exportCSV() {
+  const data = allClues.filter(c => c.Assessment).map(c => ({ id: c.Id, clue: c.Clue, answer: c.Answer, setter: c.Writer, result: c.Assessment }));
+  const blob = new Blob(['\ufeff' + Papa.unparse(data)], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "reviews.csv";
+  a.click();
 }
 
-function undoAssessment(){
-  if(historyKeys.length===0) return;
-  buzz(20);
-
-  const key = historyKeys.pop();
-  const id = getIdFromKey(key);
-  if (!id) return;
-
-  // find in allClues
-  const master = allClues.find(c => String(c.Id||"").trim() === id);
-  if (!master) return;
-
-  master.Assessment = "";
-  // keep React/Note as-is (undo only affects assessment)
-  writeClueToProgress(master);
-  saveProgress();
-
-  rebuildQueue(key);
-  updateCounts();
-  showNext();
+function resetProgress() {
+  if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); }
 }
 
-/* Export (UTF-8 BOM for emoji)
-   Includes "Filtered" rows too (because Assessment is set) */
-function exportCSV(){
-  buzz(15);
-  const filtered = allClues.filter(c=> c.Assessment || c.Note || c.React);
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swipeleft", () => animateSwipe('left', () => record('No')));
+mc.on("swiperight", () => animateSwipe('right', () => record('Workshop')));
+mc.on("swipedown", () => animateSwipe('down', () => record('Perfect')));
 
-  const rows = filtered.map(c=>({
-    id: c.Id || "",
-    created_at: (c._raw && (c._raw.created_at || c._raw.Created_at || c._raw.CREATED_AT)) || "",
-    clue: c.Clue || "",
-    answer: c.Answer || "",
-    hints: (c._raw && (c._raw.hints || c._raw.Hints)) || "",
-    setter_name: c.Writer || "",
-    email: c.Email || "",
-    setter_social_handles: (c._raw && (c._raw.setter_social_handles || c._raw.Setter_social_handles)) || "",
-    user_id: (c._raw && (c._raw.user_id || c._raw.User_id)) || "",
-    assessment: c.Assessment || "",
-    react: c.React || "",
-    note: c.Note || ""
-  }));
-
-  const csv = Papa.unparse(rows);
-  const bom = '\ufeff';
-  const blob = new Blob([bom + csv],{type:"text/csv;charset=utf-8;"});
-  const link=document.createElement("a");
-  link.href=URL.createObjectURL(blob);
-  link.download="reviewed_clues.csv";
-  link.click();
-}
-
-/* Reset progress
-   IMPORTANT: must reflect most recent CSV output:
-   - clear local progress
-   - reload from network using fetch(no-store) + cache-bust
-*/
-function resetProgress(){
-  if(confirm("Are you sure you want to reset clue progress? (Assessments, notes, reactions)")){
-    buzz(25);
-
-    localStorage.removeItem(PROGRESS_KEY);
-    progress = { currentKey:"", byId:{} };
-    historyKeys.length = 0;
-
-    currentIndex = 0;
-    currentKey = "";
-
-    queueStartSize = 0;
-    lastRemainingShown = null;
-
-    // always force a fresh fetch
-    loadSheet(true);
-  }
-}
-
-/* Notes */
-function openNote(){
-  buzz(10);
-  if (currentIndex>=clues.length) return;
-
-  noteOpen = true;
-  const clue = clues[currentIndex];
-  noteTargetKey = makeKey(clue);
-  lockUI();
-
-  const noteOverlay = document.getElementById("noteOverlay");
-  const noteText = document.getElementById("noteText");
-  noteText.value = clue.Note || "";
-
-  const y = window.scrollY || window.pageYOffset || 0;
-  document.body.style.setProperty('--scroll-lock', `-${y}px`);
-  document.body.classList.add('modal-open');
-
-  noteOverlay.style.display = "block";
-  noteText.focus();
-
-  noteText.addEventListener('blur', noteBlurSave, { once: true });
-  noteOverlay.addEventListener('keydown', escToSaveNote);
-}
-function noteBlurSave(){
-  if (noteOpen && noteTargetKey){
-    const noteText = document.getElementById("noteText");
-    const id = getIdFromKey(noteTargetKey);
-    const master = allClues.find(c => String(c.Id||"").trim() === id);
-    if (master){
-      master.Note = noteText.value;
-      writeClueToProgress(master);
-      saveProgress();
-    }
-  }
-}
-function escToSaveNote(e){
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    saveNote();
-  }
-}
-function saveNote(){
-  buzz(15);
-  const noteText = document.getElementById("noteText");
-  const id = getIdFromKey(noteTargetKey);
-  const master = allClues.find(c => String(c.Id||"").trim() === id);
-  if (master){
-    master.Note = noteText.value;
-    writeClueToProgress(master);
-    saveProgress();
-  }
-
-  document.getElementById("noteOverlay").style.display = "none";
-
-  const lock = getComputedStyle(document.body).getPropertyValue('--scroll-lock');
-  const y = Math.abs(parseInt(lock, 10)) || 0;
-  document.body.classList.remove('modal-open');
-  document.body.style.removeProperty('--scroll-lock');
-  window.scrollTo(0, y);
-
-  const noteOverlay = document.getElementById("noteOverlay");
-  noteOverlay.removeEventListener('keydown', escToSaveNote);
-  noteOpen = false;
-  noteTargetKey = null;
-  unlockUI();
-}
-
-/* View toggle */
-function syncViewActiveClasses(){
-  document.querySelectorAll(".tab").forEach(tab=>{
-    if(tab.dataset.view === viewMode) tab.classList.add("active");
-    else tab.classList.remove("active");
-  });
-}
-function setViewMode(nextMode){
-  if (nextMode !== "all" && nextMode !== "stars") return;
-  viewMode = nextMode;
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  viewMode = t.dataset.view;
   localStorage.setItem(VIEW_KEY, viewMode);
-  syncViewActiveClasses();
-
-  rebuildQueue(currentKey);
-
-  queueStartSize = clues.length;
-  lastRemainingShown = null;
-
-  document.getElementById("buttons").style.display = "flex";
-  updateProgress();
-  showNext();
-}
-document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click",()=> setViewMode(tab.dataset.view));
-});
-syncViewActiveClasses();
-
-/* Swipe gestures */
-const mc=new Hammer(document.body);
-mc.get("swipe").set({direction:Hammer.DIRECTION_ALL});
-mc.on("swipeleft",  guardUI(()=>animateSwipe("left",  ()=>recordAssessment("No"))));
-mc.on("swiperight", guardUI(()=>animateSwipe("right", ()=>recordAssessment("Workshop"))));
-mc.on("swipedown",  guardUI(()=>animateSwipe("down",  ()=>recordAssessment("Perfect"))));
-
-/* Keyboard accessibility */
-document.querySelectorAll('.emoji-btn').forEach(el=>{
-  el.addEventListener('keydown',e=>{
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
-  });
+  document.querySelectorAll(".tab").forEach(i => i.classList.toggle("active", i === t));
+  rebuild();
 });
 
-/* React palette */
-function openReactPalette(anchorEl){
-  const clue = clues[currentIndex]; if(!clue) return;
-
-  lockUI();
-  const selected = clue.React || '';
-  reactPalette.innerHTML = REACT_CHOICES.map(e =>
-    `<span class="rp ${e===selected?'active':''}" data-emoji="${e}" title="React">${e}</span>`
-  ).join('');
-
-  const r = anchorEl.getBoundingClientRect();
-  reactPalette.style.left = r.left + 'px';
-  reactPalette.style.top  = (r.top - 56) + 'px';
-  reactPalette.style.display = 'flex';
-  reactPalette.setAttribute('aria-hidden','false');
-  paletteOpen = true;
-
-  reactPalette.querySelectorAll('.rp').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const e = el.dataset.emoji;
-      setReact(e);
-    });
-  });
-
-  const outside = (ev)=>{
-    if (!reactPalette.contains(ev.target) && ev.target !== anchorEl){
-      closeReactPalette();
-      document.removeEventListener('mousedown', outside);
-      document.removeEventListener('touchstart', outside);
-    }
-  };
-  document.addEventListener('mousedown', outside);
-  document.addEventListener('touchstart', outside);
-}
-function closeReactPalette(){
-  reactPalette.style.display = 'none';
-  reactPalette.setAttribute('aria-hidden','true');
-  paletteOpen = false;
-  unlockUI();
-}
-function setReact(emoji){
-  buzz(8);
-  const clue = clues[currentIndex]; if(!clue) return;
-
-  clue.React = emoji;
-  writeClueToProgress(clue);
-  saveProgress();
-  closeReactPalette();
-
-  animateSwipe('left', () => recordAssessment('No'));
-}
-
-/* Long-press on ❌ opens react palette; short tap still rejects */
-const noBtn = Array.from(document.querySelectorAll('#buttons .emoji-btn'))
-  .find(el => el.getAttribute('aria-label') === 'No');
-
-if (noBtn) {
-  const hm = new Hammer(noBtn);
-  hm.add(new Hammer.Press({ time: 450 }));
-
-  let pressed = false;
-  hm.on('press', () => { pressed = true; buzz(12); openReactPalette(noBtn); });
-
-  noBtn.addEventListener('click', (e) => {
-    if (pressed) {
-      e.preventDefault();
-      e.stopPropagation();
-      setTimeout(()=>{ pressed=false; }, 0);
-    }
-  });
-
-  const _showNext = showNext;
-  showNext = function(){
-    if (paletteOpen) closeReactPalette();
-    _showNext();
-  };
-}
-
-/* Writer long-press to star/unstar */
-let writerPressHammer = null;
-function attachWriterLongPress(){
-  const wEl = document.getElementById('writer');
-  if (!wEl) return;
-
-  try{ writerPressHammer && writerPressHammer.destroy(); }catch{}
-  writerPressHammer = new Hammer(wEl);
-  writerPressHammer.add(new Hammer.Press({ time: 450 }));
-
-  let pressed = false;
-
-  writerPressHammer.on('press', ()=>{
-    pressed = true;
-    buzz(12);
-
-    const clue = clues[currentIndex];
-    if (!clue) { setTimeout(()=>{ pressed=false; }, 0); return; }
-
-    const newState = toggleStarWriter(clue.Writer);
-
-    if (viewMode === "stars") {
-      rebuildQueue(currentKey);
-      // resetting run sizing makes progress % sane in stars view after eligibility change
-      queueStartSize = clues.length;
-      lastRemainingShown = null;
-    }
-
-    flash.textContent = newState ? "⭐" : "☆";
-    flash.classList.add("show");
-    setTimeout(()=>flash.classList.remove("show"),450);
-
-    showNext();
-    setTimeout(()=>{ pressed=false; }, 0);
-  });
-
-  wEl.addEventListener('click', (e)=>{
-    if (pressed){
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
-}
-
-/* Init */
-loadProgress();
-loadSetterStars();
-seedInitialStars();
-syncViewActiveClasses();
-window.onload = () => loadSheet(false);
+window.onload = loadSheet;
 </script>
 </body>
 </html>
