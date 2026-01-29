@@ -9,17 +9,10 @@
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
-  :root{
-    --bg:#cce7ff;
-    --ink:#111;
-    --cardBorder:#000;
-    --shadow:6px 6px 0 #000;
-  }
-
   body {
     margin: 0;
     font-family: 'Montserrat', sans-serif;
-    background: var(--bg);
+    background: #cce7ff;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -30,86 +23,73 @@
     overflow-x: hidden;
   }
 
-  body.modal-open { position: fixed; width: 100%; overflow: hidden; }
+  #title-wrapper img { height: 38px; }
 
-  #title-wrapper { margin-bottom: 0.35rem; }
-  #title-wrapper img { height: 38px; width: auto; }
-
-  /* Tabs (smaller) */
-  #tabs { display: flex; gap: 0.8rem; margin-bottom: 0.65rem; }
+  /* Tabs */
+  #tabs { display: flex; gap: 0.8rem; margin-bottom: 0.6rem; }
   .tab {
     padding: 0.45rem 1rem;
-    font-weight: 700;
     font-size: 0.95rem;
+    font-weight: 700;
     border-radius: 18px;
-    cursor: pointer;
     background: #fff;
     color: #000;
     border: 2px solid #000;
     box-shadow: 4px 4px 0 #000;
+    cursor: pointer;
   }
   .tab.active { background: #fff2b3; }
 
-  /* Counts + progress (smaller) */
-  #assessmentCounts { font-size: 1rem; margin: 0.1rem 0 0.5rem; color: #222; }
-  #progress {
-    width: 90vw;
-    max-width: 460px;
-    height: 5px;
-    background: rgba(255,255,255,0.35);
-    border-radius: 999px;
-    overflow: hidden;
-    margin-bottom: 0.35rem;
-  }
-  #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.25s ease; }
-  #progressCount { font-size: 1.05rem; margin-bottom: 0.95rem; color: #222; }
+  /* Counts + progress */
+  #assessmentCounts { font-size: 1rem; color: #222; margin-bottom: 0.4rem; }
+  #progress { width: 90vw; max-width: 460px; height: 5px; background: rgba(255,255,255,0.35); border-radius: 999px; }
+  #progressBar { height: 100%; width: 0%; background: #ffe6e6; }
+  #progressCount { font-size: 1.05rem; margin: 0.7rem 0 1rem; color: #222; }
 
-  /* Card (smaller + better spacing) */
+  /* CARD */
   #card {
-    background: #fff;
+    background: white;
     color: #222;
-    border: 3px solid var(--cardBorder);
-    border-radius: 20px;
-    padding: 1.35rem 1.25rem;      /* a touch more vertical air */
+    border: 3px solid #000;
+    border-radius: 22px;
+    padding: 1.6rem 1.4rem 1.7rem;
     font-size: 1.35rem;
-    line-height: 1.45;
-    box-shadow: var(--shadow);
+    line-height: 1.5;
+    box-shadow: 6px 6px 0 #000;
     text-align: center;
     width: 78vw;
     max-width: 360px;
-    margin: 0.8rem 0 1.05rem;      /* space outside pane */
-    transition: transform 0.4s ease, opacity 0.4s ease;
+    margin-bottom: 1.3rem;
   }
 
-  /* Prevent the buttons row being pushed around by card height changes */
-  #layout {
-    width: 100%;
-    max-width: 520px;
-    display: flex;
-    flex-direction: column;
+  /* === KEY SPACING FIXES === */
+  .clueLine {
+    margin-bottom: 1.3rem;
+  }
+
+  .answerLine {
+    margin-bottom: 1.35rem;
+  }
+
+  #writer {
+    margin-top: 0.2rem;
+    font-size: 1.05rem;
+    color: #555;
+    display: inline-flex;
     align-items: center;
+    gap: 0.45rem;
+    justify-content: center;
   }
-
-  /* Swipe animations */
-  #card.swipe-left  { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-  #card.swipe-right { transform: translateX(150%) rotate(20deg);  opacity: 0; }
-  #card.swipe-down  { transform: translateY(150%) rotate(15deg);  opacity: 0; }
-
-  /* Card typography blocks */
-  #card p { margin: 0; }
-  .clueLine { margin-bottom: 0.95rem; }   /* more space between clue and answer */
-  .answerLine { margin-bottom: 0.95rem; } /* more space between answer and setter */
 
   /* Answer bar */
   #answer {
-    cursor: pointer;
     display: inline-block;
-    padding: 0.32em 1.25em;
-    border-radius: 10px;
+    padding: 0.45em 1.4em;
+    border-radius: 12px;
     background: #000;
     color: #000;
-    transition: 0.2s;
     letter-spacing: 0.18em;
+    cursor: pointer;
   }
   #answer.revealed {
     background: transparent;
@@ -117,549 +97,102 @@
     letter-spacing: normal;
   }
 
-  /* Setter row */
-  #writer {
-    font-size: 1.05rem;
-    color: #555;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    justify-content: center;
-    margin-top: 0.15rem;
-  }
-
-  /* Star symbols */
+  /* STAR STYLES */
   .setterStar {
-    font-size: 1.1rem;
-    line-height: 1;
-    display: inline-block;
+    font-size: 1.15rem;
     transform: translateY(1px);
   }
   .setterStar.starred {
+    color: #f4c430; /* warm yellow */
     opacity: 1;
   }
   .setterStar.unstarred {
-    opacity: 0.25;          /* faint hollow star */
-    color: #777;
+    color: #999;
+    opacity: 0.35;
   }
 
-  /* Emoji controls (smaller + more spaced out) */
+  /* Emoji buttons */
   #buttons {
     display: flex;
-    gap: 2.2rem;            /* more spacing */
-    font-size: 2.15rem;     /* smaller */
-    align-items: center;
-    margin: 0.35rem 0 0.7rem;
+    gap: 2.3rem;
+    font-size: 2.15rem;
+    margin-bottom: 0.9rem;
   }
-  .emoji-btn {
-    cursor: pointer;
-    transition: transform 0.12s ease;
-    text-shadow: 2px 2px 0 #000;
-  }
-  .emoji-btn:active { transform: scale(1.08); }
+  .emoji-btn { cursor: pointer; }
 
-  /* Bottom fixed buttons */
+  /* Bottom buttons */
   #bottomButtons {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
     display: flex;
-    z-index: 20;
   }
   #bottomButtons button {
     flex: 1;
     padding: 1rem;
-    color: white;
-    border: none;
-    cursor: pointer;
     font-size: 1.05rem;
     font-weight: 700;
+    border: none;
+    color: white;
   }
   #exportBtn { background: #222; }
-  #resetBtn  { background: #e53935; }
+  #resetBtn { background: #e53935; }
 
-  /* Flash emoji */
   #flashMessage {
     position: fixed;
     top: 40%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%);
     font-size: 4.3rem;
     opacity: 0;
-    transition: 0.35s;
     pointer-events: none;
-    text-shadow: 2px 2px 18px rgba(0,0,0,0.35);
-    z-index: 50;
   }
-  #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  #flashMessage.show { opacity: 1; }
 
-  /* Notes overlay */
-  #noteOverlay {
-    display: none;
-    position: fixed;
-    top: 18%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 320px;
-    background: white;
-    border-radius: 20px;
-    padding: 1.1rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    z-index: 1000;
-    border: 3px solid #000;
-    color: #222;
-  }
-  #noteText {
-    width: 92%;
-    height: 110px;
-    font-size: 1.15rem;
-    padding: 0.6rem;
-    border: 2px solid #000;
-    border-radius: 10px;
-    resize: none;
-    font-family: inherit;
-  }
-  #noteOverlay button {
-    margin-top: 0.9rem;
-    width: 100%;
-    padding: 0.7rem;
-    background: #222;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  /* Small helper text inside card (errors) */
-  .smallMuted { font-size: 0.95rem; color:#666; line-height:1.35; }
 </style>
 </head>
 
 <body>
-<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
+
+<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png"></div>
 
 <div id="tabs">
-  <div class="tab" data-view="all">All</div>
+  <div class="tab active" data-view="all">All</div>
   <div class="tab" data-view="stars">Stars</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
-<div id="flashMessage"></div>
 
-<div id="layout">
-  <div id="card" style="display:none;"></div>
+<div id="card">
+  <p class="clueLine">
+    Knight Elian. Heartless singer of alluring songs. (5)
+  </p>
 
-  <div id="buttons">
-    <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))" aria-label="No" role="button" tabindex="0">❌</span>
-    <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))" aria-label="Workshop" role="button" tabindex="0">💡</span>
-    <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))" aria-label="Perfect" role="button" tabindex="0">⭐</span>
-    <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
-    <span class="emoji-btn" onclick="undo()" aria-label="Undo" role="button" tabindex="0">↩️</span>
-  </div>
+  <p class="answerLine">
+    <span id="answer">████████</span>
+  </p>
+
+  <p id="writer">
+    Shippers
+    <span class="setterStar unstarred">☆</span>
+  </p>
+</div>
+
+<div id="buttons">
+  <span class="emoji-btn">❌</span>
+  <span class="emoji-btn">💡</span>
+  <span class="emoji-btn">⭐</span>
+  <span class="emoji-btn">✏️</span>
+  <span class="emoji-btn">↩️</span>
 </div>
 
 <div id="bottomButtons">
-  <button id="exportBtn" onclick="exportCSV()">Download CSV</button>
-  <button id="resetBtn" onclick="resetProgress()">Reset</button>
+  <button id="exportBtn">Download CSV</button>
+  <button id="resetBtn">Reset</button>
 </div>
 
-<div id="noteOverlay">
-  <textarea id="noteText" placeholder="Add a note..."></textarea>
-  <button onclick="saveNote()">Save</button>
-</div>
-
-<script>
-/* ---------- Config ---------- */
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
-
-const PROGRESS_KEY = "clueMatch_simple_v1";
-const VIEW_KEY     = "clueMatchView";
-const STARS_KEY    = "clueMatchSetterStars_simple";
-
-/* initial stars (seed) */
-const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
-
-/* ---------- State ---------- */
-let allClues = [];
-let clues = [];
-let currentIndex = 0;
-
-let viewMode = localStorage.getItem(VIEW_KEY) || "all";
-let progress = safeParse(localStorage.getItem(PROGRESS_KEY)) || { byId:{} };
-const history = [];
-
-let setterStars = safeParse(localStorage.getItem(STARS_KEY)) || {}; // { normalizedName: true/false }
-
-/* ---------- UI ---------- */
-const card  = document.getElementById("card");
-const flash = document.getElementById("flashMessage");
-
-function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
-
-function safeParse(s){
-  try { return s ? JSON.parse(s) : null; } catch { return null; }
-}
-
-function normName(name){
-  return String(name||"").trim().replace(/\s+/g,' ').toLowerCase();
-}
-
-/* seed initial stars once (don’t overwrite user changes) */
-(function seedStars(){
-  let changed = false;
-  for (const n of INITIAL_STARS){
-    const k = normName(n);
-    if (!k) continue;
-    if (!(k in setterStars)){
-      setterStars[k] = true;
-      changed = true;
-    }
-  }
-  if (changed) localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
-})();
-
-function isStarSetter(name){
-  return !!setterStars[normName(name)];
-}
-
-function toggleStarSetter(name){
-  const k = normName(name);
-  if (!k) return false;
-  setterStars[k] = !setterStars[k];
-  localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
-  return setterStars[k];
-}
-
-/* enumeration: spaces -> commas, hyphens preserved like (6-2-3) */
-function getEnum(ans) {
-  const raw = String(ans||"").trim();
-  if (!raw) return "";
-  const words = raw.split(/\s+/).filter(Boolean).map(w => {
-    const parts = w.split('-').filter(Boolean).map(p => (p.match(/[A-Za-z]/g) || []).length);
-    return parts.join('-');
-  });
-  return words.length ? `(${words.join(',')})` : "";
-}
-
-/* fetch + parse with Papa (no corsproxy) */
-function loadSheet(forceFresh=false) {
-  card.style.display = "block";
-  card.innerHTML = `<div class="smallMuted">Loading…</div>`;
-
-  const url = forceFresh ? `${SHEET_URL}&_=${Date.now()}` : SHEET_URL;
-
-  Papa.parse(url, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: (parsed) => {
-      const rows = Array.isArray(parsed.data) ? parsed.data : [];
-      if (!rows.length) {
-        const headers = parsed?.meta?.fields || [];
-        card.innerHTML = `<strong>No rows parsed.</strong><div class="smallMuted">Headers seen: ${JSON.stringify(headers)}</div>`;
-        allClues = []; clues = []; currentIndex = 0;
-        updateTabs();
-        updateUI();
-        document.getElementById("buttons").style.display = "flex";
-        return;
-      }
-
-      allClues = rows.map(r => {
-        // your current schema: id, clue, answer, setter_name, email, etc.
-        const id     = r.id || r.Id || "";
-        const clue   = r.clue || r.Clue || "";
-        const answer = r.answer || r.Answer || "";
-        const writer = r.setter_name || r.writer || r.Writer || "";
-        const email  = r.email || r.Email || "";
-
-        const saved = progress.byId?.[id] || {};
-        return {
-          Id: String(id).trim(),
-          Clue: String(clue).trim(),
-          Answer: String(answer).trim(),
-          Writer: String(writer).trim(),
-          Email: String(email).trim(),
-          Assessment: String(saved.Assessment || "").trim(),
-          Note: String(saved.Note || "").trim()
-        };
-      }).filter(r => r.Id && r.Clue && r.Answer); // Id is required now (good)
-
-      rebuild();
-    },
-    error: (err) => {
-      card.innerHTML = `<strong>Load error.</strong><div class="smallMuted">${String(err?.message || err)}</div>`;
-    }
-  });
-}
-
-/* queue rebuild */
-function rebuild() {
-  clues = allClues.filter(c => !c.Assessment);
-
-  if (viewMode === "stars") {
-    clues = clues.filter(c => isStarSetter(c.Writer));
-  }
-
-  currentIndex = 0;
-  render();
-  updateTabs();
-  updateUI();
-}
-
-/* render card */
-function render() {
-  if (!clues.length) {
-    card.innerHTML = (viewMode === "stars")
-      ? "<strong>No starred clues left!</strong><div class='smallMuted'>Switch to All to keep going.</div>"
-      : "<strong>No clues left!</strong>";
-    card.style.display = "block";
-    document.getElementById("buttons").style.display = "flex";
-    return;
-  }
-
-  const c = clues[currentIndex];
-  const enumText = getEnum(c.Answer);
-
-  const starred = isStarSetter(c.Writer);
-  const starChar = starred ? "★" : "☆";   // filled vs hollow
-  const starClass = starred ? "setterStar starred" : "setterStar unstarred";
-
-  // clue + enum in SAME font/size, not bold
-  card.innerHTML = `
-    <p class="clueLine">${escapeHtml(c.Clue)} ${escapeHtml(enumText)}</p>
-    <p class="answerLine">
-      <span id="answer" onclick="toggleAnswer(this)" data-answer="${escapeAttr(c.Answer)}">████████</span>
-    </p>
-    <p id="writer" title="Long-press to star/unstar setter">
-      ${escapeHtml(c.Writer)}
-      <span class="${starClass}" aria-hidden="true">${starChar}</span>
-    </p>
-  `;
-
-  card.style.display = "block";
-  document.getElementById("buttons").style.display = "flex";
-  attachWriterLongPress();
-}
-
-/* basic escaping */
-function escapeHtml(s){
-  return String(s||"")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#39;");
-}
-function escapeAttr(s){ return escapeHtml(s).replaceAll("\n"," "); }
-
-/* answer reveal */
-function toggleAnswer(el){
-  buzz(10);
-  if (el.classList.contains("revealed")){
-    el.classList.remove("revealed");
-    el.textContent = "████████";
-  } else {
-    el.classList.add("revealed");
-    el.textContent = el.getAttribute("data-answer") || "";
-  }
-}
-
-/* record / undo */
-function record(val) {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  c.Assessment = val;
-  if (!progress.byId) progress.byId = {};
-  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
-  progress.byId[c.Id].Assessment = val;
-  progress.byId[c.Id].Note = c.Note || "";
-
-  history.push(c.Id);
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-
-  rebuild();
-}
-
-function undo() {
-  const lastId = history.pop();
-  if (!lastId) return;
-
-  const c = allClues.find(x => x.Id === lastId);
-  if (c) c.Assessment = "";
-
-  if (progress.byId && progress.byId[lastId]) {
-    delete progress.byId[lastId].Assessment;
-  }
-
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-  rebuild();
-}
-
-/* notes */
-function openNote() {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  document.getElementById("noteText").value = c.Note || "";
-  document.getElementById("noteOverlay").style.display = "block";
-  document.body.classList.add("modal-open");
-}
-
-function saveNote() {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  c.Note = document.getElementById("noteText").value || "";
-  if (!progress.byId) progress.byId = {};
-  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
-  progress.byId[c.Id].Note = c.Note;
-
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-  document.getElementById("noteOverlay").style.display = "none";
-  document.body.classList.remove("modal-open");
-}
-
-/* counts + progress bar */
-function updateUI() {
-  const counts = { No:0, Workshop:0, Perfect:0 };
-  for (const c of allClues){
-    if (counts[c.Assessment] !== undefined) counts[c.Assessment]++;
-  }
-  document.getElementById("assessmentCounts").textContent =
-    `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
-
-  const left = clues.length;
-  document.getElementById("progressCount").textContent = left === 1 ? "1 left" : `${left} left`;
-
-  const total = Math.max(1, allClues.length);
-  const done = total - left;
-  document.getElementById("progressBar").style.width = `${(done/total)*100}%`;
-}
-
-/* tabs */
-function updateTabs() {
-  document.querySelectorAll(".tab").forEach(t => {
-    t.classList.toggle("active", t.dataset.view === viewMode);
-  });
-}
-
-/* swipe animation */
-function animateSwipe(dir, cb) {
-  buzz();
-  card.classList.add(`swipe-${dir}`);
-  flash.textContent = {left:'❌', right:'💡', down:'⭐'}[dir] || "";
-  flash.classList.add("show");
-  setTimeout(() => {
-    card.className = "";
-    flash.classList.remove("show");
-    cb && cb();
-  }, 380);
-}
-
-/* export */
-function exportCSV() {
-  const data = allClues
-    .filter(c => c.Assessment || c.Note)
-    .map(c => ({
-      id: c.Id,
-      clue: c.Clue,
-      answer: c.Answer,
-      setter_name: c.Writer,
-      email: c.Email || "",
-      result: c.Assessment || "",
-      note: c.Note || ""
-    }));
-
-  const csv = Papa.unparse(data);
-  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "reviews.csv";
-  a.click();
-}
-
-/* reset (progress only; keep stars) */
-function resetProgress() {
-  if (!confirm("Reset progress (assessments + notes) and reload latest CSV?")) return;
-
-  localStorage.removeItem(PROGRESS_KEY);
-  progress = { byId:{} };
-  history.length = 0;
-
-  loadSheet(true);
-}
-
-/* long-press writer to toggle star */
-let writerHammer = null;
-function attachWriterLongPress(){
-  const wEl = document.getElementById("writer");
-  if (!wEl) return;
-
-  try { writerHammer && writerHammer.destroy(); } catch {}
-  writerHammer = new Hammer(wEl);
-  writerHammer.add(new Hammer.Press({ time: 450 }));
-
-  let pressed = false;
-
-  writerHammer.on("press", () => {
-    pressed = true;
-    buzz(12);
-
-    const c = clues[currentIndex];
-    if (!c) return;
-
-    const nowStarred = toggleStarSetter(c.Writer);
-
-    // flash symbol: ⭐ when starred, ☆ when unstarred
-    flash.textContent = nowStarred ? "⭐" : "☆";
-    flash.classList.add("show");
-    setTimeout(() => flash.classList.remove("show"), 420);
-
-    // if we're in Stars view and they got unstarred, it may disappear
-    rebuild();
-    setTimeout(() => { pressed = false; }, 0);
-  });
-
-  // prevent quick tap selecting text / weirdness after press
-  wEl.addEventListener("click", (e) => {
-    if (pressed) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
-}
-
-/* gestures */
-const mc = new Hammer(document.body);
-mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-mc.on("swipeleft",  () => animateSwipe("left",  () => record("No")));
-mc.on("swiperight", () => animateSwipe("right", () => record("Workshop")));
-mc.on("swipedown",  () => animateSwipe("down",  () => record("Perfect")));
-
-/* tab clicks */
-document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
-  viewMode = t.dataset.view;
-  localStorage.setItem(VIEW_KEY, viewMode);
-  rebuild();
-});
-
-/* keyboard a11y for emoji buttons */
-document.querySelectorAll('.emoji-btn').forEach(el=>{
-  el.addEventListener('keydown', e=>{
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
-  });
-});
-
-/* init */
-updateTabs();
-window.onload = () => loadSheet(false);
-</script>
 </body>
 </html>
