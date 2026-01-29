@@ -17,19 +17,19 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.6rem 1rem 6.2rem; /* slightly tighter */
+    padding: 1.35rem 1rem 6.2rem; /* tighter overall */
     color: white;
     user-select: none;
     overflow-x: hidden;
   }
   body.modal-open { position: fixed; width: 100%; overflow: hidden; }
 
-  #title-wrapper { margin-bottom: 0.45rem; }
-  #title-wrapper img { height: 38px; }
+  #title-wrapper { margin-bottom: 0.4rem; }
+  #title-wrapper img { height: 36px; }
 
-  #tabs { display: flex; gap: 0.85rem; margin-bottom: 0.9rem; }
+  #tabs { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
   .tab {
-    padding: 0.55rem 1.05rem;
+    padding: 0.5rem 1rem;
     font-weight: 700;
     font-size: 0.95rem;
     border-radius: 16px;
@@ -41,11 +41,11 @@
   }
   .tab.active { background: #fff2b3; }
 
-  #assessmentCounts { font-size: 1.0rem; margin-bottom: 0.45rem; color: #222; }
+  #assessmentCounts { font-size: 0.98rem; margin-bottom: 0.4rem; color: #222; }
 
   #progress {
     width: 90vw;
-    max-width: 460px;
+    max-width: 420px;
     height: 6px;
     background: rgba(255,255,255,0.3);
     border-radius: 3px;
@@ -53,26 +53,26 @@
   }
   #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
   #progressCount {
-    font-size: 1.15rem;
-    margin: 0.55rem 0 1.2rem;  /* less air */
+    font-size: 1.05rem;
+    margin: 0.55rem 0 0.95rem;
     color: #222;
   }
 
-  /* Card: smaller + more “app-like” */
+  /* Card: smaller, with visible space around it */
   #card {
     background: white;
     color: #222;
     border: 3px solid #000;
-    border-radius: 18px;
-    padding: 1.35rem 1.15rem;
+    border-radius: 16px;
+    padding: 1.05rem 1rem;
     box-shadow: 6px 6px 0 #000;
     text-align: center;
 
-    width: 86vw;
-    max-width: 340px;          /* reduced */
-    margin-bottom: 1.35rem;
+    width: 82vw;
+    max-width: 310px;     /* smaller */
+    margin: 0.55rem 0 1.05rem; /* space outside pane */
 
-    min-height: 210px;         /* reduced */
+    min-height: 185px;    /* smaller */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -80,35 +80,25 @@
     transition: transform 0.4s ease, opacity 0.4s ease;
   }
 
-  /* Clue text inside card */
-  #card p { margin: 0.45rem 0; }
-  #card .clueText {
-    font-size: 1.55rem;        /* down from ~2rem */
+  #card p { margin: 0.4rem 0; }
+
+  /* Clue + enum: same font/size/weight (not bold) */
+  #card .clueLine {
+    font-size: 1.28rem;   /* smaller text */
     line-height: 1.35;
-    font-weight: 700;
-  }
-  #card .enumText {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #777;
-    display: inline-block;
-    margin-left: 0.25rem;
-    vertical-align: baseline;
-  }
-  #card .answerLine {
-    font-size: 1.15rem;
-  }
-  #card .answerLine strong {
-    font-weight: 700;
+    font-weight: 400;     /* NOT bold */
   }
 
-  #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-  #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-  #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+  /* Answer line a bit smaller */
+  #card .answerLine {
+    font-size: 1.05rem;
+    font-weight: 400;
+  }
+  #card .answerLine strong { font-weight: 700; } /* keep “Ans:” a touch stronger */
 
   #answer {
     cursor: pointer;
-    padding: 0 0.35em;
+    padding: 0 0.32em;
     border-radius: 6px;
     background: black;
     color: black;
@@ -118,21 +108,26 @@
   #answer.revealed { background: none; color: #222; }
 
   #writer {
-    font-size: 1.05rem; /* down */
+    font-size: 1.0rem;
     color: #555;
-    margin-top: 0.6rem;
+    margin-top: 0.55rem;
+    font-weight: 400;
   }
 
-  /* Buttons: tighter so they don’t bounce visually */
+  #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+  #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+  #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+
+  /* Emojis: smaller */
   #buttons {
     display: flex;
-    gap: 1.55rem;
-    font-size: 2.35rem;
+    gap: 1.2rem;
+    font-size: 2.05rem;   /* smaller icons */
     align-items: center;
-    margin-bottom: 0.2rem;
+    margin: 0.15rem 0 0;
   }
   .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
-  .emoji-btn:active { transform: scale(1.15); }
+  .emoji-btn:active { transform: scale(1.12); }
 
   #bottomButtons {
     position: fixed;
@@ -158,7 +153,7 @@
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 5rem;
+    font-size: 4.6rem;
     opacity: 0;
     transition: 0.4s;
     pointer-events: none;
@@ -245,21 +240,16 @@ const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchSetterStars_simple";
 
-/* Seed list */
 const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
 
 let allClues = [], clues = [], currentIndex = 0;
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
-
-/* progress by id */
 let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}');
 const history = [];
 
-/* starred setters map */
 let starred = {};
 try { starred = JSON.parse(localStorage.getItem(STARS_KEY) || "{}") || {}; } catch { starred = {}; }
 
-/* seed stars once */
 (function seedStarsOnce(){
   let changed = false;
   for (const n of INITIAL_STARS){
@@ -286,7 +276,6 @@ function getEnum(ans) {
   return parts.length ? `(${parts.join(',')})` : "";
 }
 
-/* Fetch CSV directly: NO CORS PROXY */
 async function loadSheet(forceFresh = true) {
   card.style.display = "block";
   card.innerHTML = "<strong>Loading…</strong>";
@@ -296,28 +285,25 @@ async function loadSheet(forceFresh = true) {
     const res = await fetch(url, { cache: "no-store" });
     const text = await res.text();
 
-    const firstLine = (text.split(/\r?\n/)[0] || "").toLowerCase();
-    if (firstLine.includes('{"error"') || firstLine.includes('"error"') || !text.includes("\n")) {
-      throw new Error("Fetch did not return CSV (got an error page/JSON instead).");
-    }
-
     const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
 
     if (!parsed.data || !parsed.data.length) {
       card.innerHTML = "<strong>No rows parsed.</strong>";
+      buttonsRow.style.display = "none";
       return;
     }
 
     allClues = parsed.data.map(r => {
       const id = r.id || r.Id || "";
+      const idStr = String(id || "").trim();
       return {
-        Id: String(id || "").trim(),
+        Id: idStr,
         Clue: String(r.clue || r.Clue || "").trim(),
         Answer: String(r.answer || r.Answer || "").trim(),
         Writer: String(r.setter_name || r.Writer || r.setter || "").trim(),
         Email: String(r.email || r.Email || "").trim(),
-        Assessment: (progress.byId[String(id||"").trim()]?.Assessment) || "",
-        Note: (progress.byId[String(id||"").trim()]?.Note) || ""
+        Assessment: (progress.byId[idStr]?.Assessment) || "",
+        Note: (progress.byId[idStr]?.Note) || ""
       };
     }).filter(r => r.Id && r.Clue && r.Answer);
 
@@ -331,9 +317,7 @@ async function loadSheet(forceFresh = true) {
 
 function rebuild() {
   clues = allClues.filter(c => !c.Assessment);
-  if (viewMode === "stars") {
-    clues = clues.filter(c => isStarSetter(c.Writer));
-  }
+  if (viewMode === "stars") clues = clues.filter(c => isStarSetter(c.Writer));
   currentIndex = 0;
   render();
 }
@@ -350,9 +334,10 @@ function render() {
   const enumText = getEnum(c.Answer);
   const star = isStarSetter(c.Writer) ? "⭐" : "☆";
 
+  /* enumeration is SAME style as clue (same span, no styling class) */
   card.innerHTML = `
     <div>
-      <p class="clueText">${escapeHtml(c.Clue)} <span class="enumText">${escapeHtml(enumText)}</span></p>
+      <p class="clueLine">${escapeHtml(c.Clue)} ${escapeHtml(enumText)}</p>
       <p class="answerLine"><strong>Ans:</strong> <span id="answer" onclick="toggleAnswer()">${escapeHtml("████████")}</span></p>
       <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(c.Writer)} ${star}</p>
     </div>
@@ -552,6 +537,7 @@ function escapeHtml(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[m]));
 }
+function saveStars(){ try{ localStorage.setItem(STARS_KEY, JSON.stringify(starred)); }catch{} }
 
 window.onload = () => loadSheet(true);
 </script>
