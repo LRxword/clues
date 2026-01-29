@@ -9,250 +9,642 @@
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
-body {
-  margin: 0;
-  font-family: 'Montserrat', sans-serif;
-  background: #cce7ff;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.2rem 1rem 6rem;
-  color: white;
-  user-select: none;
-  overflow-x: hidden;
+body{
+  margin:0;
+  font-family:'Montserrat',sans-serif;
+  background:#cce7ff;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:1.2rem 1rem 6rem;
+  color:white;
+  user-select:none;
+  overflow-x:hidden;
 }
-body.modal-open { position: fixed; width: 100%; overflow: hidden; }
+body.modal-open{ position:fixed; width:100%; overflow:hidden; }
 
-#title-wrapper { margin-bottom: 0.35rem; }
-#title-wrapper img { height: 34px; }
+#title-wrapper{ margin-bottom:.35rem; }
+#title-wrapper img{ height:34px; }
 
-/* Tabs — smaller */
-#tabs {
-  display: flex;
-  gap: 0.55rem;
-  margin-bottom: 0.55rem;
+#tabs{ display:flex; gap:.55rem; margin-bottom:.55rem; }
+.tab{
+  padding:.38rem .8rem;
+  font-weight:700;
+  font-size:.85rem;
+  border-radius:14px;
+  cursor:pointer;
+  background:#fff;
+  color:#000;
+  border:2px solid #000;
+  box-shadow:3px 3px 0 #000;
 }
-.tab {
-  padding: 0.38rem 0.8rem;
-  font-weight: 700;
-  font-size: 0.85rem;
-  border-radius: 14px;
-  cursor: pointer;
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
-  box-shadow: 3px 3px 0 #000;
-}
-.tab.active { background: #fff2b3; }
+.tab.active{ background:#fff2b3; }
 
-#assessmentCounts {
-  font-size: 0.9rem;
-  margin-bottom: 0.3rem;
-  color: #222;
+#assessmentCounts{
+  font-size:.9rem;
+  margin-bottom:.3rem;
+  color:#222;
 }
 
-/* Progress — slimmer */
-#progress {
-  width: 90vw;
-  max-width: 380px;
-  height: 4px;
-  background: rgba(255,255,255,0.3);
-  border-radius: 3px;
-  overflow: hidden;
+#progress{
+  width:90vw;
+  max-width:380px;
+  height:4px;
+  background:rgba(255,255,255,.3);
+  border-radius:3px;
+  overflow:hidden;
 }
-#progressBar {
-  height: 100%;
-  width: 0%;
-  background: #ffe6e6;
-  transition: width 0.3s ease;
+#progressBar{
+  height:100%;
+  width:0%;
+  background:#ffe6e6;
+  transition:width .3s ease;
 }
-#progressCount {
-  font-size: 0.9rem;
-  margin: 0.45rem 0 0.85rem;
-  color: #222;
-}
-
-/* Card */
-#card {
-  background: white;
-  color: #222;
-  border: 3px solid #000;
-  border-radius: 16px;
-  padding: 1rem 0.95rem;
-  box-shadow: 6px 6px 0 #000;
-  text-align: center;
-  width: 82vw;
-  max-width: 300px;
-  margin: 0.6rem 0 1rem;
-  min-height: 175px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition: transform 0.4s ease, opacity 0.4s ease;
-}
-#card p { margin: 0; }
-
-.clueLine {
-  font-size: 1.25rem;
-  line-height: 1.35;
-  font-weight: 400;
-  margin-bottom: 0.85rem; /* more space before answer */
+#progressCount{
+  font-size:.9rem;
+  margin:.45rem 0 .85rem;
+  color:#222;
 }
 
-.answerLine {
-  font-size: 1.05rem;
-  margin-bottom: 0.75rem; /* more space before setter */
+#card{
+  background:#fff;
+  color:#222;
+  border:3px solid #000;
+  border-radius:16px;
+  padding:1rem .95rem;
+  box-shadow:6px 6px 0 #000;
+  text-align:center;
+  width:82vw;
+  max-width:300px;
+  margin:.6rem 0 1rem;
+  min-height:175px;
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  transition:transform .4s ease, opacity .4s ease;
+}
+#card p{ margin:0; }
+
+#card.swipe-left{ transform:translateX(-150%) rotate(-20deg); opacity:0; }
+#card.swipe-right{ transform:translateX(150%) rotate(20deg); opacity:0; }
+#card.swipe-down{ transform:translateY(150%) rotate(15deg); opacity:0; }
+
+.clueLine{
+  font-size:1.25rem;
+  line-height:1.35;
+  font-weight:400; /* NOT bold */
+  margin-bottom:.9rem; /* more space before answer */
+}
+.enumSame{
+  font:inherit;         /* same font + size */
+  font-weight:inherit;  /* not bold */
+  color:#555;
+  margin-left:.35rem;
+  white-space:nowrap;
 }
 
-#answer {
-  cursor: pointer;
-  padding: 0 0.32em;
-  border-radius: 6px;
-  background: black;
-  color: black;
-  font-weight: 700;
-  transition: 0.3s;
+.answerLine{
+  font-size:1.05rem;
+  margin-bottom:.8rem; /* more space before setter */
 }
-#answer.revealed { background: none; color: #222; }
+#answer{
+  cursor:pointer;
+  padding:0 .32em;
+  border-radius:6px;
+  background:#000;
+  color:#000;
+  font-weight:700;
+  transition:.25s;
+}
+#answer.revealed{ background:none; color:#222; }
 
-#writer {
-  font-size: 0.95rem;
-  color: #555;
-  margin-top: 0.25rem;
+#writer{
+  font-size:.95rem;
+  color:#555;
+  margin-top:.1rem;
 }
+#writer .starBadge{ margin-left:.25rem; }
 
-/* Swipe animations */
-#card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-#card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
+#buttons{
+  display:flex;
+  gap:1.55rem;      /* slightly more spaced */
+  font-size:1.78rem;/* touch smaller */
+  align-items:center;
+  margin-top:.15rem;
+}
+.emoji-btn{
+  cursor:pointer;
+  transition:transform .15s ease;
+  text-shadow:2px 2px 0 #000;
+}
+.emoji-btn:active{ transform:scale(1.12); }
 
-/* Emojis — smaller & spaced */
-#buttons {
-  display: flex;
-  gap: 1.45rem;        /* more spacing */
-  font-size: 1.85rem; /* slightly smaller */
-  align-items: center;
-  margin-top: 0.1rem;
+#bottomButtons{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  display:flex;
+  z-index:10;
 }
-.emoji-btn {
-  cursor: pointer;
-  transition: transform 0.15s ease;
-  text-shadow: 2px 2px 0 #000;
+#bottomButtons button{
+  flex:1;
+  padding:.95rem;
+  font-size:.95rem;
+  font-weight:700;
+  color:#fff;
+  border:none;
+  cursor:pointer;
 }
-.emoji-btn:active { transform: scale(1.12); }
+#exportBtn{ background:#222; }
+#resetBtn{ background:#e53935; }
 
-/* Bottom buttons */
-#bottomButtons {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  display: flex;
-  z-index: 10;
+#flashMessage{
+  position:fixed;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:4.2rem;
+  opacity:0;
+  transition:.4s;
+  pointer-events:none;
 }
-#bottomButtons button {
-  flex: 1;
-  padding: 0.95rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-#exportBtn { background: #222; }
-#resetBtn { background: #e53935; }
-
-/* Flash */
-#flashMessage {
-  position: fixed;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 4.2rem;
-  opacity: 0;
-  transition: 0.4s;
-  pointer-events: none;
-}
-#flashMessage.show {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.2);
+#flashMessage.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1.2);
 }
 
 /* Notes */
-#noteOverlay {
-  display: none;
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  max-width: 320px;
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  z-index: 1000;
-  border: 3px solid #000;
+#noteOverlay{
+  display:none;
+  position:fixed;
+  top:20%;
+  left:50%;
+  transform:translateX(-50%);
+  width:80%;
+  max-width:320px;
+  background:#fff;
+  border-radius:20px;
+  padding:1.5rem;
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
+  z-index:1000;
+  border:3px solid #000;
 }
-#noteText {
-  width: 90%;
-  height: 100px;
-  font-size: 1.1rem;
-  padding: 0.5rem;
-  border: 2px solid #000;
-  border-radius: 10px;
-  resize: none;
-  font-family: inherit;
+#noteText{
+  width:90%;
+  height:100px;
+  font-size:1.1rem;
+  padding:.5rem;
+  border:2px solid #000;
+  border-radius:10px;
+  resize:none;
+  font-family:inherit;
 }
-#noteOverlay button {
-  margin-top: 1rem;
-  width: 100%;
-  padding: 0.7rem;
-  background: #222;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
+#noteOverlay button{
+  margin-top:1rem;
+  width:100%;
+  padding:.7rem;
+  background:#222;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
 }
 </style>
 </head>
+
 <body>
+  <div id="title-wrapper">
+    <img src="https://i.imgur.com/3cTvC1h.png" alt="logo">
+  </div>
 
-<div id="title-wrapper">
-  <img src="https://i.imgur.com/3cTvC1h.png" alt="logo">
-</div>
+  <div id="tabs">
+    <div class="tab" data-view="all">All</div>
+    <div class="tab" data-view="stars">Stars</div>
+  </div>
 
-<div id="tabs">
-  <div class="tab" data-view="all">All</div>
-  <div class="tab" data-view="stars">Stars</div>
-</div>
+  <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
+  <div id="progress"><div id="progressBar"></div></div>
+  <div id="progressCount"></div>
+  <div id="flashMessage"></div>
 
-<div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
-<div id="progress"><div id="progressBar"></div></div>
-<div id="progressCount"></div>
-<div id="flashMessage"></div>
+  <div id="card"></div>
 
-<div id="card" style="display:none;"></div>
+  <div id="buttons">
+    <span class="emoji-btn" id="btnNo"      aria-label="No"       role="button" tabindex="0">❌</span>
+    <span class="emoji-btn" id="btnWork"    aria-label="Workshop" role="button" tabindex="0">💡</span>
+    <span class="emoji-btn" id="btnPerfect" aria-label="Perfect"  role="button" tabindex="0">⭐</span>
+    <span class="emoji-btn" id="btnNote"    aria-label="Note"     role="button" tabindex="0">✏️</span>
+    <span class="emoji-btn" id="btnUndo"    aria-label="Undo"     role="button" tabindex="0">↩️</span>
+  </div>
 
-<div id="buttons">
-  <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))">💡</span>
-  <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))">⭐</span>
-  <span class="emoji-btn" onclick="openNote()">✏️</span>
-  <span class="emoji-btn" onclick="undo()">↩️</span>
-</div>
+  <div id="bottomButtons">
+    <button id="exportBtn">Download CSV</button>
+    <button id="resetBtn">Reset</button>
+  </div>
 
-<div id="bottomButtons">
-  <button id="exportBtn" onclick="exportCSV()">Download CSV</button>
-  <button id="resetBtn" onclick="resetProgress()">Reset</button>
-</div>
+  <div id="noteOverlay">
+    <textarea id="noteText" placeholder="Add a note..."></textarea>
+    <button id="noteSaveBtn">Save</button>
+  </div>
 
-<div id="noteOverlay">
-  <textarea id="noteText" placeholder="Add a note..."></textarea>
-  <button onclick="saveNote()">Save</button>
-</div>
+<script>
+/* ---------------- config ---------------- */
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
-<!-- JS unchanged from your last working version -->
+const PROGRESS_KEY = "cluesmash_progress_v2";
+const VIEW_KEY     = "cluesmash_view_v2";
+const STARS_KEY    = "cluesmash_stars_v2";
+
+/* seed list (only used for first-time initialisation) */
+const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
+
+/* ---------------- state ---------------- */
+let allClues = [];
+let queue = [];
+let currentIndex = 0;
+
+let viewMode = localStorage.getItem(VIEW_KEY) || "all";
+let progress = safeJson(localStorage.getItem(PROGRESS_KEY)) || { byId:{} };
+let history = []; // session undo stack
+
+let stars = safeJson(localStorage.getItem(STARS_KEY));
+if (!stars || typeof stars !== "object") stars = {};
+
+/* ---------------- dom ---------------- */
+const card = document.getElementById("card");
+const flash = document.getElementById("flashMessage");
+
+const btnNo = document.getElementById("btnNo");
+const btnWork = document.getElementById("btnWork");
+const btnPerfect = document.getElementById("btnPerfect");
+const btnNote = document.getElementById("btnNote");
+const btnUndo = document.getElementById("btnUndo");
+
+const exportBtn = document.getElementById("exportBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+function buzz(ms=20){ if (navigator.vibrate) navigator.vibrate(ms); }
+function safeJson(s){ try { return JSON.parse(s); } catch { return null; } }
+
+function normName(name){
+  return String(name||"").trim().replace(/\s+/g," ").toLowerCase();
+}
+
+/* ---------------- stars persistence ---------------- */
+function seedStarsOnce(){
+  // only seed if stars is empty
+  if (Object.keys(stars).length) return;
+  for (const n of INITIAL_STARS){
+    const k = normName(n);
+    if (k) stars[k] = true;
+  }
+  localStorage.setItem(STARS_KEY, JSON.stringify(stars));
+}
+function isStarSetter(name){
+  return !!stars[normName(name)];
+}
+function toggleStarSetter(name){
+  const k = normName(name);
+  if (!k) return false;
+  stars[k] = !stars[k];
+  localStorage.setItem(STARS_KEY, JSON.stringify(stars));
+  return stars[k];
+}
+
+/* ---------------- enumeration ---------------- */
+function getEnum(ans){
+  // spaces separate words; hyphens preserved as 6-2-3
+  const words = String(ans||"").trim().split(/\s+/).filter(Boolean);
+  const pieces = words.map(w=>{
+    const parts = w.split("-").filter(Boolean).map(p => (p.match(/[A-Za-z]/g) || []).length);
+    return parts.join("-");
+  });
+  return pieces.length ? `(${pieces.join(",")})` : "";
+}
+
+/* ---------------- parsing ---------------- */
+function pickField(row, names){
+  for (const n of names){
+    if (row && row[n] != null && String(row[n]).trim() !== "") return row[n];
+    // case variants
+    const alt = Object.keys(row||{}).find(k => k.toLowerCase() === n.toLowerCase());
+    if (alt && row[alt] != null && String(row[alt]).trim() !== "") return row[alt];
+  }
+  return "";
+}
+
+async function loadSheet(forceFresh=false){
+  card.style.display = "flex";
+  card.innerHTML = `<p class="clueLine">Loading…</p>`;
+
+  const url = SHEET_URL + (SHEET_URL.includes("?") ? "&" : "?") + `_=${forceFresh ? Date.now() : ""}`;
+
+  try{
+    // Fetch text then parse (more reliable than Papa download=true in some mobile browsers)
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("Fetch failed: " + res.status);
+    const text = await res.text();
+
+    const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+    const rows = Array.isArray(parsed.data) ? parsed.data : [];
+
+    allClues = rows.map(r=>{
+      const id = String(pickField(r, ["id","Id","uid","unique_id","uniqueid"])).trim();
+      const clue = String(pickField(r, ["clue","Clue","cluetext"])).trim();
+      const answer = String(pickField(r, ["answer","Answer","solution"])).trim();
+      const writer = String(pickField(r, ["setter_name","Writer","writer","setter","author"])).trim();
+      const email = String(pickField(r, ["email","Email","writer_email","writeremail"])).trim();
+
+      const saved = progress.byId[id] || {};
+      return {
+        Id: id,
+        Clue: clue,
+        Answer: answer,
+        Writer: writer,
+        Email: email,
+        Assessment: saved.Assessment || "",
+        Note: saved.Note || ""
+      };
+    }).filter(r => r.Id && r.Clue && r.Answer);
+
+    if (!allClues.length){
+      card.innerHTML = `<p class="clueLine">No rows parsed.</p>`;
+      updateTabsUI();
+      updateStatsUI();
+      return;
+    }
+
+    rebuildQueue();
+  }catch(e){
+    card.innerHTML = `<p class="clueLine">Couldn’t load the CSV.</p><p style="font-size:.9rem;color:#555;margin-top:.5rem">(${String(e.message||e)})</p>`;
+  }
+}
+
+/* ---------------- queue + render ---------------- */
+function rebuildQueue(){
+  queue = allClues.filter(c => !c.Assessment);
+
+  if (viewMode === "stars"){
+    queue = queue.filter(c => isStarSetter(c.Writer));
+  }
+
+  currentIndex = 0;
+  updateTabsUI();
+  render();
+}
+
+function render(){
+  if (!queue.length){
+    card.style.display = "flex";
+    card.innerHTML = viewMode === "stars"
+      ? `<p class="clueLine">No starred clues left.</p><p style="font-size:.9rem;color:#555;margin-top:.35rem">Switch to All to keep going.</p>`
+      : `<p class="clueLine">No clues left.</p>`;
+    updateStatsUI();
+    return;
+  }
+
+  const c = queue[currentIndex];
+  const enumText = getEnum(c.Answer);
+  const starBadge = isStarSetter(c.Writer) ? `<span class="starBadge">⭐</span>` : ``;
+
+  card.style.display = "flex";
+  card.innerHTML = `
+    <p class="clueLine">${escapeHtml(c.Clue)}<span class="enumSame">${escapeHtml(enumText)}</span></p>
+    <p class="answerLine"><span id="answer" data-answer="${escapeHtml(c.Answer)}">████████</span></p>
+    <p id="writer" title="Long-press to star/unstar">${escapeHtml(c.Writer)} ${starBadge}</p>
+  `;
+
+  const ansEl = document.getElementById("answer");
+  ansEl.addEventListener("click", ()=>{
+    buzz(10);
+    if (ansEl.classList.contains("revealed")){
+      ansEl.classList.remove("revealed");
+      ansEl.textContent = "████████";
+    }else{
+      ansEl.classList.add("revealed");
+      ansEl.textContent = c.Answer;
+    }
+  });
+
+  attachWriterLongPress();
+
+  updateStatsUI();
+}
+
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+/* ---------------- counts + progress ---------------- */
+function updateStatsUI(){
+  const counts = { No:0, Workshop:0, Perfect:0 };
+  for (const c of allClues){
+    if (counts[c.Assessment] != null) counts[c.Assessment]++;
+  }
+  document.getElementById("assessmentCounts").textContent =
+    `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
+
+  const remaining = queue.length;
+  document.getElementById("progressCount").textContent = remaining ? `${remaining} left` : "";
+
+  const total = allClues.length || 1;
+  const done = total - remaining;
+  document.getElementById("progressBar").style.width = `${Math.max(0, Math.min(100, (done/total)*100))}%`;
+}
+
+function updateTabsUI(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.classList.toggle("active", t.dataset.view === viewMode);
+  });
+}
+
+/* ---------------- swipe + flash ---------------- */
+function flashEmoji(e){
+  flash.textContent = e;
+  flash.classList.add("show");
+  setTimeout(()=>flash.classList.remove("show"), 420);
+}
+
+function animateSwipe(dir, cb){
+  buzz(18);
+  card.classList.add(`swipe-${dir}`);
+  flashEmoji({left:"❌", right:"💡", down:"⭐"}[dir] || "");
+  setTimeout(()=>{
+    card.className = "";
+    cb();
+  }, 380);
+}
+
+/* ---------------- record / undo ---------------- */
+function record(val){
+  if (!queue.length) return;
+
+  const c = queue[currentIndex];
+  c.Assessment = val;
+
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
+  progress.byId[c.Id].Assessment = val;
+  progress.byId[c.Id].Note = c.Note || "";
+
+  history.push(c.Id);
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  rebuildQueue();
+}
+
+function undo(){
+  const lastId = history.pop();
+  if (!lastId) return;
+
+  const master = allClues.find(x => x.Id === lastId);
+  if (master) master.Assessment = "";
+
+  if (progress.byId[lastId]) delete progress.byId[lastId].Assessment;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  rebuildQueue();
+}
+
+/* ---------------- notes ---------------- */
+function openNote(){
+  if (!queue.length) return;
+  const c = queue[currentIndex];
+  document.getElementById("noteText").value = c.Note || "";
+  document.getElementById("noteOverlay").style.display = "block";
+  document.body.classList.add("modal-open");
+}
+
+function saveNote(){
+  if (!queue.length) return;
+  const c = queue[currentIndex];
+  c.Note = document.getElementById("noteText").value;
+
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
+  progress.byId[c.Id].Note = c.Note || "";
+  progress.byId[c.Id].Assessment = c.Assessment || progress.byId[c.Id].Assessment || "";
+
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  document.getElementById("noteOverlay").style.display = "none";
+  document.body.classList.remove("modal-open");
+}
+
+/* ---------------- export ---------------- */
+function exportCSV(){
+  const data = allClues
+    .filter(c => c.Assessment || c.Note)
+    .map(c => ({
+      id: c.Id,
+      clue: c.Clue,
+      answer: c.Answer,
+      setter_name: c.Writer,
+      email: c.Email || "",
+      result: c.Assessment || "",
+      note: c.Note || ""
+    }));
+
+  const csv = Papa.unparse(data);
+  const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "reviews.csv";
+  a.click();
+}
+
+/* Reset: clears only progress (NOT stars), then reloads latest CSV */
+function resetProgress(){
+  if (!confirm("Reset assessments/notes? (Stars stay)")) return;
+  localStorage.removeItem(PROGRESS_KEY);
+  progress = { byId:{} };
+  history = [];
+  loadSheet(true);
+}
+
+/* ---------------- writer long-press to star/unstar ---------------- */
+let writerHammer = null;
+function attachWriterLongPress(){
+  const w = document.getElementById("writer");
+  if (!w) return;
+
+  try { writerHammer && writerHammer.destroy(); } catch {}
+  writerHammer = new Hammer(w);
+  writerHammer.add(new Hammer.Press({ time: 450 }));
+
+  let pressed = false;
+
+  writerHammer.on("press", ()=>{
+    pressed = true;
+    buzz(12);
+    const c = queue[currentIndex];
+    if (!c) return;
+
+    const newState = toggleStarSetter(c.Writer);
+    flashEmoji(newState ? "⭐" : "☆");
+
+    // if we're in Stars view and we unstarred them, they may disappear from queue
+    rebuildQueue();
+
+    setTimeout(()=>{ pressed=false; }, 0);
+  });
+
+  // prevent “tap” from doing anything weird after press
+  w.addEventListener("click", (e)=>{
+    if (pressed){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+}
+
+/* ---------------- wiring ---------------- */
+btnNo.addEventListener("click", ()=>animateSwipe("left",  ()=>record("No")));
+btnWork.addEventListener("click", ()=>animateSwipe("right", ()=>record("Workshop")));
+btnPerfect.addEventListener("click", ()=>animateSwipe("down",  ()=>record("Perfect")));
+btnNote.addEventListener("click", openNote);
+btnUndo.addEventListener("click", undo);
+
+exportBtn.addEventListener("click", exportCSV);
+resetBtn.addEventListener("click", resetProgress);
+document.getElementById("noteSaveBtn").addEventListener("click", saveNote);
+
+/* keyboard support */
+document.querySelectorAll(".emoji-btn").forEach(el=>{
+  el.addEventListener("keydown", e=>{
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      el.click();
+    }
+  });
+});
+
+/* swipe gestures */
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swipeleft",  ()=>animateSwipe("left",  ()=>record("No")));
+mc.on("swiperight", ()=>animateSwipe("right", ()=>record("Workshop")));
+mc.on("swipedown",  ()=>animateSwipe("down",  ()=>record("Perfect")));
+
+/* tab switching */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    viewMode = t.dataset.view;
+    localStorage.setItem(VIEW_KEY, viewMode);
+    rebuildQueue();
+  });
+});
+
+/* init */
+seedStarsOnce();
+updateTabsUI();
+window.onload = ()=>loadSheet(false);
+</script>
 </body>
 </html>
