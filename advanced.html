@@ -10,73 +10,196 @@
 
 <style>
   body {
-    margin: 0; font-family: 'Montserrat', sans-serif; background: #cce7ff;
-    min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
-    padding: 2rem 1rem 7rem; color: white; user-select: none; overflow-x: hidden;
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background: #cce7ff;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.6rem 1rem 6.2rem; /* slightly tighter */
+    color: white;
+    user-select: none;
+    overflow-x: hidden;
   }
   body.modal-open { position: fixed; width: 100%; overflow: hidden; }
 
-  #title-wrapper { margin-bottom: 0.5rem; }
-  #title-wrapper img { height: 40px; }
+  #title-wrapper { margin-bottom: 0.45rem; }
+  #title-wrapper img { height: 38px; }
 
-  #tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
+  #tabs { display: flex; gap: 0.85rem; margin-bottom: 0.9rem; }
   .tab {
-    padding: 0.6rem 1.2rem; font-weight: 700; border-radius: 16px; cursor: pointer;
-    background: #fff; color: #000; border: 2px solid #000; box-shadow: 4px 4px 0 #000;
+    padding: 0.55rem 1.05rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 16px;
+    cursor: pointer;
+    background: #fff;
+    color: #000;
+    border: 2px solid #000;
+    box-shadow: 4px 4px 0 #000;
   }
   .tab.active { background: #fff2b3; }
 
-  #assessmentCounts { font-size: 1.1rem; margin-bottom: 0.5rem; color: #222; }
+  #assessmentCounts { font-size: 1.0rem; margin-bottom: 0.45rem; color: #222; }
+
   #progress {
-    width: 90vw; max-width: 500px; height: 6px; background: rgba(255,255,255,0.3);
-    border-radius: 3px; overflow: hidden;
+    width: 90vw;
+    max-width: 460px;
+    height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    overflow: hidden;
   }
   #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
-  #progressCount { font-size: 1.3rem; margin-bottom: 1.5rem; color: #222; }
+  #progressCount {
+    font-size: 1.15rem;
+    margin: 0.55rem 0 1.2rem;  /* less air */
+    color: #222;
+  }
 
-  /* Keep the card a consistent size so buttons don't jump */
+  /* Card: smaller + more “app-like” */
   #card {
-    background: white; color: #222; border: 3px solid #000; border-radius: 20px;
-    padding: 2rem 1.5rem; font-size: 2rem; line-height: 1.4; box-shadow: 6px 6px 0 #000;
-    text-align: center; width: 80vw; max-width: 380px; margin-bottom: 2rem;
-    min-height: 260px; display: flex; flex-direction: column; justify-content: center;
+    background: white;
+    color: #222;
+    border: 3px solid #000;
+    border-radius: 18px;
+    padding: 1.35rem 1.15rem;
+    box-shadow: 6px 6px 0 #000;
+    text-align: center;
+
+    width: 86vw;
+    max-width: 340px;          /* reduced */
+    margin-bottom: 1.35rem;
+
+    min-height: 210px;         /* reduced */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
     transition: transform 0.4s ease, opacity 0.4s ease;
   }
+
+  /* Clue text inside card */
+  #card p { margin: 0.45rem 0; }
+  #card .clueText {
+    font-size: 1.55rem;        /* down from ~2rem */
+    line-height: 1.35;
+    font-weight: 700;
+  }
+  #card .enumText {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #777;
+    display: inline-block;
+    margin-left: 0.25rem;
+    vertical-align: baseline;
+  }
+  #card .answerLine {
+    font-size: 1.15rem;
+  }
+  #card .answerLine strong {
+    font-weight: 700;
+  }
+
   #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
   #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
   #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
-  #answer { cursor: pointer; padding: 0 0.4em; border-radius: 6px; background: black; color: black; transition: 0.3s; }
+  #answer {
+    cursor: pointer;
+    padding: 0 0.35em;
+    border-radius: 6px;
+    background: black;
+    color: black;
+    transition: 0.3s;
+    font-weight: 700;
+  }
   #answer.revealed { background: none; color: #222; }
 
-  #writer { font-size: 1.2rem; color: #555; margin-top: 1rem; }
-  #buttons { display: flex; gap: 1.8rem; font-size: 2.5rem; align-items: center; }
+  #writer {
+    font-size: 1.05rem; /* down */
+    color: #555;
+    margin-top: 0.6rem;
+  }
+
+  /* Buttons: tighter so they don’t bounce visually */
+  #buttons {
+    display: flex;
+    gap: 1.55rem;
+    font-size: 2.35rem;
+    align-items: center;
+    margin-bottom: 0.2rem;
+  }
   .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
   .emoji-btn:active { transform: scale(1.15); }
 
-  #bottomButtons { position: fixed; bottom: 0; width: 100%; display: flex; z-index: 10; }
-  #bottomButtons button { flex: 1; padding: 1rem; color: white; border: none; cursor: pointer; }
+  #bottomButtons {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    z-index: 10;
+  }
+  #bottomButtons button {
+    flex: 1;
+    padding: 1rem;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
   #exportBtn { background: #222; }
   #resetBtn { background: #e53935; }
 
   #flashMessage {
-    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 5rem; opacity: 0; transition: 0.4s; pointer-events: none;
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    opacity: 0;
+    transition: 0.4s;
+    pointer-events: none;
   }
   #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 
   #noteOverlay {
-    display: none; position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
-    width: 80%; max-width: 320px; background: white; border-radius: 20px;
-    padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000; border: 3px solid #000;
+    display: none;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 320px;
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1000;
+    border: 3px solid #000;
   }
   #noteText {
-    width: 90%; height: 100px; font-size: 1.2rem; padding: 0.5rem;
-    border: 2px solid #000; border-radius: 10px; resize: none; font-family: inherit;
+    width: 90%;
+    height: 100px;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    border: 2px solid #000;
+    border-radius: 10px;
+    resize: none;
+    font-family: inherit;
   }
   #noteOverlay button {
-    margin-top: 1rem; width: 100%; padding: 0.7rem; background: #222;
-    color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.7rem;
+    background: #222;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
   }
 </style>
 </head>
@@ -173,7 +296,6 @@ async function loadSheet(forceFresh = true) {
     const res = await fetch(url, { cache: "no-store" });
     const text = await res.text();
 
-    /* Hardening: detect non-CSV responses */
     const firstLine = (text.split(/\r?\n/)[0] || "").toLowerCase();
     if (firstLine.includes('{"error"') || firstLine.includes('"error"') || !text.includes("\n")) {
       throw new Error("Fetch did not return CSV (got an error page/JSON instead).");
@@ -202,7 +324,7 @@ async function loadSheet(forceFresh = true) {
     updateTabs();
     rebuild();
   } catch(e) {
-    card.innerHTML = `<strong>Load error.</strong><br><span style="font-size:1.1rem;color:#555">${escapeHtml(e.message || "Unknown error")}</span>`;
+    card.innerHTML = `<strong>Load error.</strong><br><span style="font-size:1.05rem;color:#555">${escapeHtml(e.message || "Unknown error")}</span>`;
     buttonsRow.style.display = "none";
   }
 }
@@ -230,8 +352,8 @@ function render() {
 
   card.innerHTML = `
     <div>
-      <p>${escapeHtml(c.Clue)} <span style="color:#777; font-weight:700">${escapeHtml(enumText)}</span></p>
-      <p><strong>Ans:</strong> <span id="answer" onclick="toggleAnswer()">${escapeHtml("████████")}</span></p>
+      <p class="clueText">${escapeHtml(c.Clue)} <span class="enumText">${escapeHtml(enumText)}</span></p>
+      <p class="answerLine"><strong>Ans:</strong> <span id="answer" onclick="toggleAnswer()">${escapeHtml("████████")}</span></p>
       <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(c.Writer)} ${star}</p>
     </div>
   `;
@@ -343,8 +465,13 @@ function exportCSV() {
   const data = allClues
     .filter(c => c.Assessment || c.Note)
     .map(c => ({
-      id: c.Id, clue: c.Clue, answer: c.Answer, setter_name: c.Writer, email: c.Email,
-      result: c.Assessment, note: c.Note
+      id: c.Id,
+      clue: c.Clue,
+      answer: c.Answer,
+      setter_name: c.Writer,
+      email: c.Email,
+      result: c.Assessment,
+      note: c.Note
     }));
 
   const blob = new Blob(['\ufeff' + Papa.unparse(data)], { type: "text/csv" });
@@ -354,7 +481,6 @@ function exportCSV() {
   a.click();
 }
 
-/* Reset should NOT wipe all localStorage keys; only this app's progress */
 function resetProgress() {
   if (!confirm("Reset progress (assessments + notes) and reload latest CSV?")) return;
 
@@ -362,7 +488,6 @@ function resetProgress() {
   progress = { byId: {} };
   history.length = 0;
 
-  /* Reload fresh from sheet; ensures latest CSV is used */
   loadSheet(true);
 }
 
@@ -393,7 +518,6 @@ function attachWriterLongPress(){
     flash.classList.add("show");
     setTimeout(()=>flash.classList.remove("show"),450);
 
-    /* If we're in Stars view and they just got unstarred, it should disappear immediately */
     rebuild();
 
     setTimeout(()=>{ pressed=false; }, 0);
