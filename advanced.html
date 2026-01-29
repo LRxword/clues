@@ -27,20 +27,20 @@
   .tab.active { background: #fff2b3; }
 
   #assessmentCounts { font-size: 1.1rem; margin-bottom: 0.5rem; color: #222; }
-
-  #progress { width: 90vw; max-width: 500px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+  #progress {
+    width: 90vw; max-width: 500px; height: 6px; background: rgba(255,255,255,0.3);
+    border-radius: 3px; overflow: hidden;
+  }
   #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
   #progressCount { font-size: 1.3rem; margin-bottom: 1.5rem; color: #222; }
 
+  /* Keep the card a consistent size so buttons don't jump */
   #card {
     background: white; color: #222; border: 3px solid #000; border-radius: 20px;
     padding: 2rem 1.5rem; font-size: 2rem; line-height: 1.4; box-shadow: 6px 6px 0 #000;
     text-align: center; width: 80vw; max-width: 380px; margin-bottom: 2rem;
+    min-height: 260px; display: flex; flex-direction: column; justify-content: center;
     transition: transform 0.4s ease, opacity 0.4s ease;
-    min-height: 220px; /* keeps emoji row from bouncing */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
   #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
@@ -49,19 +49,20 @@
   #answer { cursor: pointer; padding: 0 0.4em; border-radius: 6px; background: black; color: black; transition: 0.3s; }
   #answer.revealed { background: none; color: #222; }
 
-  #writer { font-size: 1.2rem; color: #555; margin-top: 1rem; display: inline-flex; gap: .35rem; align-items: center; justify-content: center; }
-  #writerStar { font-size: 1.15rem; line-height: 1; }
-
-  #buttons { display: flex; gap: 1.8rem; font-size: 2.5rem; align-items: center; margin-bottom: 1rem; }
+  #writer { font-size: 1.2rem; color: #555; margin-top: 1rem; }
+  #buttons { display: flex; gap: 1.8rem; font-size: 2.5rem; align-items: center; }
   .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
-  .emoji-btn:hover, .emoji-btn:active { transform: scale(1.25); }
+  .emoji-btn:active { transform: scale(1.15); }
 
   #bottomButtons { position: fixed; bottom: 0; width: 100%; display: flex; z-index: 10; }
   #bottomButtons button { flex: 1; padding: 1rem; color: white; border: none; cursor: pointer; }
   #exportBtn { background: #222; }
   #resetBtn { background: #e53935; }
 
-  #flashMessage { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; opacity: 0; transition: 0.4s; pointer-events: none; }
+  #flashMessage {
+    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 5rem; opacity: 0; transition: 0.4s; pointer-events: none;
+  }
   #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 
   #noteOverlay {
@@ -69,12 +70,18 @@
     width: 80%; max-width: 320px; background: white; border-radius: 20px;
     padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000; border: 3px solid #000;
   }
-  #noteText { width: 90%; height: 100px; font-size: 1.2rem; padding: 0.5rem; border: 2px solid #000; border-radius: 10px; resize: none; font-family: inherit; }
-  #noteOverlay button { margin-top: 1rem; width: 100%; padding: 0.7rem; background: #222; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+  #noteText {
+    width: 90%; height: 100px; font-size: 1.2rem; padding: 0.5rem;
+    border: 2px solid #000; border-radius: 10px; resize: none; font-family: inherit;
+  }
+  #noteOverlay button {
+    margin-top: 1rem; width: 100%; padding: 0.7rem; background: #222;
+    color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+  }
 </style>
 </head>
-
 <body>
+
 <div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
 
 <div id="tabs">
@@ -86,6 +93,7 @@
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
 <div id="flashMessage"></div>
+
 <div id="card" style="display:none;"></div>
 
 <div id="buttons">
@@ -107,32 +115,46 @@
 </div>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+
 const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
-const STARS_KEY = "clueMatchSetterStars_v1";
+const STARS_KEY = "clueMatchSetterStars_simple";
 
+/* Seed list */
 const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
 
 let allClues = [], clues = [], currentIndex = 0;
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
+
+/* progress by id */
 let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}');
 const history = [];
 
+/* starred setters map */
+let starred = {};
+try { starred = JSON.parse(localStorage.getItem(STARS_KEY) || "{}") || {}; } catch { starred = {}; }
+
+/* seed stars once */
+(function seedStarsOnce(){
+  let changed = false;
+  for (const n of INITIAL_STARS){
+    const k = keyName(n);
+    if (!(k in starred)) { starred[k] = true; changed = true; }
+  }
+  if (changed) saveStars();
+})();
+
 const card = document.getElementById("card");
 const flash = document.getElementById("flashMessage");
+const buttonsRow = document.getElementById("buttons");
 
 function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
-function escapeHtml(s){
-  return String(s||"")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
+function keyName(name){ return String(name||"").trim().toLowerCase().replace(/\s+/g,' '); }
+function isStarSetter(name){ return !!starred[keyName(name)]; }
+function saveStars(){ try{ localStorage.setItem(STARS_KEY, JSON.stringify(starred)); }catch{} }
 
-/* Enumeration from answer; hyphens become e.g. (6-2-3) */
 function getEnum(ans) {
   const parts = String(ans||"").split(/\s+/).filter(Boolean).map(w => {
     const hy = w.split('-').filter(Boolean).map(p => (p.match(/[A-Za-z]/g) || []).length);
@@ -141,154 +163,104 @@ function getEnum(ans) {
   return parts.length ? `(${parts.join(',')})` : "";
 }
 
-/* ----- Star system (persistent) ----- */
-function getWriterKey(name){ return String(name||"").trim().replace(/\s+/g,' ').toLowerCase(); }
-
-let starMap = {};
-function loadStars(){
-  try{
-    const raw = localStorage.getItem(STARS_KEY);
-    starMap = raw ? JSON.parse(raw) : {};
-    if(!starMap || typeof starMap !== "object") starMap = {};
-  }catch{ starMap = {}; }
-}
-function saveStars(){
-  try{ localStorage.setItem(STARS_KEY, JSON.stringify(starMap)); }catch{}
-}
-function seedStars(){
-  let changed = false;
-  for(const n of INITIAL_STARS){
-    const k = getWriterKey(n);
-    if(!k) continue;
-    if(!(k in starMap)){ starMap[k] = true; changed = true; }
-  }
-  if(changed) saveStars();
-}
-function isStarSetter(name){ return !!starMap[getWriterKey(name)]; }
-function toggleStarSetter(name){
-  const k = getWriterKey(name);
-  if(!k) return false;
-  starMap[k] = !starMap[k];
-  saveStars();
-  return starMap[k];
-}
-
-/* ----- Robust CSV header detection (fixes BOM / renamed columns) ----- */
-async function loadSheet() {
+/* Fetch CSV directly: NO CORS PROXY */
+async function loadSheet(forceFresh = true) {
   card.style.display = "block";
-  card.textContent = "Loading...";
+  card.innerHTML = "<strong>Loading…</strong>";
 
   try {
-    const res = await fetch(
-      "https://corsproxy.io/?" + encodeURIComponent(SHEET_URL + `&_=${Date.now()}`),
-      { cache: "no-store" }
-    );
+    const url = SHEET_URL + (forceFresh ? `&_=${Date.now()}` : "");
+    const res = await fetch(url, { cache: "no-store" });
     const text = await res.text();
+
+    /* Hardening: detect non-CSV responses */
+    const firstLine = (text.split(/\r?\n/)[0] || "").toLowerCase();
+    if (firstLine.includes('{"error"') || firstLine.includes('"error"') || !text.includes("\n")) {
+      throw new Error("Fetch did not return CSV (got an error page/JSON instead).");
+    }
+
     const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
 
-    const fields = (parsed.meta && parsed.meta.fields) ? parsed.meta.fields : [];
-    const norm = (s) => String(s || "").replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, "_");
-
-    const fieldMap = {};
-    for (const f of fields) fieldMap[norm(f)] = f;
-
-    const pick = (...cands) => {
-      for (const c of cands) {
-        const k = norm(c);
-        if (fieldMap[k]) return fieldMap[k];
-      }
-      return "";
-    };
-
-    const ID_F      = pick("id", "Id", "uid", "uuid");
-    const CLUE_F    = pick("clue", "Clue", "clue_text");
-    const ANSWER_F  = pick("answer", "Answer", "solution");
-    const WRITER_F  = pick("setter_name", "writer", "setter", "author", "Writer");
-    const EMAIL_F   = pick("email", "Email", "setter_email", "writer_email");
-    const CREATED_F = pick("created_at", "created", "timestamp");
-
-    allClues = (parsed.data || []).map((r, idx) => {
-      const rawId = (ID_F ? r[ID_F] : "") || "";
-      const clue = (CLUE_F ? r[CLUE_F] : "") || "";
-      const answer = (ANSWER_F ? r[ANSWER_F] : "") || "";
-      const writer = (WRITER_F ? r[WRITER_F] : "") || "";
-      const email = (EMAIL_F ? r[EMAIL_F] : "") || "";
-      const created = (CREATED_F ? r[CREATED_F] : "") || "";
-
-      // Fallback Id keeps app usable if id header is missing/blank
-      const id = String(rawId).trim() || (`ROW_${idx}_${created}_${clue}_${answer}`).slice(0, 160);
-
-      return {
-        Id: String(id).trim(),
-        Clue: String(clue).trim(),
-        Answer: String(answer).trim(),
-        Writer: String(writer).trim(),
-        Email: String(email).trim(),
-        Assessment: progress.byId[id]?.Assessment || "",
-        Note: progress.byId[id]?.Note || ""
-      };
-    }).filter(r => r.Clue && r.Answer);
-
-    if (!allClues.length) {
-      card.innerHTML =
-        `<strong>No rows parsed.</strong><br>` +
-        `<span style="font-size:1rem;color:#555">Headers seen: ${escapeHtml(fields.join(" | "))}</span>`;
-      document.getElementById("buttons").style.display = "none";
-      document.getElementById("progressCount").textContent = "";
+    if (!parsed.data || !parsed.data.length) {
+      card.innerHTML = "<strong>No rows parsed.</strong>";
       return;
     }
 
+    allClues = parsed.data.map(r => {
+      const id = r.id || r.Id || "";
+      return {
+        Id: String(id || "").trim(),
+        Clue: String(r.clue || r.Clue || "").trim(),
+        Answer: String(r.answer || r.Answer || "").trim(),
+        Writer: String(r.setter_name || r.Writer || r.setter || "").trim(),
+        Email: String(r.email || r.Email || "").trim(),
+        Assessment: (progress.byId[String(id||"").trim()]?.Assessment) || "",
+        Note: (progress.byId[String(id||"").trim()]?.Note) || ""
+      };
+    }).filter(r => r.Id && r.Clue && r.Answer);
+
     updateTabs();
     rebuild();
-  } catch (e) {
-    alert("Load error: " + (e?.message || e));
-    card.textContent = "Load error.";
+  } catch(e) {
+    card.innerHTML = `<strong>Load error.</strong><br><span style="font-size:1.1rem;color:#555">${escapeHtml(e.message || "Unknown error")}</span>`;
+    buttonsRow.style.display = "none";
   }
 }
 
-function rebuild(keepId="") {
+function rebuild() {
   clues = allClues.filter(c => !c.Assessment);
-  if (viewMode === "stars") clues = clues.filter(c => isStarSetter(c.Writer));
-
-  if (keepId) {
-    const idx = clues.findIndex(x => x.Id === keepId);
-    currentIndex = idx >= 0 ? idx : 0;
-  } else {
-    currentIndex = 0;
+  if (viewMode === "stars") {
+    clues = clues.filter(c => isStarSetter(c.Writer));
   }
-
+  currentIndex = 0;
   render();
 }
 
 function render() {
   if (!clues.length) {
-    card.innerHTML = (viewMode === "stars")
-      ? "<strong>No starred clues left!</strong><br><span style='font-size:1rem;color:#555'>Switch to All to keep going.</span>"
-      : "<strong>No clues left!</strong>";
-    card.style.display = "block";
-    document.getElementById("buttons").style.display = "none";
+    card.innerHTML = "<strong>No clues left!</strong>";
+    buttonsRow.style.display = "none";
     updateUI();
     return;
   }
 
   const c = clues[currentIndex];
   const enumText = getEnum(c.Answer);
-  const star = isStarSetter(c.Writer) ? `<span id="writerStar">⭐</span>` : "";
+  const star = isStarSetter(c.Writer) ? "⭐" : "☆";
 
   card.innerHTML = `
-    <p>${escapeHtml(c.Clue)} <span style="color:#777; font-weight:700">${escapeHtml(enumText)}</span></p>
-    <p><strong>Ans:</strong> <span id="answer" onclick="this.classList.toggle('revealed')">${escapeHtml(c.Answer)}</span></p>
-    <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(c.Writer)} ${star}</p>
+    <div>
+      <p>${escapeHtml(c.Clue)} <span style="color:#777; font-weight:700">${escapeHtml(enumText)}</span></p>
+      <p><strong>Ans:</strong> <span id="answer" onclick="toggleAnswer()">${escapeHtml("████████")}</span></p>
+      <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(c.Writer)} ${star}</p>
+    </div>
   `;
-  card.style.display = "block";
-  document.getElementById("buttons").style.display = "flex";
+
+  card.style.display = "flex";
+  buttonsRow.style.display = "flex";
 
   attachWriterLongPress();
   updateUI();
 }
 
+function toggleAnswer(){
+  const c = clues[currentIndex];
+  const el = document.getElementById("answer");
+  if (!el || !c) return;
+  buzz(10);
+  if (el.classList.contains("revealed")){
+    el.classList.remove("revealed");
+    el.textContent = "████████";
+  } else {
+    el.classList.add("revealed");
+    el.textContent = c.Answer;
+  }
+}
+
 function record(val) {
   const c = clues[currentIndex];
+  if (!c) return;
+
   c.Assessment = val;
 
   if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
@@ -297,8 +269,7 @@ function record(val) {
 
   history.push(c.Id);
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-
-  rebuild(); // requeue
+  rebuild();
 }
 
 function undo() {
@@ -306,29 +277,34 @@ function undo() {
   if (!lastId) return;
 
   const c = allClues.find(cl => cl.Id === lastId);
-  if (c) c.Assessment = "";
-
-  if (progress.byId[lastId]) delete progress.byId[lastId].Assessment;
+  if (c) {
+    c.Assessment = "";
+    if (progress.byId[lastId]) delete progress.byId[lastId].Assessment;
+  }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-
-  rebuild(lastId); // anchor back to undone clue if still eligible
+  rebuild();
 }
 
 function openNote() {
-  if (!clues[currentIndex]) return;
-  document.getElementById("noteText").value = clues[currentIndex].Note || "";
+  const c = clues[currentIndex];
+  if (!c) return;
+
+  document.getElementById("noteText").value = c.Note || "";
   document.getElementById("noteOverlay").style.display = "block";
   document.body.classList.add("modal-open");
 }
 
 function saveNote() {
   const c = clues[currentIndex];
+  if (!c) return;
+
   c.Note = document.getElementById("noteText").value;
 
   if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
   progress.byId[c.Id].Note = c.Note;
 
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
   document.getElementById("noteOverlay").style.display = "none";
   document.body.classList.remove("modal-open");
 }
@@ -342,9 +318,9 @@ function updateUI() {
 
   document.getElementById("progressCount").textContent = `${clues.length} left`;
 
-  const total = allClues.length || 1;
-  const done = total - clues.length;
-  document.getElementById("progressBar").style.width = `${(done/total)*100}%`;
+  const denom = Math.max(1, allClues.length);
+  document.getElementById("progressBar").style.width =
+    `${((denom - clues.length) / denom) * 100}%`;
 }
 
 function updateTabs() {
@@ -356,20 +332,19 @@ function animateSwipe(dir, cb) {
   card.classList.add(`swipe-${dir}`);
   flash.textContent = {left:'❌', right:'💡', down:'⭐'}[dir];
   flash.classList.add("show");
-  setTimeout(() => { card.className=''; flash.classList.remove("show"); cb(); }, 400);
+  setTimeout(() => {
+    card.className = '';
+    flash.classList.remove("show");
+    cb();
+  }, 400);
 }
 
 function exportCSV() {
   const data = allClues
     .filter(c => c.Assessment || c.Note)
     .map(c => ({
-      id: c.Id,
-      clue: c.Clue,
-      answer: c.Answer,
-      setter: c.Writer,
-      email: c.Email || "",
-      result: c.Assessment,
-      note: c.Note || ""
+      id: c.Id, clue: c.Clue, answer: c.Answer, setter_name: c.Writer, email: c.Email,
+      result: c.Assessment, note: c.Note
     }));
 
   const blob = new Blob(['\ufeff' + Papa.unparse(data)], { type: "text/csv" });
@@ -379,23 +354,23 @@ function exportCSV() {
   a.click();
 }
 
-/* Reset ONLY this app's keys (avoids nuking unrelated localStorage) */
+/* Reset should NOT wipe all localStorage keys; only this app's progress */
 function resetProgress() {
-  if (!confirm("Reset app progress? (Assessments + notes)")) return;
+  if (!confirm("Reset progress (assessments + notes) and reload latest CSV?")) return;
 
   localStorage.removeItem(PROGRESS_KEY);
-  // keep stars + view
   progress = { byId: {} };
   history.length = 0;
 
-  loadSheet(); // always reload fresh CSV
+  /* Reload fresh from sheet; ensures latest CSV is used */
+  loadSheet(true);
 }
 
 /* Long-press on writer to star/unstar */
 let writerPressHammer = null;
 function attachWriterLongPress(){
   const wEl = document.getElementById("writer");
-  if(!wEl) return;
+  if (!wEl) return;
 
   try { writerPressHammer && writerPressHammer.destroy(); } catch {}
   writerPressHammer = new Hammer(wEl);
@@ -408,34 +383,36 @@ function attachWriterLongPress(){
     buzz(12);
 
     const c = clues[currentIndex];
-    if (!c) { setTimeout(()=>{ pressed=false; }, 0); return; }
+    if (!c) return;
 
-    const newState = toggleStarSetter(c.Writer);
+    const k = keyName(c.Writer);
+    starred[k] = !starred[k];
+    saveStars();
 
-    flash.textContent = newState ? "⭐" : "☆";
+    flash.textContent = starred[k] ? "⭐" : "☆";
     flash.classList.add("show");
     setTimeout(()=>flash.classList.remove("show"),450);
 
-    // If we're in Stars view and we just unstarred them, the clue may disappear from queue
-    rebuild(c.Id);
+    /* If we're in Stars view and they just got unstarred, it should disappear immediately */
+    rebuild();
 
     setTimeout(()=>{ pressed=false; }, 0);
   });
 
   wEl.addEventListener("click", (e) => {
-    if (pressed) {
+    if (pressed){
       e.preventDefault();
       e.stopPropagation();
     }
   });
 }
 
-/* Swipe */
+/* Swipe gestures */
 const mc = new Hammer(document.body);
 mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-mc.on("swipeleft", () => animateSwipe('left', () => record('No')));
+mc.on("swipeleft",  () => animateSwipe('left',  () => record('No')));
 mc.on("swiperight", () => animateSwipe('right', () => record('Workshop')));
-mc.on("swipedown", () => animateSwipe('down', () => record('Perfect')));
+mc.on("swipedown",  () => animateSwipe('down',  () => record('Perfect')));
 
 /* Tabs */
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
@@ -445,18 +422,14 @@ document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
   rebuild();
 });
 
-/* Keyboard support for emoji buttons */
-document.querySelectorAll('.emoji-btn').forEach(el=>{
-  el.addEventListener('keydown',e=>{
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
-  });
-});
+/* Utilities */
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
 
-/* Init */
-loadStars();
-seedStars();
-updateTabs();
-window.onload = loadSheet;
+window.onload = () => loadSheet(true);
 </script>
 </body>
 </html>
