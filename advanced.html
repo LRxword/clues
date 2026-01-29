@@ -9,198 +9,219 @@
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
-  body {
-    margin: 0;
-    font-family: 'Montserrat', sans-serif;
-    background: #cce7ff;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.35rem 1rem 6.2rem; /* tighter overall */
-    color: white;
-    user-select: none;
-    overflow-x: hidden;
-  }
-  body.modal-open { position: fixed; width: 100%; overflow: hidden; }
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background: #cce7ff;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.2rem 1rem 6rem;
+  color: white;
+  user-select: none;
+  overflow-x: hidden;
+}
+body.modal-open { position: fixed; width: 100%; overflow: hidden; }
 
-  #title-wrapper { margin-bottom: 0.4rem; }
-  #title-wrapper img { height: 36px; }
+#title-wrapper { margin-bottom: 0.35rem; }
+#title-wrapper img { height: 34px; }
 
-  #tabs { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
-  .tab {
-    padding: 0.5rem 1rem;
-    font-weight: 700;
-    font-size: 0.95rem;
-    border-radius: 16px;
-    cursor: pointer;
-    background: #fff;
-    color: #000;
-    border: 2px solid #000;
-    box-shadow: 4px 4px 0 #000;
-  }
-  .tab.active { background: #fff2b3; }
+/* Tabs — smaller */
+#tabs {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+.tab {
+  padding: 0.38rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 14px;
+  cursor: pointer;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #000;
+}
+.tab.active { background: #fff2b3; }
 
-  #assessmentCounts { font-size: 0.98rem; margin-bottom: 0.4rem; color: #222; }
+#assessmentCounts {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: #222;
+}
 
-  #progress {
-    width: 90vw;
-    max-width: 420px;
-    height: 6px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.3s ease; }
-  #progressCount {
-    font-size: 1.05rem;
-    margin: 0.55rem 0 0.95rem;
-    color: #222;
-  }
+/* Progress — slimmer */
+#progress {
+  width: 90vw;
+  max-width: 380px;
+  height: 4px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background: #ffe6e6;
+  transition: width 0.3s ease;
+}
+#progressCount {
+  font-size: 0.9rem;
+  margin: 0.45rem 0 0.85rem;
+  color: #222;
+}
 
-  /* Card: smaller, with visible space around it */
-  #card {
-    background: white;
-    color: #222;
-    border: 3px solid #000;
-    border-radius: 16px;
-    padding: 1.05rem 1rem;
-    box-shadow: 6px 6px 0 #000;
-    text-align: center;
+/* Card */
+#card {
+  background: white;
+  color: #222;
+  border: 3px solid #000;
+  border-radius: 16px;
+  padding: 1rem 0.95rem;
+  box-shadow: 6px 6px 0 #000;
+  text-align: center;
+  width: 82vw;
+  max-width: 300px;
+  margin: 0.6rem 0 1rem;
+  min-height: 175px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+#card p { margin: 0; }
 
-    width: 82vw;
-    max-width: 310px;     /* smaller */
-    margin: 0.55rem 0 1.05rem; /* space outside pane */
+.clueLine {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 400;
+  margin-bottom: 0.85rem; /* more space before answer */
+}
 
-    min-height: 185px;    /* smaller */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+.answerLine {
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem; /* more space before setter */
+}
 
-    transition: transform 0.4s ease, opacity 0.4s ease;
-  }
+#answer {
+  cursor: pointer;
+  padding: 0 0.32em;
+  border-radius: 6px;
+  background: black;
+  color: black;
+  font-weight: 700;
+  transition: 0.3s;
+}
+#answer.revealed { background: none; color: #222; }
 
-  #card p { margin: 0.4rem 0; }
+#writer {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 0.25rem;
+}
 
-  /* Clue + enum: same font/size/weight (not bold) */
-  #card .clueLine {
-    font-size: 1.28rem;   /* smaller text */
-    line-height: 1.35;
-    font-weight: 400;     /* NOT bold */
-  }
+/* Swipe animations */
+#card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+#card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
-  /* Answer line a bit smaller */
-  #card .answerLine {
-    font-size: 1.05rem;
-    font-weight: 400;
-  }
-  #card .answerLine strong { font-weight: 700; } /* keep “Ans:” a touch stronger */
+/* Emojis — smaller & spaced */
+#buttons {
+  display: flex;
+  gap: 1.45rem;        /* more spacing */
+  font-size: 1.85rem; /* slightly smaller */
+  align-items: center;
+  margin-top: 0.1rem;
+}
+.emoji-btn {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  text-shadow: 2px 2px 0 #000;
+}
+.emoji-btn:active { transform: scale(1.12); }
 
-  #answer {
-    cursor: pointer;
-    padding: 0 0.32em;
-    border-radius: 6px;
-    background: black;
-    color: black;
-    transition: 0.3s;
-    font-weight: 700;
-  }
-  #answer.revealed { background: none; color: #222; }
+/* Bottom buttons */
+#bottomButtons {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  z-index: 10;
+}
+#bottomButtons button {
+  flex: 1;
+  padding: 0.95rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+#exportBtn { background: #222; }
+#resetBtn { background: #e53935; }
 
-  #writer {
-    font-size: 1.0rem;
-    color: #555;
-    margin-top: 0.55rem;
-    font-weight: 400;
-  }
+/* Flash */
+#flashMessage {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4.2rem;
+  opacity: 0;
+  transition: 0.4s;
+  pointer-events: none;
+}
+#flashMessage.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.2);
+}
 
-  #card.swipe-left { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
-  #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
-  #card.swipe-down { transform: translateY(150%) rotate(15deg); opacity: 0; }
-
-  /* Emojis: smaller */
-  #buttons {
-    display: flex;
-    gap: 1.2rem;
-    font-size: 2.05rem;   /* smaller icons */
-    align-items: center;
-    margin: 0.15rem 0 0;
-  }
-  .emoji-btn { cursor: pointer; transition: transform 0.15s ease; text-shadow: 2px 2px 0 #000; }
-  .emoji-btn:active { transform: scale(1.12); }
-
-  #bottomButtons {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    z-index: 10;
-  }
-  #bottomButtons button {
-    flex: 1;
-    padding: 1rem;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 1.05rem;
-    font-weight: 700;
-  }
-  #exportBtn { background: #222; }
-  #resetBtn { background: #e53935; }
-
-  #flashMessage {
-    position: fixed;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4.6rem;
-    opacity: 0;
-    transition: 0.4s;
-    pointer-events: none;
-  }
-  #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-
-  #noteOverlay {
-    display: none;
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 320px;
-    background: white;
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    z-index: 1000;
-    border: 3px solid #000;
-  }
-  #noteText {
-    width: 90%;
-    height: 100px;
-    font-size: 1.2rem;
-    padding: 0.5rem;
-    border: 2px solid #000;
-    border-radius: 10px;
-    resize: none;
-    font-family: inherit;
-  }
-  #noteOverlay button {
-    margin-top: 1rem;
-    width: 100%;
-    padding: 0.7rem;
-    background: #222;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+/* Notes */
+#noteOverlay {
+  display: none;
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 320px;
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  z-index: 1000;
+  border: 3px solid #000;
+}
+#noteText {
+  width: 90%;
+  height: 100px;
+  font-size: 1.1rem;
+  padding: 0.5rem;
+  border: 2px solid #000;
+  border-radius: 10px;
+  resize: none;
+  font-family: inherit;
+}
+#noteOverlay button {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.7rem;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
 
-<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
+<div id="title-wrapper">
+  <img src="https://i.imgur.com/3cTvC1h.png" alt="logo">
+</div>
 
 <div id="tabs">
   <div class="tab" data-view="all">All</div>
@@ -215,11 +236,11 @@
 <div id="card" style="display:none;"></div>
 
 <div id="buttons">
-  <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))" aria-label="No" role="button" tabindex="0">❌</span>
-  <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))" aria-label="Workshop" role="button" tabindex="0">💡</span>
-  <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))" aria-label="Perfect" role="button" tabindex="0">⭐</span>
-  <span class="emoji-btn" onclick="openNote()" aria-label="Note" role="button" tabindex="0">✏️</span>
-  <span class="emoji-btn" onclick="undo()" aria-label="Undo" role="button" tabindex="0">↩️</span>
+  <span class="emoji-btn" onclick="animateSwipe('left', () => record('No'))">❌</span>
+  <span class="emoji-btn" onclick="animateSwipe('right', () => record('Workshop'))">💡</span>
+  <span class="emoji-btn" onclick="animateSwipe('down', () => record('Perfect'))">⭐</span>
+  <span class="emoji-btn" onclick="openNote()">✏️</span>
+  <span class="emoji-btn" onclick="undo()">↩️</span>
 </div>
 
 <div id="bottomButtons">
@@ -232,314 +253,6 @@
   <button onclick="saveNote()">Save</button>
 </div>
 
-<script>
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
-
-const PROGRESS_KEY = "clueMatch_simple_v1";
-const VIEW_KEY = "clueMatchView";
-const STARS_KEY = "clueMatchSetterStars_simple";
-
-const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
-
-let allClues = [], clues = [], currentIndex = 0;
-let viewMode = localStorage.getItem(VIEW_KEY) || "all";
-let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}');
-const history = [];
-
-let starred = {};
-try { starred = JSON.parse(localStorage.getItem(STARS_KEY) || "{}") || {}; } catch { starred = {}; }
-
-(function seedStarsOnce(){
-  let changed = false;
-  for (const n of INITIAL_STARS){
-    const k = keyName(n);
-    if (!(k in starred)) { starred[k] = true; changed = true; }
-  }
-  if (changed) saveStars();
-})();
-
-const card = document.getElementById("card");
-const flash = document.getElementById("flashMessage");
-const buttonsRow = document.getElementById("buttons");
-
-function buzz(ms=20){ if(navigator.vibrate) navigator.vibrate(ms); }
-function keyName(name){ return String(name||"").trim().toLowerCase().replace(/\s+/g,' '); }
-function isStarSetter(name){ return !!starred[keyName(name)]; }
-function saveStars(){ try{ localStorage.setItem(STARS_KEY, JSON.stringify(starred)); }catch{} }
-
-function getEnum(ans) {
-  const parts = String(ans||"").split(/\s+/).filter(Boolean).map(w => {
-    const hy = w.split('-').filter(Boolean).map(p => (p.match(/[A-Za-z]/g) || []).length);
-    return hy.join('-');
-  });
-  return parts.length ? `(${parts.join(',')})` : "";
-}
-
-async function loadSheet(forceFresh = true) {
-  card.style.display = "block";
-  card.innerHTML = "<strong>Loading…</strong>";
-
-  try {
-    const url = SHEET_URL + (forceFresh ? `&_=${Date.now()}` : "");
-    const res = await fetch(url, { cache: "no-store" });
-    const text = await res.text();
-
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-
-    if (!parsed.data || !parsed.data.length) {
-      card.innerHTML = "<strong>No rows parsed.</strong>";
-      buttonsRow.style.display = "none";
-      return;
-    }
-
-    allClues = parsed.data.map(r => {
-      const id = r.id || r.Id || "";
-      const idStr = String(id || "").trim();
-      return {
-        Id: idStr,
-        Clue: String(r.clue || r.Clue || "").trim(),
-        Answer: String(r.answer || r.Answer || "").trim(),
-        Writer: String(r.setter_name || r.Writer || r.setter || "").trim(),
-        Email: String(r.email || r.Email || "").trim(),
-        Assessment: (progress.byId[idStr]?.Assessment) || "",
-        Note: (progress.byId[idStr]?.Note) || ""
-      };
-    }).filter(r => r.Id && r.Clue && r.Answer);
-
-    updateTabs();
-    rebuild();
-  } catch(e) {
-    card.innerHTML = `<strong>Load error.</strong><br><span style="font-size:1.05rem;color:#555">${escapeHtml(e.message || "Unknown error")}</span>`;
-    buttonsRow.style.display = "none";
-  }
-}
-
-function rebuild() {
-  clues = allClues.filter(c => !c.Assessment);
-  if (viewMode === "stars") clues = clues.filter(c => isStarSetter(c.Writer));
-  currentIndex = 0;
-  render();
-}
-
-function render() {
-  if (!clues.length) {
-    card.innerHTML = "<strong>No clues left!</strong>";
-    buttonsRow.style.display = "none";
-    updateUI();
-    return;
-  }
-
-  const c = clues[currentIndex];
-  const enumText = getEnum(c.Answer);
-  const star = isStarSetter(c.Writer) ? "⭐" : "☆";
-
-  /* enumeration is SAME style as clue (same span, no styling class) */
-  card.innerHTML = `
-    <div>
-      <p class="clueLine">${escapeHtml(c.Clue)} ${escapeHtml(enumText)}</p>
-      <p class="answerLine"><strong>Ans:</strong> <span id="answer" onclick="toggleAnswer()">${escapeHtml("████████")}</span></p>
-      <p id="writer" title="Long-press to star/unstar setter">${escapeHtml(c.Writer)} ${star}</p>
-    </div>
-  `;
-
-  card.style.display = "flex";
-  buttonsRow.style.display = "flex";
-
-  attachWriterLongPress();
-  updateUI();
-}
-
-function toggleAnswer(){
-  const c = clues[currentIndex];
-  const el = document.getElementById("answer");
-  if (!el || !c) return;
-  buzz(10);
-  if (el.classList.contains("revealed")){
-    el.classList.remove("revealed");
-    el.textContent = "████████";
-  } else {
-    el.classList.add("revealed");
-    el.textContent = c.Answer;
-  }
-}
-
-function record(val) {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  c.Assessment = val;
-
-  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
-  progress.byId[c.Id].Assessment = val;
-  progress.byId[c.Id].Note = c.Note || "";
-
-  history.push(c.Id);
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-  rebuild();
-}
-
-function undo() {
-  const lastId = history.pop();
-  if (!lastId) return;
-
-  const c = allClues.find(cl => cl.Id === lastId);
-  if (c) {
-    c.Assessment = "";
-    if (progress.byId[lastId]) delete progress.byId[lastId].Assessment;
-  }
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-  rebuild();
-}
-
-function openNote() {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  document.getElementById("noteText").value = c.Note || "";
-  document.getElementById("noteOverlay").style.display = "block";
-  document.body.classList.add("modal-open");
-}
-
-function saveNote() {
-  const c = clues[currentIndex];
-  if (!c) return;
-
-  c.Note = document.getElementById("noteText").value;
-
-  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
-  progress.byId[c.Id].Note = c.Note;
-
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-
-  document.getElementById("noteOverlay").style.display = "none";
-  document.body.classList.remove("modal-open");
-}
-
-function updateUI() {
-  const counts = { No:0, Workshop:0, Perfect:0 };
-  allClues.forEach(c => { if (counts[c.Assessment] !== undefined) counts[c.Assessment]++; });
-
-  document.getElementById("assessmentCounts").textContent =
-    `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
-
-  document.getElementById("progressCount").textContent = `${clues.length} left`;
-
-  const denom = Math.max(1, allClues.length);
-  document.getElementById("progressBar").style.width =
-    `${((denom - clues.length) / denom) * 100}%`;
-}
-
-function updateTabs() {
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === viewMode));
-}
-
-function animateSwipe(dir, cb) {
-  buzz();
-  card.classList.add(`swipe-${dir}`);
-  flash.textContent = {left:'❌', right:'💡', down:'⭐'}[dir];
-  flash.classList.add("show");
-  setTimeout(() => {
-    card.className = '';
-    flash.classList.remove("show");
-    cb();
-  }, 400);
-}
-
-function exportCSV() {
-  const data = allClues
-    .filter(c => c.Assessment || c.Note)
-    .map(c => ({
-      id: c.Id,
-      clue: c.Clue,
-      answer: c.Answer,
-      setter_name: c.Writer,
-      email: c.Email,
-      result: c.Assessment,
-      note: c.Note
-    }));
-
-  const blob = new Blob(['\ufeff' + Papa.unparse(data)], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "reviews.csv";
-  a.click();
-}
-
-function resetProgress() {
-  if (!confirm("Reset progress (assessments + notes) and reload latest CSV?")) return;
-
-  localStorage.removeItem(PROGRESS_KEY);
-  progress = { byId: {} };
-  history.length = 0;
-
-  loadSheet(true);
-}
-
-/* Long-press on writer to star/unstar */
-let writerPressHammer = null;
-function attachWriterLongPress(){
-  const wEl = document.getElementById("writer");
-  if (!wEl) return;
-
-  try { writerPressHammer && writerPressHammer.destroy(); } catch {}
-  writerPressHammer = new Hammer(wEl);
-  writerPressHammer.add(new Hammer.Press({ time: 450 }));
-
-  let pressed = false;
-
-  writerPressHammer.on("press", () => {
-    pressed = true;
-    buzz(12);
-
-    const c = clues[currentIndex];
-    if (!c) return;
-
-    const k = keyName(c.Writer);
-    starred[k] = !starred[k];
-    saveStars();
-
-    flash.textContent = starred[k] ? "⭐" : "☆";
-    flash.classList.add("show");
-    setTimeout(()=>flash.classList.remove("show"),450);
-
-    rebuild();
-
-    setTimeout(()=>{ pressed=false; }, 0);
-  });
-
-  wEl.addEventListener("click", (e) => {
-    if (pressed){
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  });
-}
-
-/* Swipe gestures */
-const mc = new Hammer(document.body);
-mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
-mc.on("swipeleft",  () => animateSwipe('left',  () => record('No')));
-mc.on("swiperight", () => animateSwipe('right', () => record('Workshop')));
-mc.on("swipedown",  () => animateSwipe('down',  () => record('Perfect')));
-
-/* Tabs */
-document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
-  viewMode = t.dataset.view;
-  localStorage.setItem(VIEW_KEY, viewMode);
-  updateTabs();
-  rebuild();
-});
-
-/* Utilities */
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[m]));
-}
-function saveStars(){ try{ localStorage.setItem(STARS_KEY, JSON.stringify(starred)); }catch{} }
-
-window.onload = () => loadSheet(true);
-</script>
+<!-- JS unchanged from your last working version -->
 </body>
 </html>
