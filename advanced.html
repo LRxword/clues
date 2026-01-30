@@ -9,6 +9,7 @@
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
 
 <style>
+  /* Base */
   body {
     margin: 0;
     font-family: 'Montserrat', sans-serif;
@@ -17,176 +18,197 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.4rem 1rem 6.3rem;
+    padding: 1.4rem 1rem 6.2rem;
     color: white;
     user-select: none;
     overflow-x: hidden;
   }
+  body.modal-open { position: fixed; width: 100%; overflow: hidden; }
 
+  #title-wrapper { margin-bottom: 0.5rem; }
   #title-wrapper img { height: 38px; }
 
   /* Tabs */
-  #tabs { display: flex; gap: 0.8rem; margin-bottom: 0.6rem; }
+  #tabs { display: flex; gap: 0.75rem; margin-bottom: 0.6rem; }
   .tab {
-    padding: 0.45rem 1rem;
+    padding: 0.42rem 0.95rem;
     font-size: 0.95rem;
     font-weight: 700;
     border-radius: 18px;
+    cursor: pointer;
     background: #fff;
     color: #000;
     border: 2px solid #000;
     box-shadow: 4px 4px 0 #000;
-    cursor: pointer;
   }
   .tab.active { background: #fff2b3; }
 
   /* Counts + progress */
-  #assessmentCounts { font-size: 1rem; color: #222; margin-bottom: 0.4rem; }
-  #progress { width: 90vw; max-width: 460px; height: 5px; background: rgba(255,255,255,0.35); border-radius: 999px; }
-  #progressBar { height: 100%; width: 0%; background: #ffe6e6; }
-  #progressCount { font-size: 1.05rem; margin: 0.7rem 0 1rem; color: #222; }
+  #assessmentCounts { font-size: 1rem; margin-bottom: 0.35rem; color: #222; }
+  #progress {
+    width: 90vw; max-width: 460px; height: 5px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.25s ease; }
+  #progressCount { font-size: 1.05rem; margin: 0.65rem 0 0.95rem; color: #222; }
 
-  /* CARD */
+  /* Card */
   #card {
     background: white;
     color: #222;
     border: 3px solid #000;
     border-radius: 22px;
-    padding: 1.6rem 1.4rem 1.7rem;
+    padding: 1.55rem 1.35rem 1.65rem;
     font-size: 1.35rem;
-    line-height: 1.5;
+    line-height: 1.55;
     box-shadow: 6px 6px 0 #000;
     text-align: center;
     width: 78vw;
     max-width: 360px;
-    margin-bottom: 1.3rem;
+    margin-bottom: 1.25rem;
+    transition: transform 0.4s ease, opacity 0.4s ease;
   }
+  #card.swipe-left  { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+  #card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }
+  #card.swipe-down  { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
-  /* === KEY SPACING FIXES === */
-  .clueLine {
-    margin-bottom: 1.3rem;
-  }
-
-  .answerLine {
-    margin-bottom: 1.35rem;
-  }
-
+  /* Pane spacing (fix “squashed”) */
+  .clueLine { margin: 0 0 1.2rem 0; font-weight: 400; }         /* NOT bold */
+  .answerLine { margin: 0 0 1.2rem 0; }
   #writer {
-    margin-top: 0.2rem;
+    margin: 0;
     font-size: 1.05rem;
     color: #555;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
     justify-content: center;
+    gap: 0.45rem;
+  }
+
+  /* Enumeration same font/size as clue */
+  .enum {
+    font: inherit;
+    font-size: inherit;
+    font-weight: 400;
+    color: inherit;
+    opacity: 0.95;
+    white-space: nowrap;
+    margin-left: 0.2rem;
   }
 
   /* Answer bar */
   #answer {
-    display: inline-block;
-    padding: 0.45em 1.4em;
-    border-radius: 12px;
-    background: #000;
-    color: #000;
-    letter-spacing: 0.18em;
     cursor: pointer;
+    padding: 0.45em 1.45em;
+    border-radius: 12px;
+    background: black;
+    color: black;
+    letter-spacing: 0.18em;
+    display: inline-block;
   }
-  #answer.revealed {
-    background: transparent;
-    color: #222;
-    letter-spacing: normal;
-  }
+  #answer.revealed { background: none; color: #222; letter-spacing: normal; }
 
-  /* STAR STYLES */
-  .setterStar {
-    font-size: 1.15rem;
-    transform: translateY(1px);
-  }
-  .setterStar.starred {
-    color: #f4c430; /* warm yellow */
-    opacity: 1;
-  }
-  .setterStar.unstarred {
-    color: #999;
-    opacity: 0.35;
-  }
+  /* Stars */
+  .setterStar { font-size: 1.15rem; transform: translateY(1px); }
+  .setterStar.starred { color: #f4c430; opacity: 1; }          /* yellow ★ */
+  .setterStar.unstarred { color: #999; opacity: 0.35; }        /* faint ☆ */
 
-  /* Emoji buttons */
-  #buttons {
-    display: flex;
-    gap: 2.3rem;
-    font-size: 2.15rem;
-    margin-bottom: 0.9rem;
-  }
-  .emoji-btn { cursor: pointer; }
+  /* Emoji controls */
+  #buttons { display: flex; gap: 2.4rem; font-size: 2.15rem; align-items: center; margin-bottom: 0.9rem; }
+  .emoji-btn { cursor: pointer; text-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
 
-  /* Bottom buttons */
-  #bottomButtons {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-  }
+  /* Bottom fixed buttons */
+  #bottomButtons { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; z-index: 10; }
   #bottomButtons button {
     flex: 1;
     padding: 1rem;
     font-size: 1.05rem;
     font-weight: 700;
-    border: none;
     color: white;
+    border: none;
+    cursor: pointer;
   }
   #exportBtn { background: #222; }
   #resetBtn { background: #e53935; }
 
+  /* Flash */
   #flashMessage {
     position: fixed;
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 4.3rem;
+    font-size: 4.6rem;
     opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
     pointer-events: none;
+    z-index: 999;
   }
-  #flashMessage.show { opacity: 1; }
+  #flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
 
+  /* Notes overlay */
+  #noteOverlay {
+    display: none;
+    position: fixed;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 320px;
+    background: white;
+    color: #222;
+    border-radius: 20px;
+    padding: 1.2rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1000;
+    border: 3px solid #000;
+  }
+  #noteText {
+    width: 92%;
+    height: 110px;
+    font-size: 1.1rem;
+    padding: 0.6rem;
+    border: 2px solid #000;
+    border-radius: 10px;
+    resize: none;
+    font-family: inherit;
+  }
+  #noteOverlay button {
+    margin-top: 0.85rem;
+    width: 100%;
+    padding: 0.7rem;
+    background: #222;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 </head>
 
 <body>
-
-<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png"></div>
+<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
 
 <div id="tabs">
-  <div class="tab active" data-view="all">All</div>
+  <div class="tab" data-view="all">All</div>
   <div class="tab" data-view="stars">Stars</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
 <div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
+<div id="flashMessage"></div>
 
-<div id="card">
-  <p class="clueLine">
-    Knight Elian. Heartless singer of alluring songs. (5)
-  </p>
-
-  <p class="answerLine">
-    <span id="answer">████████</span>
-  </p>
-
-  <p id="writer">
-    Shippers
-    <span class="setterStar unstarred">☆</span>
-  </p>
-</div>
+<div id="card" style="display:none;"></div>
 
 <div id="buttons">
-  <span class="emoji-btn">❌</span>
-  <span class="emoji-btn">💡</span>
-  <span class="emoji-btn">⭐</span>
-  <span class="emoji-btn">✏️</span>
-  <span class="emoji-btn">↩️</span>
+  <span class="emoji-btn" id="btnNo" aria-label="No">❌</span>
+  <span class="emoji-btn" id="btnWorkshop" aria-label="Workshop">💡</span>
+  <span class="emoji-btn" id="btnPerfect" aria-label="Perfect">⭐</span>
+  <span class="emoji-btn" id="btnNote" aria-label="Note">✏️</span>
+  <span class="emoji-btn" id="btnUndo" aria-label="Undo">↩️</span>
 </div>
 
 <div id="bottomButtons">
@@ -194,5 +216,421 @@
   <button id="resetBtn">Reset</button>
 </div>
 
+<div id="noteOverlay">
+  <textarea id="noteText" placeholder="Add a note..."></textarea>
+  <button id="noteSaveBtn">Save</button>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+
+const PROGRESS_KEY = "clueMatch_simple_v1";
+const VIEW_KEY = "clueMatchView";
+const STARS_KEY = "clueMatchSetterStars";
+
+const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
+
+/* ===================== STATE ===================== */
+let allClues = [];
+let queue = [];
+let currentIndex = 0;
+
+let viewMode = localStorage.getItem(VIEW_KEY) || "all";
+
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}'); }
+catch { progress = { byId:{} }; }
+if (!progress.byId) progress.byId = {};
+
+let setterStars = {};
+try { setterStars = JSON.parse(localStorage.getItem(STARS_KEY) || "{}"); }
+catch { setterStars = {}; }
+if (!setterStars || typeof setterStars !== "object") setterStars = {};
+
+const history = [];
+
+/* ===================== UI ===================== */
+const card = document.getElementById("card");
+const flash = document.getElementById("flashMessage");
+
+const assessmentCounts = document.getElementById("assessmentCounts");
+const progressBar = document.getElementById("progressBar");
+const progressCount = document.getElementById("progressCount");
+
+function buzz(ms=20){ if (navigator.vibrate) navigator.vibrate(ms); }
+function flashEmoji(e){
+  flash.textContent = e;
+  flash.classList.add("show");
+  setTimeout(()=>flash.classList.remove("show"), 450);
+}
+
+function writerKey(name){
+  return String(name||"").trim().toLowerCase().replace(/\s+/g,' ');
+}
+
+/* Seed stars once (only adds missing keys) */
+(function seedStarsOnce(){
+  let changed = false;
+  for (const n of INITIAL_STARS){
+    const k = writerKey(n);
+    if (k && !(k in setterStars)){
+      setterStars[k] = true;
+      changed = true;
+    }
+  }
+  if (changed) localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
+})();
+
+function isStarSetter(name){
+  return !!setterStars[writerKey(name)];
+}
+function toggleStarSetter(name){
+  const k = writerKey(name);
+  if (!k) return false;
+  setterStars[k] = !setterStars[k];
+  localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
+  return setterStars[k];
+}
+
+/* Enumeration from answer incl hyphens as requested (6-2-3) */
+function getEnum(ans){
+  const s = String(ans||"").trim();
+  if (!s) return "";
+  const parts = s.split(/\s+/).filter(Boolean).map(word=>{
+    const hy = word.split('-').filter(Boolean).map(p => (p.match(/[A-Za-z]/g)||[]).length);
+    return hy.join('-');
+  });
+  return parts.length ? `(${parts.join(',')})` : "";
+}
+
+/* ===================== DATA LOAD ===================== */
+/* Robust fetch that avoids corsproxy limits. Tries direct first, then r.jina.ai as fallback. */
+async function fetchCSVText(){
+  const bust = `&_=${Date.now()}`;
+  const direct = `${SHEET_URL}${SHEET_URL.includes('?') ? '&' : '?'}${bust.replace(/^&/,'')}`;
+  const fall1 = "https://r.jina.ai/http://"+direct.replace(/^https?:\/\//,'');
+  const fall2 = "https://r.jina.ai/https://"+direct.replace(/^https?:\/\//,'');
+
+  const tries = [direct, fall2, fall1];
+
+  let lastErr = null;
+  for (const url of tries){
+    try{
+      const res = await fetch(url, { cache: "no-store" });
+      const text = await res.text();
+      // quick sanity: must contain clue/answer headers somewhere
+      if (text && text.length > 20) return text;
+    }catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error("Unable to fetch CSV");
+}
+
+async function loadSheet(){
+  card.style.display = "block";
+  card.innerHTML = "<p class='clueLine'>Loading…</p>";
+
+  try{
+    const text = await fetchCSVText();
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+
+    const rows = Array.isArray(parsed.data) ? parsed.data : [];
+    if (!rows.length){
+      card.innerHTML = "<p class='clueLine'>No rows parsed.</p>";
+      return;
+    }
+
+    allClues = rows.map(r=>{
+      const id = r.id || r.Id || r.ID || "";
+      const clue = r.clue || r.Clue || "";
+      const ans  = r.answer || r.Answer || "";
+      const writer = r.setter_name || r.Writer || r.setter || "";
+
+      const saved = progress.byId[id] || {};
+      return {
+        Id: String(id).trim(),
+        Clue: String(clue).trim(),
+        Answer: String(ans).trim(),
+        Writer: String(writer).trim(),
+        Assessment: String(saved.Assessment || "").trim(),
+        Note: String(saved.Note || "").trim()
+      };
+    }).filter(r => r.Id && r.Clue && r.Answer);
+
+    syncTabs();
+    rebuildQueue();
+    render();
+  }catch(e){
+    card.innerHTML = "<p class='clueLine'>Load error.</p>";
+    console.error(e);
+  }
+}
+
+/* ===================== QUEUE / RENDER ===================== */
+function rebuildQueue(){
+  queue = allClues.filter(c => !c.Assessment);
+
+  if (viewMode === "stars"){
+    queue = queue.filter(c => isStarSetter(c.Writer));
+  }
+  currentIndex = 0;
+  updateUI();
+}
+
+function render(){
+  if (!queue.length){
+    card.style.display = "block";
+    card.innerHTML = (viewMode === "stars")
+      ? "<p class='clueLine'><strong>No starred clues left.</strong></p>"
+      : "<p class='clueLine'><strong>No clues left.</strong></p>";
+    return;
+  }
+
+  const c = queue[currentIndex];
+  const enumText = getEnum(c.Answer);
+
+  const starred = isStarSetter(c.Writer);
+  const starChar = starred ? "★" : "☆";
+  const starClass = starred ? "starred" : "unstarred";
+
+  card.style.display = "block";
+  card.innerHTML = `
+    <p class="clueLine">
+      ${escapeHTML(c.Clue)}
+      <span class="enum">${escapeHTML(enumText)}</span>
+    </p>
+
+    <p class="answerLine">
+      <span id="answer" data-answer="${escapeHTMLAttr(c.Answer)}">████████</span>
+    </p>
+
+    <p id="writer" title="Long-press to star/unstar setter">
+      ${escapeHTML(c.Writer)}
+      <span class="setterStar ${starClass}" id="writerStar">${starChar}</span>
+    </p>
+  `;
+
+  // answer reveal
+  const ansEl = document.getElementById("answer");
+  ansEl.addEventListener("click", ()=>{
+    buzz(10);
+    ansEl.classList.toggle("revealed");
+    ansEl.textContent = ansEl.classList.contains("revealed") ? c.Answer : "████████";
+  });
+
+  attachWriterLongPress();
+  updateUI();
+}
+
+/* ===================== ACTIONS ===================== */
+function record(val){
+  if (!queue[currentIndex]) return;
+  const c = queue[currentIndex];
+
+  c.Assessment = val;
+  progress.byId[c.Id] = { Assessment: val, Note: c.Note || "" };
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  history.push(c.Id);
+
+  rebuildQueue();
+  render();
+}
+
+function undo(){
+  const lastId = history.pop();
+  if (!lastId) return;
+
+  const master = allClues.find(x => x.Id === lastId);
+  if (master) master.Assessment = "";
+
+  if (progress.byId[lastId]) {
+    delete progress.byId[lastId].Assessment;
+    // keep note if exists
+    if (!progress.byId[lastId].Note) delete progress.byId[lastId];
+  }
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  rebuildQueue();
+  render();
+}
+
+function exportCSV(){
+  const data = allClues
+    .filter(c => c.Assessment || c.Note)
+    .map(c => ({
+      id: c.Id,
+      clue: c.Clue,
+      answer: c.Answer,
+      setter: c.Writer,
+      result: c.Assessment,
+      note: c.Note
+    }));
+
+  const csv = Papa.unparse(data);
+  const blob = new Blob(['\ufeff' + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "reviews.csv";
+  a.click();
+}
+
+function resetProgress(){
+  if (!confirm("Reset assessments/notes? (Stars stay)")) return;
+
+  // only wipe progress + view; keep stars
+  localStorage.removeItem(PROGRESS_KEY);
+  localStorage.removeItem(VIEW_KEY);
+
+  progress = { byId:{} };
+  viewMode = "all";
+
+  syncTabs();
+  loadSheet();
+}
+
+/* ===================== NOTES ===================== */
+function openNote(){
+  if (!queue[currentIndex]) return;
+  document.getElementById("noteText").value = queue[currentIndex].Note || "";
+  document.getElementById("noteOverlay").style.display = "block";
+  document.body.classList.add("modal-open");
+}
+
+function saveNote(){
+  if (!queue[currentIndex]) return;
+  const c = queue[currentIndex];
+  c.Note = document.getElementById("noteText").value || "";
+
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
+  progress.byId[c.Id].Note = c.Note;
+
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  document.getElementById("noteOverlay").style.display = "none";
+  document.body.classList.remove("modal-open");
+}
+
+/* ===================== UI UPDATES ===================== */
+function updateUI(){
+  const counts = { No:0, Workshop:0, Perfect:0 };
+  allClues.forEach(c=>{
+    if (counts[c.Assessment] !== undefined) counts[c.Assessment]++;
+  });
+
+  assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
+
+  const remaining = queue.length;
+  progressCount.textContent = remaining === 1 ? "1 left" : `${remaining} left`;
+
+  const total = allClues.length || 1;
+  const done = total - remaining;
+  const pct = Math.max(0, Math.min(100, (done / total) * 100));
+  progressBar.style.width = pct + "%";
+}
+
+function syncTabs(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.classList.toggle("active", t.dataset.view === viewMode);
+  });
+}
+
+/* ===================== ANIMATION + SWIPES ===================== */
+function animateSwipe(dir, cb){
+  buzz(20);
+  card.classList.add(`swipe-${dir}`);
+  flashEmoji({left:"❌", right:"💡", down:"⭐"}[dir] || "");
+  setTimeout(()=>{
+    card.className = "";
+    cb();
+  }, 380);
+}
+
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swipeleft",  ()=> animateSwipe("left",  ()=>record("No")));
+mc.on("swiperight", ()=> animateSwipe("right", ()=>record("Workshop")));
+mc.on("swipedown",  ()=> animateSwipe("down",  ()=>record("Perfect")));
+
+/* ===================== LONG PRESS: TOGGLE SETTER STAR ===================== */
+let writerPressHammer = null;
+function attachWriterLongPress(){
+  const wEl = document.getElementById("writer");
+  if (!wEl) return;
+
+  try { writerPressHammer && writerPressHammer.destroy(); } catch {}
+  writerPressHammer = new Hammer(wEl);
+  writerPressHammer.add(new Hammer.Press({ time: 450 }));
+
+  let pressed = false;
+  writerPressHammer.on("press", ()=>{
+    pressed = true;
+    buzz(12);
+
+    const c = queue[currentIndex];
+    if (!c) return;
+
+    const nowStarred = toggleStarSetter(c.Writer);
+
+    // Flash symbol you asked about:
+    // starred => ★, unstarred => ☆
+    flashEmoji(nowStarred ? "★" : "☆");
+
+    // If we're viewing Stars and you unstarred, it should disappear immediately
+    rebuildQueue();
+    render();
+
+    setTimeout(()=>{ pressed = false; }, 0);
+  });
+
+  wEl.addEventListener("click", (e)=>{
+    if (pressed){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+}
+
+/* ===================== BUTTON WIRING (the part I stupidly removed before) ===================== */
+document.getElementById("btnNo").addEventListener("click", ()=> animateSwipe("left",  ()=>record("No")));
+document.getElementById("btnWorkshop").addEventListener("click", ()=> animateSwipe("right", ()=>record("Workshop")));
+document.getElementById("btnPerfect").addEventListener("click", ()=> animateSwipe("down",  ()=>record("Perfect")));
+document.getElementById("btnNote").addEventListener("click", openNote);
+document.getElementById("btnUndo").addEventListener("click", undo);
+
+document.getElementById("exportBtn").addEventListener("click", exportCSV);
+document.getElementById("resetBtn").addEventListener("click", resetProgress);
+
+document.getElementById("noteSaveBtn").addEventListener("click", saveNote);
+
+/* Tabs */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    viewMode = t.dataset.view;
+    localStorage.setItem(VIEW_KEY, viewMode);
+    syncTabs();
+    rebuildQueue();
+    render();
+  });
+});
+
+/* ===================== SAFE HTML ESCAPES ===================== */
+function escapeHTML(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+function escapeHTMLAttr(s){
+  return escapeHTML(s).replaceAll("`","&#096;");
+}
+
+/* Init */
+syncTabs();
+window.onload = loadSheet;
+</script>
 </body>
 </html>
