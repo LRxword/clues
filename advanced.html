@@ -405,14 +405,6 @@ function applyHardFilters(list){
       c.Assessment = "Filtered";
       continue;
     }
-
-    // Rule C: clue contains the entire answer contiguously (normalised)
-    const clueN = normForContainment(clue).replace(/\s+/g,'');
-    const ansN  = normAnswerForContainment(ans);
-    if (ansN && clueN.includes(ansN)){
-      c.Assessment = "Filtered";
-      continue;
-    }
   }
 }
 
