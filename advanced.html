@@ -75,8 +75,9 @@
   #card.swipe-down  { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
   /* Pane spacing */
-  .clueLine { margin: 0 0 1.2rem 0; font-weight: 400; }
+  .clueLine { margin: 0 0 1.2rem 0; font-weight: 400; } /* NOT bold */
   .answerLine { margin: 0 0 1.2rem 0; }
+
   #writer {
     margin: 0;
     font-size: 1.05rem;
@@ -98,7 +99,7 @@
     margin-left: 0.2rem;
   }
 
-  /* Answer bar */
+  /* Answer */
   #answer {
     cursor: pointer;
     padding: 0.45em 1.45em;
@@ -112,8 +113,8 @@
 
   /* Stars */
   .setterStar { font-size: 1.15rem; transform: translateY(1px); }
-  .setterStar.starred { color: #f4c430; opacity: 1; }          /* yellow ★ */
-  .setterStar.unstarred { color: #999; opacity: 0.35; }        /* faint ☆ */
+  .setterStar.starred { color: #f4c430; opacity: 1; }   /* yellow ★ */
+  .setterStar.unstarred { color: #999; opacity: 0.35; } /* faint ☆ */
 
   /* Emoji controls */
   #buttons { display: flex; gap: 2.4rem; font-size: 2.15rem; align-items: center; margin-bottom: 0.9rem; }
@@ -185,55 +186,6 @@
     font-weight: 700;
     cursor: pointer;
   }
-
-  /* Export chooser overlay */
-  #exportOverlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 1100;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-  #exportModal {
-    width: min(360px, 92vw);
-    background: #fff;
-    color: #222;
-    border: 3px solid #000;
-    border-radius: 18px;
-    box-shadow: 8px 8px 0 #000;
-    padding: 1.1rem 1rem;
-    text-align: center;
-  }
-  #exportModal h3{
-    margin: 0 0 0.75rem 0;
-    font-size: 1.15rem;
-  }
-  .exportChoice {
-    width: 100%;
-    margin: 0.45rem 0;
-    padding: 0.8rem 0.75rem;
-    border-radius: 14px;
-    border: 2px solid #000;
-    background: #fff;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 4px 4px 0 #000;
-  }
-  .exportChoice:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
-  .exportCancel{
-    width: 100%;
-    margin-top: 0.65rem;
-    padding: 0.7rem 0.75rem;
-    border-radius: 14px;
-    border: 2px solid #000;
-    background: #fff2b3;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 4px 4px 0 #000;
-  }
 </style>
 </head>
 
@@ -268,17 +220,6 @@
 <div id="noteOverlay">
   <textarea id="noteText" placeholder="Add a note..."></textarea>
   <button id="noteSaveBtn">Save</button>
-</div>
-
-<!-- Export chooser -->
-<div id="exportOverlay" role="dialog" aria-hidden="true">
-  <div id="exportModal">
-    <h3>Export which clues?</h3>
-    <button class="exportChoice" id="exportReviewedBtn">Reviewed (incl Filtered)</button>
-    <button class="exportChoice" id="exportUnreviewedBtn">Unreviewed</button>
-    <button class="exportChoice" id="exportAllBtn">All</button>
-    <button class="exportCancel" id="exportCancelBtn">Cancel</button>
-  </div>
 </div>
 
 <script>
@@ -318,8 +259,6 @@ const flash = document.getElementById("flashMessage");
 const assessmentCounts = document.getElementById("assessmentCounts");
 const progressBar = document.getElementById("progressBar");
 const progressCount = document.getElementById("progressCount");
-
-const exportOverlay = document.getElementById("exportOverlay");
 
 function buzz(ms=20){ if (navigator.vibrate) navigator.vibrate(ms); }
 function flashEmoji(e){
@@ -367,54 +306,52 @@ function getEnum(ans){
   return parts.length ? `(${parts.join(',')})` : "";
 }
 
-/* ===================== HARD FILTERS (REINSTATED) ===================== */
+/* Used for export column + appending to clue in export */
+function getLetterCount(ans){
+  const e = getEnum(ans);
+  return e ? e.replace(/[()]/g, "") : "";
+}
+
+/* ===================== HARD FILTERS (NO containment rule) ===================== */
+/* Keeps only:
+   - letters/spaces only answers (no digits/punct)
+   - lettercount between 3 and 10 inclusive (letters only, ignores spaces)
+   Marks Assessment="Filtered" (counts as assessed). */
 function answerLetterCount(ans){
   return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
 }
 function answerHasOnlyLettersAndSpaces(ans){
   return /^[A-Za-z ]+$/.test(String(ans || "").trim());
 }
-function normForContainment(s){
-  return String(s || "")
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-function normAnswerForContainment(ans){
-  return normForContainment(ans).replace(/\s+/g, '');
-}
 function applyHardFilters(list){
   for (const c of list){
-    // Never override anything already assessed (including prior Filtered)
-    if (c.Assessment && String(c.Assessment).trim() !== "") continue;
-
+    if (!c || c.Assessment) continue; // never override existing assessment
     const ans = String(c.Answer || "").trim();
-    const clue = String(c.Clue || "").trim();
+    if (!ans) continue;
 
-    // Rule A: answer must be letters/spaces only
-    if (ans && !answerHasOnlyLettersAndSpaces(ans)){
+    if (!answerHasOnlyLettersAndSpaces(ans)){
       c.Assessment = "Filtered";
       continue;
     }
 
-    // Rule B: answer letter count 3..10 inclusive
     const n = answerLetterCount(ans);
-    if (n > 0 && (n < 3 || n > 10)){
+    if (n > 0 && n < 3){
+      c.Assessment = "Filtered";
+      continue;
+    }
+    if (n > 10){
       c.Assessment = "Filtered";
       continue;
     }
   }
 }
-
 /* ===================== DATA LOAD ===================== */
-/* Robust fetch: direct first, then r.jina.ai fallback */
+/* Robust fetch: direct first, then r.jina.ai fallback. */
 async function fetchCSVText(){
   const bust = `&_=${Date.now()}`;
   const direct = `${SHEET_URL}${SHEET_URL.includes('?') ? '&' : '?'}${bust.replace(/^&/,'')}`;
-  const fall1 = "https://r.jina.ai/http://"+direct.replace(/^https?:\/\//,'');
-  const fall2 = "https://r.jina.ai/https://"+direct.replace(/^https?:\/\//,'');
+  const fall1 = "https://r.jina.ai/http://" + direct.replace(/^https?:\/\//,'');
+  const fall2 = "https://r.jina.ai/https://" + direct.replace(/^https?:\/\//,'');
 
   const tries = [direct, fall2, fall1];
 
@@ -443,17 +380,15 @@ async function loadSheet(){
       return;
     }
 
-    const fresh = rows.map(r=>{
+    allClues = rows.map(r=>{
       const id = r.id || r.Id || r.ID || "";
       const clue = r.clue || r.Clue || "";
       const ans  = r.answer || r.Answer || "";
-      const writer = r.setter_name || r.Writer || r.setter || r.setterName || "";
+      const writer = r.setter_name || r.Writer || r.setter || "";
 
-      const sid = String(id).trim();
-      const saved = progress.byId[sid] || {};
-
+      const saved = progress.byId[id] || {};
       return {
-        Id: sid,
+        Id: String(id).trim(),
         Clue: String(clue).trim(),
         Answer: String(ans).trim(),
         Writer: String(writer).trim(),
@@ -462,9 +397,7 @@ async function loadSheet(){
       };
     }).filter(r => r.Id && r.Clue && r.Answer);
 
-    allClues = fresh;
-
-    // Apply filters AFTER merge (never overrides existing assessments)
+    /* Apply filters AFTER merging saved progress (so Filtered persists) */
     applyHardFilters(allClues);
 
     syncTabs();
@@ -478,9 +411,7 @@ async function loadSheet(){
 
 /* ===================== QUEUE / RENDER ===================== */
 function rebuildQueue(){
-  // Queue is "unassessed" only. Filtered counts as assessed.
-  queue = allClues.filter(c => !(c.Assessment && String(c.Assessment).trim() !== ""));
-
+  queue = allClues.filter(c => !c.Assessment);
   if (viewMode === "stars"){
     queue = queue.filter(c => isStarSetter(c.Writer));
   }
@@ -561,63 +492,40 @@ function undo(){
   }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
-  // Re-apply filters to anything that is now unassessed (so it doesn't sneak back in)
-  applyHardFilters(allClues);
-
   rebuildQueue();
   render();
 }
 
-/* ===================== EXPORT OPTIONS (POPUP) ===================== */
-function openExportChooser(){
-  exportOverlay.style.display = "flex";
-  exportOverlay.setAttribute("aria-hidden","false");
-}
-function closeExportChooser(){
-  exportOverlay.style.display = "none";
-  exportOverlay.setAttribute("aria-hidden","true");
-}
-function doExport(mode){
-  // mode: 'reviewed' | 'unreviewed' | 'all'
-  let rows = allClues.slice();
+/* Export options:
+   - default (Enter) => assessed-only (includes Filtered)
+   - type ALL => everything (assessed + unassessed) */
+function exportCSV(){
+  const choice = prompt("Export options:\n\n• Press Enter for ASSESSED only (includes Filtered)\n• Type ALL for everything", "");
+  const exportAll = String(choice || "").trim().toLowerCase() === "all";
 
-  if (mode === "reviewed"){
-    // Reviewed = ANY assessment (incl Filtered) OR a note
-    rows = rows.filter(c =>
-      (c.Assessment && String(c.Assessment).trim() !== "") ||
-      (c.Note && String(c.Note).trim() !== "")
-    );
-  } else if (mode === "unreviewed"){
-    // Unreviewed = no assessment AND no note
-    rows = rows.filter(c =>
-      !(c.Assessment && String(c.Assessment).trim() !== "") &&
-      !(c.Note && String(c.Note).trim() !== "")
-    );
-  } // 'all' => no filter
+  const rows = (exportAll ? allClues : allClues.filter(c => c.Assessment || c.Note))
+    .map(c => ({
+      id: c.Id,
+      clue: `${c.Clue} (${getLetterCount(c.Answer)})`,
+      lettercount: getLetterCount(c.Answer),
+      answer: c.Answer,
+      setter: c.Writer,
+      result: c.Assessment,
+      note: c.Note
+    }));
 
-  const data = rows.map(c => ({
-    id: c.Id,
-    clue: c.Clue,
-    answer: c.Answer,
-    setter: c.Writer,
-    result: c.Assessment,
-    note: c.Note
-  }));
-
-  const csv = Papa.unparse(data);
+  const csv = Papa.unparse(rows);
   const blob = new Blob(['\ufeff' + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download =
-    mode === "reviewed" ? "reviewed_clues.csv" :
-    mode === "unreviewed" ? "unreviewed_clues.csv" :
-    "all_clues.csv";
+  a.download = exportAll ? "clues_all.csv" : "clues_assessed.csv";
   a.click();
 }
 
 function resetProgress(){
   if (!confirm("Reset assessments/notes? (Stars stay)")) return;
 
+  // wipe only progress + view; keep stars
   localStorage.removeItem(PROGRESS_KEY);
   localStorage.removeItem(VIEW_KEY);
 
@@ -625,7 +533,7 @@ function resetProgress(){
   viewMode = "all";
 
   syncTabs();
-  loadSheet(); // always reloads fresh CSV
+  loadSheet(); // pulls freshest CSV again
 }
 
 /* ===================== NOTES ===================== */
@@ -711,7 +619,7 @@ function attachWriterLongPress(){
 
     const nowStarred = toggleStarSetter(c.Writer);
 
-    // Flash: starred => ★, unstarred => ☆
+    // starred => ★, unstarred => ☆
     flashEmoji(nowStarred ? "★" : "☆");
 
     rebuildQueue();
@@ -735,30 +643,10 @@ document.getElementById("btnPerfect").addEventListener("click", ()=> animateSwip
 document.getElementById("btnNote").addEventListener("click", openNote);
 document.getElementById("btnUndo").addEventListener("click", undo);
 
-document.getElementById("exportBtn").addEventListener("click", openExportChooser);
+document.getElementById("exportBtn").addEventListener("click", exportCSV);
 document.getElementById("resetBtn").addEventListener("click", resetProgress);
 
 document.getElementById("noteSaveBtn").addEventListener("click", saveNote);
-
-/* Export chooser buttons */
-document.getElementById("exportReviewedBtn").addEventListener("click", ()=>{
-  closeExportChooser();
-  doExport("reviewed");
-});
-document.getElementById("exportUnreviewedBtn").addEventListener("click", ()=>{
-  closeExportChooser();
-  doExport("unreviewed");
-});
-document.getElementById("exportAllBtn").addEventListener("click", ()=>{
-  closeExportChooser();
-  doExport("all");
-});
-document.getElementById("exportCancelBtn").addEventListener("click", closeExportChooser);
-
-/* Tap outside modal closes */
-exportOverlay.addEventListener("click", (e)=>{
-  if (e.target === exportOverlay) closeExportChooser();
-});
 
 /* Tabs */
 document.querySelectorAll(".tab").forEach(t=>{
