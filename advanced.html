@@ -3,11 +3,34 @@
 <head>
 <meta charset="UTF-8" />
 <title>cluesmash</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+<!-- iOS Web App Settings -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="cluesmash">
+<link rel="apple-touch-icon" href="icon.png">
+
+<!-- Embedded Manifest -->
+<link rel="manifest" href='data:application/manifest+json,{
+  "name":"cluesmash",
+  "short_name":"cluesmash",
+  "display":"standalone",
+  "background_color":"#cce7ff",
+  "theme_color":"#cce7ff",
+  "icons":[
+    {
+      "src":"icon.png",
+      "sizes":"512x512",
+      "type":"image/png"
+    }
+  ]
+}'>
+
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-
 <style>
   /* Base */
   body {
