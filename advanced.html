@@ -254,6 +254,9 @@ const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchSetterStars";
 
+/* NEW: export checkpoint */
+const LAST_EXPORT_KEY = "cluesmash_lastExportedAt";
+
 const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
 
 /* ===================== STATE ===================== */
@@ -354,6 +357,7 @@ function applyHardFilters(list){
 
     if (!answerHasOnlyLettersAndSpaces(ans)){
       c.Assessment = "Filtered";
+      // IMPORTANT: do not stamp UpdatedAt here; "Filtered" is auto-applied and not user work
       continue;
     }
 
@@ -368,6 +372,7 @@ function applyHardFilters(list){
     }
   }
 }
+
 /* ===================== DATA LOAD ===================== */
 /* Robust fetch: direct first, then r.jina.ai fallback. */
 async function fetchCSVText(){
@@ -416,7 +421,8 @@ async function loadSheet(){
         Answer: String(ans).trim(),
         Writer: String(writer).trim(),
         Assessment: String(saved.Assessment || "").trim(),
-        Note: String(saved.Note || "").trim()
+        Note: String(saved.Note || "").trim(),
+        UpdatedAt: Number(saved.UpdatedAt || 0) || 0
       };
     }).filter(r => r.Id && r.Clue && r.Answer);
 
@@ -492,8 +498,15 @@ function record(val){
   if (!queue[currentIndex]) return;
   const c = queue[currentIndex];
 
+  const now = Date.now();
   c.Assessment = val;
-  progress.byId[c.Id] = { Assessment: val, Note: c.Note || "" };
+  c.UpdatedAt = now;
+
+  progress.byId[c.Id] = {
+    Assessment: val,
+    Note: c.Note || "",
+    UpdatedAt: now
+  };
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
   history.push(c.Id);
@@ -507,10 +520,14 @@ function undo(){
   if (!lastId) return;
 
   const master = allClues.find(x => x.Id === lastId);
-  if (master) master.Assessment = "";
+  if (master) {
+    master.Assessment = "";
+    master.UpdatedAt = 0;
+  }
 
   if (progress.byId[lastId]) {
     delete progress.byId[lastId].Assessment;
+    delete progress.byId[lastId].UpdatedAt;
     if (!progress.byId[lastId].Note) delete progress.byId[lastId];
   }
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
@@ -520,37 +537,74 @@ function undo(){
 }
 
 /* Export options:
-   - default (Enter) => assessed-only (includes Filtered)
-   - type ALL => everything (assessed + unassessed) */
+   - default (Enter) => NEW since last export checkpoint
+   - type ASSESSED  => assessed-only (includes Filtered) [old behaviour]
+   - type ALL       => everything (assessed + unassessed)
+   After NEW export, we advance the checkpoint.
+*/
 function exportCSV(){
-  const choice = prompt("Export options:\n\n• Press Enter for ASSESSED only (includes Filtered)\n• Type ALL for everything", "");
-  const exportAll = String(choice || "").trim().toLowerCase() === "all";
+  const choice = prompt(
+    "Export options:\n\n" +
+    "• Press Enter for NEW (since last export)\n" +
+    "• Type ASSESSED for all assessed (includes Filtered)\n" +
+    "• Type ALL for everything",
+    ""
+  );
 
-  const rows = (exportAll ? allClues : allClues.filter(c => c.Assessment || c.Note))
-    .map(c => ({
-      id: c.Id,
-      clue: `${c.Clue} (${getLetterCount(c.Answer)})`,
-      lettercount: getLetterCount(c.Answer),
-      answer: c.Answer,
-      setter: c.Writer,
-      result: c.Assessment,
-      note: c.Note
-    }));
+  const raw = String(choice || "").trim().toLowerCase();
+  const mode =
+    raw === "all" ? "all" :
+    raw === "assessed" ? "assessed" :
+    "new";
+
+  const lastExportedAt = Number(localStorage.getItem(LAST_EXPORT_KEY) || 0) || 0;
+
+  let rowsSource = [];
+  if (mode === "all"){
+    rowsSource = allClues;
+  } else if (mode === "assessed"){
+    rowsSource = allClues.filter(c => c.Assessment || c.Note);
+  } else {
+    // NEW since last export: anything the user touched after the checkpoint
+    rowsSource = allClues.filter(c => (Number(c.UpdatedAt || 0) > lastExportedAt));
+  }
+
+  const rows = rowsSource.map(c => ({
+    id: c.Id,
+    clue: `${c.Clue} (${getLetterCount(c.Answer)})`,
+    lettercount: getLetterCount(c.Answer),
+    answer: c.Answer,
+    setter: c.Writer,
+    result: c.Assessment,
+    note: c.Note
+  }));
 
   const csv = Papa.unparse(rows);
   const blob = new Blob(['\ufeff' + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = exportAll ? "clues_all.csv" : "clues_assessed.csv";
+
+  const stamp = new Date().toISOString().replace(/[:]/g,"").slice(0,15); // YYYY-MM-DDTHHMMSS -> safe-ish
+  a.download =
+    mode === "all" ? `clues_all_${stamp}.csv` :
+    mode === "assessed" ? `clues_assessed_${stamp}.csv` :
+    `clues_new_${stamp}.csv`;
+
   a.click();
+
+  // Advance checkpoint only for NEW exports (so "ASSESSED" doesn't affect batching)
+  if (mode === "new"){
+    localStorage.setItem(LAST_EXPORT_KEY, String(Date.now()));
+  }
 }
 
 function resetProgress(){
   if (!confirm("Reset assessments/notes? (Stars stay)")) return;
 
-  // wipe only progress + view; keep stars
+  // wipe only progress + view + export checkpoint; keep stars
   localStorage.removeItem(PROGRESS_KEY);
   localStorage.removeItem(VIEW_KEY);
+  localStorage.removeItem(LAST_EXPORT_KEY);
 
   progress = { byId:{} };
   viewMode = "all";
@@ -570,10 +624,18 @@ function openNote(){
 function saveNote(){
   if (!queue[currentIndex]) return;
   const c = queue[currentIndex];
+
   c.Note = document.getElementById("noteText").value || "";
+
+  const now = Date.now();
+  c.UpdatedAt = now;
 
   if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
   progress.byId[c.Id].Note = c.Note;
+  progress.byId[c.Id].UpdatedAt = now;
+
+  // If user adds a note to an unassessed clue, keep Assessment absent/empty.
+  // This will still export in NEW mode because UpdatedAt is set.
 
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
