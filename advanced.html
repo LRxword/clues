@@ -131,13 +131,14 @@
     color: black;
     letter-spacing: 0.18em;
     display: inline-block;
+    white-space: pre-wrap;
   }
   #answer.revealed { background: none; color: #222; letter-spacing: normal; }
 
   /* Stars */
   .setterStar { font-size: 1.15rem; transform: translateY(1px); }
-  .setterStar.starred { color: #f4c430; opacity: 1; }   /* yellow ★ */
-  .setterStar.unstarred { color: #999; opacity: 0.35; } /* faint ☆ */
+  .setterStar.starred { color: #f4c430; opacity: 1; }
+  .setterStar.unstarred { color: #999; opacity: 0.35; }
 
   /* Emoji controls */
   #buttons { display: flex; gap: 2.4rem; font-size: 2.15rem; align-items: center; margin-bottom: 0.9rem; }
@@ -253,8 +254,6 @@ const SHEET_URL =
 const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchSetterStars";
-
-/* NEW: export checkpoint */
 const LAST_EXPORT_KEY = "cluesmash_lastExportedAt";
 
 const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
@@ -338,6 +337,11 @@ function getLetterCount(ans){
   return e ? e.replace(/[()]/g, "") : "";
 }
 
+/* Correct-length answer mask */
+function getAnswerMask(ans){
+  return String(ans || "").replace(/[A-Za-z]/g, "█");
+}
+
 /* Reveal order for output */
 function getRevealOrder(ans){
   const n = answerLetterCount(ans);
@@ -354,8 +358,9 @@ function getRevealOrder(ans){
   return orders[n] || "";
 }
 
-/* ===================== HARD FILTERS (NO containment rule) ===================== */
+/* ===================== HARD FILTERS ===================== */
 /* Keeps only:
+   - clue text under 80 characters
    - letters/spaces only answers (no digits/punct)
    - lettercount between 3 and 10 inclusive (letters only, ignores spaces)
    Marks Assessment="Filtered" (counts as assessed). */
@@ -368,12 +373,18 @@ function answerHasOnlyLettersAndSpaces(ans){
 function applyHardFilters(list){
   for (const c of list){
     if (!c || c.Assessment) continue; // never override existing assessment
+
+    const clueText = String(c.Clue || "").trim();
+    if (clueText.length >= 80){
+      c.Assessment = "Filtered";
+      continue;
+    }
+
     const ans = String(c.Answer || "").trim();
     if (!ans) continue;
 
     if (!answerHasOnlyLettersAndSpaces(ans)){
       c.Assessment = "Filtered";
-      // IMPORTANT: do not stamp UpdatedAt here; "Filtered" is auto-applied and not user work
       continue;
     }
 
@@ -481,6 +492,7 @@ function render(){
 
   const c = queue[currentIndex];
   const enumText = getEnum(c.Answer);
+  const maskText = getAnswerMask(c.Answer);
 
   const starred = isStarSetter(c.Writer);
   const starChar = starred ? "★" : "☆";
@@ -494,7 +506,7 @@ function render(){
     </p>
 
     <p class="answerLine">
-      <span id="answer" data-answer="${escapeHTMLAttr(c.Answer)}">████████</span>
+      <span id="answer" data-answer="${escapeHTMLAttr(c.Answer)}">${escapeHTML(maskText)}</span>
     </p>
 
     <p id="writer" title="Long-press to star/unstar setter">
@@ -508,7 +520,7 @@ function render(){
   ansEl.addEventListener("click", ()=>{
     buzz(10);
     ansEl.classList.toggle("revealed");
-    ansEl.textContent = ansEl.classList.contains("revealed") ? c.Answer : "████████";
+    ansEl.textContent = ansEl.classList.contains("revealed") ? c.Answer : getAnswerMask(c.Answer);
   });
 
   attachWriterLongPress();
@@ -560,7 +572,7 @@ function undo(){
 
 /* Export options:
    - default (Enter) => NEW since last export checkpoint
-   - type ASSESSED  => assessed-only (includes Filtered) [old behaviour]
+   - type ASSESSED  => assessed-only (includes Filtered)
    - type ALL       => everything (assessed + unassessed)
    After NEW export, we advance the checkpoint.
 */
@@ -587,12 +599,11 @@ function exportCSV(){
   } else if (mode === "assessed"){
     rowsSource = allClues.filter(c => c.Assessment || c.Note);
   } else {
-    // NEW since last export: anything the user touched after the checkpoint
     rowsSource = allClues.filter(c => (Number(c.UpdatedAt || 0) > lastExportedAt));
   }
 
   const rows = rowsSource.map(c => ({
-    clue_text: c.Clue,
+    clue_text: `${c.Clue} ${getEnum(c.Answer)}`,
     answer: c.Answer,
     letter_reveal_order: getRevealOrder(c.Answer),
     hints: c.Hints,
@@ -618,7 +629,6 @@ function exportCSV(){
 
   a.click();
 
-  // Advance checkpoint only for NEW exports (so "ASSESSED" doesn't affect batching)
   if (mode === "new"){
     localStorage.setItem(LAST_EXPORT_KEY, String(Date.now()));
   }
@@ -627,7 +637,6 @@ function exportCSV(){
 function resetProgress(){
   if (!confirm("Reset assessments/notes? (Stars stay)")) return;
 
-  // wipe only progress + view + export checkpoint; keep stars
   localStorage.removeItem(PROGRESS_KEY);
   localStorage.removeItem(VIEW_KEY);
   localStorage.removeItem(LAST_EXPORT_KEY);
@@ -636,7 +645,7 @@ function resetProgress(){
   viewMode = "all";
 
   syncTabs();
-  loadSheet(); // pulls freshest CSV again
+  loadSheet();
 }
 
 /* ===================== NOTES ===================== */
@@ -659,9 +668,6 @@ function saveNote(){
   if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
   progress.byId[c.Id].Note = c.Note;
   progress.byId[c.Id].UpdatedAt = now;
-
-  // If user adds a note to an unassessed clue, keep Assessment absent/empty.
-  // This will still export in NEW mode because UpdatedAt is set.
 
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
@@ -730,7 +736,6 @@ function attachWriterLongPress(){
 
     const nowStarred = toggleStarSetter(c.Writer);
 
-    // starred => ★, unstarred => ☆
     flashEmoji(nowStarred ? "★" : "☆");
 
     rebuildQueue();
