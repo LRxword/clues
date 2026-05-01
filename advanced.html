@@ -332,10 +332,26 @@ function getEnum(ans){
   return parts.length ? `(${parts.join(',')})` : "";
 }
 
-/* Used for export column + appending to clue in export */
+/* Used for export column + appending to clue in old exports */
 function getLetterCount(ans){
   const e = getEnum(ans);
   return e ? e.replace(/[()]/g, "") : "";
+}
+
+/* Reveal order for output */
+function getRevealOrder(ans){
+  const n = answerLetterCount(ans);
+  const orders = {
+    3:  "2,1,0",
+    4:  "2,1,0,3",
+    5:  "2,1,0,3,4",
+    6:  "2,1,5,0,3,4",
+    7:  "2,1,5,0,3,6,4",
+    8:  "7,2,1,5,0,3,6,4",
+    9:  "7,2,1,5,8,0,3,6,4",
+    10: "7,9,2,1,5,8,0,3,6,4"
+  };
+  return orders[n] || "";
 }
 
 /* ===================== HARD FILTERS (NO containment rule) ===================== */
@@ -420,6 +436,12 @@ async function loadSheet(){
         Clue: String(clue).trim(),
         Answer: String(ans).trim(),
         Writer: String(writer).trim(),
+
+        Hints: String(r.hints || r.Hints || "").trim(),
+        CreatorUserId: String(r.creator_user_id || r.CreatorUserId || r["Creator User ID"] || "").trim(),
+        SetterSocialHandles: String(r.setter_social_handles || r["Social Handles"] || r.social_handles || "").trim(),
+        WorkshopCirclePostUrl: String(r.workshop_circle_post_url || r["Play Link"] || r.play_link || "").trim(),
+
         Assessment: String(saved.Assessment || "").trim(),
         Note: String(saved.Note || "").trim(),
         UpdatedAt: Number(saved.UpdatedAt || 0) || 0
@@ -570,12 +592,16 @@ function exportCSV(){
   }
 
   const rows = rowsSource.map(c => ({
-    id: c.Id,
-    clue: `${c.Clue} (${getLetterCount(c.Answer)})`,
-    lettercount: getLetterCount(c.Answer),
+    clue_text: c.Clue,
     answer: c.Answer,
-    setter: c.Writer,
-    result: c.Assessment,
+    letter_reveal_order: getRevealOrder(c.Answer),
+    hints: c.Hints,
+    creator_user_id: c.CreatorUserId,
+    setter_name: c.Writer,
+    setter_social_handles: c.SetterSocialHandles,
+    parent_clue_id: c.Id,
+    workshop_circle_post_url: c.WorkshopCirclePostUrl,
+    assessment: c.Assessment,
     note: c.Note
   }));
 
@@ -584,7 +610,7 @@ function exportCSV(){
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
 
-  const stamp = new Date().toISOString().replace(/[:]/g,"").slice(0,15); // YYYY-MM-DDTHHMMSS -> safe-ish
+  const stamp = new Date().toISOString().replace(/[:]/g,"").slice(0,15);
   a.download =
     mode === "all" ? `clues_all_${stamp}.csv` :
     mode === "assessed" ? `clues_assessed_${stamp}.csv` :
