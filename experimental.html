@@ -2,174 +2,943 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>cluesmash experimental</title>
+<title>ClueLab</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <style>
 :root{
-  --bg:#14151d;
-  --card:#fff9ec;
-  --blue:#8bd8ff;
-  --pink:#ffacd4;
-  --mint:#baf7d1;
-  --yellow:#fff09b;
-  --red:#ffb4b4;
+  --bg:#090b10;
+  --panel:#11141b;
+  --panel2:#171b24;
+  --card:#f7f3ea;
+  --ink:#111318;
+  --muted:#8b93a5;
+  --line:#272d3a;
+  --good:#48d597;
+  --maybe:#ffd166;
+  --bad:#ff6b6b;
+  --accent:#8ab4ff;
 }
+
 *{box-sizing:border-box}
+
 body{
   margin:0;
   min-height:100dvh;
+  font-family:Inter,system-ui,sans-serif;
   background:
-    radial-gradient(circle at 12% 10%,#8bd8ff55,transparent 28%),
-    radial-gradient(circle at 88% 16%,#ffacd455,transparent 28%),
-    radial-gradient(circle at 52% 95%,#baf7d144,transparent 34%),
+    radial-gradient(circle at 20% 0%,#1d335f 0,transparent 34%),
+    radial-gradient(circle at 90% 18%,#3a1b52 0,transparent 30%),
     var(--bg);
-  font-family:Montserrat,sans-serif;
-  color:#fff;
-  padding:18px 14px 100px;
+  color:white;
+  padding:18px;
 }
 
-.wrap{max-width:900px;margin:auto;display:grid;gap:12px}
-
-.card{
-  background:var(--card);
-  color:#111;
-  border:3px solid #000;
-  border-radius:28px;
-  box-shadow:8px 8px 0 #000;
-  padding:20px;
+.app{
+  max-width:980px;
+  margin:0 auto;
+  display:grid;
+  gap:14px;
 }
 
-.clue{
-  font-size:1.6rem;
-  font-weight:900;
-  margin-bottom:16px;
-}
-
-.answer{
-  background:#111;
-  color:#111;
-  padding:12px;
-  border-radius:14px;
-  border:3px solid #000;
-  letter-spacing:0.2em;
-}
-
-.answer.show{background:var(--yellow);color:#111;letter-spacing:normal}
-.answer.hint{background:#fff;color:#2a5fd7;letter-spacing:normal}
-
-.actions{
+header{
   display:flex;
-  gap:10px;
-  margin-top:16px;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.brand h1{
+  margin:0;
+  font-size:1.35rem;
+  letter-spacing:-.04em;
+}
+
+.brand span{
+  color:var(--muted);
+  font-size:.82rem;
+}
+
+.badge{
+  border:1px solid var(--line);
+  background:#ffffff10;
+  color:#dbe6ff;
+  padding:8px 11px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:700;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+.stat{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+}
+
+.stat b{
+  display:block;
+  font-size:1.25rem;
+}
+
+.stat span{
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+.progress{
+  height:6px;
+  background:#ffffff15;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.progress div{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--bad),var(--maybe),var(--good));
+  transition:.25s;
+}
+
+.controls{
+  display:flex;
+  gap:8px;
+  overflow:auto;
+  padding-bottom:3px;
 }
 
 button{
-  flex:1;
-  padding:12px;
-  font-weight:900;
-  border:2px solid #000;
-  box-shadow:3px 3px 0 #000;
+  border:0;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
 }
 
-.no{background:var(--red)}
-.workshop{background:var(--yellow)}
-.perfect{background:var(--mint)}
+.chip{
+  white-space:nowrap;
+  border:1px solid var(--line);
+  background:#ffffff0d;
+  color:white;
+  padding:9px 12px;
+  border-radius:999px;
+}
+
+.chip.active{
+  background:white;
+  color:#111;
+}
+
+.search{
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:white;
+  border-radius:16px;
+  padding:13px 14px;
+  outline:none;
+  font-weight:600;
+}
+
+.main{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+
+.card{
+  background:var(--card);
+  color:var(--ink);
+  border-radius:28px;
+  padding:22px;
+  min-height:390px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  box-shadow:0 24px 80px #0008;
+}
+
+.meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  color:#6f7580;
+  font-size:.82rem;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.clue{
+  font-size:clamp(1.8rem,7vw,3.2rem);
+  line-height:1.04;
+  letter-spacing:-.07em;
+  font-weight:800;
+  margin:28px 0;
+}
+
+.enum{
+  font-size:.62em;
+  color:#6d7179;
+  letter-spacing:-.02em;
+  white-space:nowrap;
+}
+
+.answer{
+  width:100%;
+  min-height:66px;
+  border-radius:20px;
+  background:#111318;
+  color:#111318;
+  padding:16px;
+  font-size:1.18rem;
+  font-weight:800;
+  letter-spacing:.18em;
+  text-align:left;
+  white-space:pre-wrap;
+}
+
+.answer.hint{
+  background:#eef4ff;
+  color:#2855aa;
+  letter-spacing:0;
+  font-size:1rem;
+  line-height:1.35;
+}
+
+.answer.show{
+  background:#fff2b8;
+  color:#111;
+  letter-spacing:0;
+}
+
+.writer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#535863;
+  font-weight:800;
+  margin-top:18px;
+}
+
+.panel{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:14px;
+  display:grid;
+  gap:10px;
+}
+
+.actions{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.action{
+  border-radius:18px;
+  padding:14px 8px;
+  color:#111;
+}
+
+.no{background:var(--bad)}
+.workshop{background:var(--maybe)}
+.perfect{background:var(--good)}
+
+.tools{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.tool{
+  background:#ffffff0f;
+  color:white;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:11px 8px;
+}
 
 textarea{
   width:100%;
-  margin-top:10px;
-  padding:10px;
-  border:3px solid #000;
-  border-radius:12px;
+  min-height:92px;
+  resize:vertical;
+  background:#080a0f;
+  border:1px solid var(--line);
+  color:white;
+  border-radius:18px;
+  padding:13px;
+  font:inherit;
+  outline:none;
 }
 
+.preview{
+  display:none;
+}
+
+.mini{
+  background:#ffffff0d;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:11px;
+  color:#d8deea;
+  font-size:.84rem;
+}
+
+.mini b{
+  display:block;
+  color:white;
+  margin-bottom:4px;
+}
+
+.footer{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+
+.footer button{
+  padding:16px;
+  color:white;
+}
+
+.export{background:#181d27}
+.reset{background:#9f2f3a}
+
+.toast{
+  position:fixed;
+  top:35%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(.9);
+  opacity:0;
+  pointer-events:none;
+  font-size:4rem;
+  transition:.18s;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1.1);
+}
+
+@media(min-width:820px){
+  .main{grid-template-columns:1fr 310px}
+  .panel{align-self:start;position:sticky;top:18px}
+  .preview{display:grid;gap:8px}
+}
+
+@media(max-width:520px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  body{padding:14px 12px 90px}
+}
 </style>
 </head>
 
 <body>
+<div class="toast" id="toast"></div>
 
-<div class="wrap">
-  <div class="card" id="card">
-    <div class="clue">Loading…</div>
-    <div class="answer" id="answer"></div>
-
-    <div class="actions">
-      <button class="no" onclick="rate('No')">❌</button>
-      <button class="workshop" onclick="rate('Workshop')">💡</button>
-      <button class="perfect" onclick="rate('Perfect')">⭐</button>
+<main class="app">
+  <header>
+    <div class="brand">
+      <h1>ClueLab</h1>
+      <span>experimental review mode</span>
     </div>
+    <div class="badge" id="status">Loading</div>
+  </header>
 
-    <textarea id="note" placeholder="Note..."></textarea>
+  <section class="stats">
+    <div class="stat"><b id="leftCount">–</b><span>left</span></div>
+    <div class="stat"><b id="noCount">0</b><span>no</span></div>
+    <div class="stat"><b id="workshopCount">0</b><span>workshop</span></div>
+    <div class="stat"><b id="perfectCount">0</b><span>perfect</span></div>
+  </section>
+
+  <div class="progress"><div id="progressBar"></div></div>
+
+  <div class="controls">
+    <button class="chip" data-view="priority">Priority</button>
+    <button class="chip" data-view="all">All</button>
+    <button class="chip" data-view="stars">Stars</button>
+    <button class="chip" data-view="unnoted">No notes</button>
   </div>
-</div>
+
+  <input class="search" id="searchInput" placeholder="Search clue, answer or setter…">
+
+  <section class="main">
+    <article class="card" id="card">
+      <div class="clue">Loading…</div>
+    </article>
+
+    <aside class="panel">
+      <div class="actions">
+        <button class="action no" id="btnNo">Reject</button>
+        <button class="action workshop" id="btnWorkshop">Workshop</button>
+        <button class="action perfect" id="btnPerfect">Perfect</button>
+      </div>
+
+      <div class="tools">
+        <button class="tool" id="btnReveal">Reveal</button>
+        <button class="tool" id="btnSkip">Skip</button>
+        <button class="tool" id="btnUndo">Undo</button>
+      </div>
+
+      <textarea id="noteText" placeholder="Notes auto-save…"></textarea>
+
+      <div class="preview" id="preview"></div>
+    </aside>
+  </section>
+</main>
+
+<footer class="footer">
+  <button class="export" id="exportBtn">Download CSV</button>
+  <button class="reset" id="resetBtn">Reset</button>
+</footer>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
 
-let clues = [];
-let i = 0;
-let reveal = 0;
+const PROGRESS_KEY = "clueMatch_simple_v1";
+const VIEW_KEY = "cluelab_view";
+const STARS_KEY = "clueMatchSetterStars";
+const LAST_EXPORT_KEY = "cluesmash_lastExportedAt";
 
-function mask(a){
-  return a.replace(/[A-Za-z]/g,"█");
+const INITIAL_STARS = [
+  "Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps",
+  "Annie R","Arbel Feldman","Bill Lash","Billy Frank","Campbell H","Dan Heath",
+  "David Hassine","Dean Harding","Dr W","Eamonn S","Emily C","Ethan R","Eulerian",
+  "Gabriel K.","Gregory Lewis","Jack Porter","Jake Burrow","Jamie T","Jasel","Jay",
+  "JimbieP","Jo J","Johnny Quarrie","Kelly Hicks","Lucy","Martin","Nate Mizelle",
+  "Oren","Pete Bowdon","Peter Green","Phil McLean","Rob D","Ryan Gittins",
+  "Sam Mount (Kaldar)","Seivad","Stevie Reed","Tanner Burton","Tyler Hopp","Bluejay","hurblub"
+];
+
+let allClues = [];
+let queue = [];
+let currentIndex = 0;
+let revealState = 0;
+let history = [];
+
+let viewMode = localStorage.getItem(VIEW_KEY) || "priority";
+
+let progress = safeJSON(localStorage.getItem(PROGRESS_KEY), { byId:{} });
+if (!progress.byId) progress.byId = {};
+
+let setterStars = safeJSON(localStorage.getItem(STARS_KEY), {});
+
+const $ = id => document.getElementById(id);
+
+function safeJSON(s,f){
+  try { return JSON.parse(s || ""); }
+  catch { return f; }
 }
 
-function hintText(raw){
+function escapeHTML(s){
+  return String(s || "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+function writerKey(name){
+  return String(name || "").trim().toLowerCase().replace(/\s+/g," ");
+}
+
+function seedStars(){
+  let changed = false;
+  for (const name of INITIAL_STARS){
+    const key = writerKey(name);
+    if (key && !(key in setterStars)){
+      setterStars[key] = true;
+      changed = true;
+    }
+  }
+  if (changed) localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
+}
+
+function isStarSetter(name){
+  return !!setterStars[writerKey(name)];
+}
+
+function flash(text){
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),360);
+}
+
+function answerLetterCount(ans){
+  return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
+}
+
+function getEnum(ans){
+  const s = String(ans || "").trim();
+  if (!s) return "";
+  const parts = s.split(/\s+/).filter(Boolean).map(word =>
+    word.split("-").filter(Boolean).map(part =>
+      (part.match(/[A-Za-z]/g) || []).length
+    ).join("-")
+  );
+  return `(${parts.join(",")})`;
+}
+
+function getMask(ans){
+  return String(ans || "").replace(/[A-Za-z]/g,"█");
+}
+
+function getHintText(raw){
+  if (!raw) return "";
   try{
-    let p = JSON.parse(raw);
-    return p.map(x=>x.text).join("\n\n");
-  }catch{return raw;}
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)){
+      return parsed.map(h => h && h.text ? String(h.text).trim() : "")
+        .filter(Boolean)
+        .join("\n\n");
+    }
+  }catch{}
+  return String(raw).trim();
+}
+
+function getRevealOrder(ans){
+  const n = answerLetterCount(ans);
+  const orders = {
+    3:"2,1,0",
+    4:"2,1,0,3",
+    5:"2,1,0,3,4",
+    6:"2,1,5,0,3,4",
+    7:"2,1,5,0,3,6,4",
+    8:"7,2,1,5,0,3,6,4",
+    9:"7,2,1,5,8,0,3,6,4",
+    10:"7,9,2,1,5,8,0,3,6,4"
+  };
+  return orders[n] || "";
+}
+
+function answerHasOnlyLettersAndSpaces(ans){
+  return /^[A-Za-z ]+$/.test(String(ans || "").trim());
+}
+
+function applyHardFilters(){
+  for (const c of allClues){
+    if (c.Assessment) continue;
+    const n = answerLetterCount(c.Answer);
+
+    if (
+      c.Clue.length >= 80 ||
+      !answerHasOnlyLettersAndSpaces(c.Answer) ||
+      (n > 0 && n < 3) ||
+      n > 10
+    ){
+      c.Assessment = "Filtered";
+    }
+  }
+}
+
+async function fetchCSVText(){
+  const bust = `&_=${Date.now()}`;
+  const direct = `${SHEET_URL}${SHEET_URL.includes("?") ? "&" : "?"}${bust.replace(/^&/,"")}`;
+  const fall1 = "https://r.jina.ai/http://" + direct.replace(/^https?:\/\//,"");
+  const fall2 = "https://r.jina.ai/https://" + direct.replace(/^https?:\/\//,"");
+
+  const tries = [direct, fall2, fall1];
+
+  for (const url of tries){
+    try{
+      const res = await fetch(url, { cache:"no-store" });
+      const text = await res.text();
+      if (text && text.length > 20) return text;
+    }catch(e){}
+  }
+
+  throw new Error("Unable to fetch CSV");
 }
 
 async function load(){
-  let res = await fetch(SHEET_URL);
-  let txt = await res.text();
-  let data = Papa.parse(txt,{header:true}).data;
+  $("status").textContent = "Loading";
+  try{
+    const text = await fetchCSVText();
+    const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
 
-  clues = data.filter(x=>x.clue && x.answer);
-  show();
+    allClues = (parsed.data || []).map(r => {
+      const id = String(r.id || r.Id || r.ID || "").trim();
+      const saved = progress.byId[id] || {};
+
+      return {
+        Id: id,
+        Clue: String(r.clue || r.Clue || "").trim(),
+        Answer: String(r.answer || r.Answer || "").trim(),
+        Writer: String(r.setter_name || r.Writer || r.setter || "").trim(),
+        Hints: String(r.hints || r.Hints || "").trim(),
+        CreatorUserId: String(r.creator_user_id || r.CreatorUserId || r["Creator User ID"] || "").trim(),
+        SetterSocialHandles: String(r.setter_social_handles || r["Social Handles"] || r.social_handles || "").trim(),
+        WorkshopCirclePostUrl: String(r.workshop_circle_post_url || r["Play Link"] || r.play_link || "").trim(),
+        Assessment: String(saved.Assessment || "").trim(),
+        Note: String(saved.Note || "").trim(),
+        UpdatedAt: Number(saved.UpdatedAt || 0) || 0
+      };
+    }).filter(c => c.Id && c.Clue && c.Answer);
+
+    applyHardFilters();
+    rebuildQueue();
+    render();
+    $("status").textContent = `${allClues.length} loaded`;
+  }catch(e){
+    console.error(e);
+    $("card").innerHTML = `
+      <div class="meta"><span>Error</span></div>
+      <div class="clue">Could not load clues.</div>
+      <button class="answer show" onclick="load()">Tap to retry</button>
+    `;
+    $("status").textContent = "Load error";
+  }
 }
 
-function show(){
-  let c = clues[i];
-  document.querySelector(".clue").innerText = c.clue;
-  document.getElementById("answer").innerText = mask(c.answer);
-  document.getElementById("note").value = "";
-  reveal = 0;
+function score(c){
+  let s = 0;
+  if (isStarSetter(c.Writer)) s += 10000;
+  if (!c.Note) s += 180;
+  if (c.Clue.length < 55) s += 80;
+  if (c.Clue.length > 68) s -= 60;
+  s += Math.max(0, 10 - answerLetterCount(c.Answer));
+  return s;
 }
 
-document.getElementById("answer").onclick = ()=>{
-  let c = clues[i];
+function rebuildQueue(){
+  const search = $("searchInput").value.trim().toLowerCase();
 
-  if(reveal===0 && c.hints){
-    document.getElementById("answer").className="answer hint";
-    document.getElementById("answer").innerText = hintText(c.hints);
-    reveal=1;
-  }
-  else if(reveal<2){
-    document.getElementById("answer").className="answer show";
-    document.getElementById("answer").innerText = c.answer;
-    reveal=2;
-  }
-  else{
-    document.getElementById("answer").className="answer";
-    document.getElementById("answer").innerText = mask(c.answer);
-    reveal=0;
-  }
-};
+  queue = allClues.filter(c => !c.Assessment).filter(c => {
+    if (viewMode === "stars" && !isStarSetter(c.Writer)) return false;
+    if (viewMode === "unnoted" && c.Note) return false;
 
-function rate(type){
-  i++;
-  if(i>=clues.length) i=0;
-  show();
+    if (search){
+      const haystack = `${c.Clue} ${c.Answer} ${c.Writer}`.toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+
+    return true;
+  });
+
+  if (viewMode === "priority"){
+    queue.sort((a,b) => score(b) - score(a));
+  }
+
+  currentIndex = Math.min(currentIndex, Math.max(0, queue.length - 1));
+  revealState = 0;
+  syncViewButtons();
+  updateStats();
 }
 
+function current(){
+  return queue[currentIndex];
+}
+
+function render(){
+  updateStats();
+  renderPreview();
+
+  const c = current();
+
+  if (!c){
+    $("card").innerHTML = `
+      <div class="meta"><span>Queue empty</span></div>
+      <div class="clue">No clues left in this view.</div>
+      <button class="answer show" onclick="setView('all')">Show all</button>
+    `;
+    $("noteText").value = "";
+    return;
+  }
+
+  $("noteText").value = c.Note || "";
+
+  $("card").innerHTML = `
+    <div class="meta">
+      <span>${currentIndex + 1} / ${queue.length}</span>
+      <span>${answerLetterCount(c.Answer)} letters</span>
+    </div>
+
+    <div class="clue">
+      ${escapeHTML(c.Clue)}
+      <span class="enum">${escapeHTML(getEnum(c.Answer))}</span>
+    </div>
+
+    <button class="answer" id="answerBtn">${escapeHTML(getMask(c.Answer))}</button>
+
+    <div class="writer">
+      <span>${escapeHTML(c.Writer || "Unknown setter")}</span>
+      <span>${isStarSetter(c.Writer) ? "★ Starred" : "☆ Not starred"}</span>
+    </div>
+  `;
+
+  $("answerBtn").onclick = revealNext;
+}
+
+function revealNext(){
+  const c = current();
+  if (!c) return;
+
+  const btn = $("answerBtn");
+  const hint = getHintText(c.Hints);
+
+  if (revealState === 0 && hint){
+    btn.className = "answer hint";
+    btn.textContent = hint;
+    revealState = 1;
+  } else if (revealState < 2){
+    btn.className = "answer show";
+    btn.textContent = c.Answer;
+    revealState = 2;
+  } else {
+    btn.className = "answer";
+    btn.textContent = getMask(c.Answer);
+    revealState = 0;
+  }
+}
+
+function saveCurrentNote(){
+  const c = current();
+  if (!c) return;
+
+  const text = $("noteText").value || "";
+  if (text === c.Note) return;
+
+  c.Note = text;
+  c.UpdatedAt = Date.now();
+
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
+  progress.byId[c.Id].Note = c.Note;
+  progress.byId[c.Id].UpdatedAt = c.UpdatedAt;
+
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+}
+
+function record(value){
+  const c = current();
+  if (!c) return;
+
+  saveCurrentNote();
+
+  c.Assessment = value;
+  c.UpdatedAt = Date.now();
+
+  progress.byId[c.Id] = {
+    Assessment: value,
+    Note: c.Note || "",
+    UpdatedAt: c.UpdatedAt
+  };
+
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  history.push(c.Id);
+  flash(value === "No" ? "×" : value === "Workshop" ? "?" : "✓");
+
+  rebuildQueue();
+  render();
+}
+
+function skip(){
+  if (!queue.length) return;
+  currentIndex = (currentIndex + 1) % queue.length;
+  render();
+}
+
+function undo(){
+  const id = history.pop();
+  if (!id) return;
+
+  const c = allClues.find(x => x.Id === id);
+  if (c){
+    c.Assessment = "";
+    c.UpdatedAt = 0;
+  }
+
+  if (progress.byId[id]){
+    delete progress.byId[id].Assessment;
+    delete progress.byId[id].UpdatedAt;
+    if (!progress.byId[id].Note) delete progress.byId[id];
+  }
+
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+
+  rebuildQueue();
+  render();
+  flash("↩");
+}
+
+function updateStats(){
+  const counts = { No:0, Workshop:0, Perfect:0 };
+
+  allClues.forEach(c => {
+    if (counts[c.Assessment] !== undefined) counts[c.Assessment]++;
+  });
+
+  $("leftCount").textContent = queue.length;
+  $("noCount").textContent = counts.No;
+  $("workshopCount").textContent = counts.Workshop;
+  $("perfectCount").textContent = counts.Perfect;
+
+  const total = allClues.length || 1;
+  const done = total - queue.length;
+  $("progressBar").style.width = Math.max(0, Math.min(100, done / total * 100)) + "%";
+}
+
+function syncViewButtons(){
+  document.querySelectorAll(".chip[data-view]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.view === viewMode);
+  });
+}
+
+function renderPreview(){
+  const box = $("preview");
+  box.innerHTML = "";
+
+  queue.slice(currentIndex + 1, currentIndex + 4).forEach(c => {
+    const div = document.createElement("div");
+    div.className = "mini";
+    div.innerHTML = `
+      <b>${escapeHTML(c.Writer || "Unknown")}</b>
+      ${escapeHTML(c.Clue.slice(0, 90))}${c.Clue.length > 90 ? "…" : ""}
+    `;
+    box.appendChild(div);
+  });
+}
+
+function setView(view){
+  saveCurrentNote();
+  viewMode = view;
+  localStorage.setItem(VIEW_KEY, viewMode);
+  currentIndex = 0;
+  rebuildQueue();
+  render();
+}
+
+function exportCSV(){
+  saveCurrentNote();
+
+  const choice = prompt(
+    "Export options:\n\nPress Enter for NEW (since last export)\nType ASSESSED for all assessed (includes Filtered)\nType ALL for everything",
+    ""
+  );
+
+  const raw = String(choice || "").trim().toLowerCase();
+  const mode = raw === "all" ? "all" : raw === "assessed" ? "assessed" : "new";
+  const lastExportedAt = Number(localStorage.getItem(LAST_EXPORT_KEY) || 0) || 0;
+
+  let source;
+  if (mode === "all"){
+    source = allClues;
+  } else if (mode === "assessed"){
+    source = allClues.filter(c => c.Assessment || c.Note);
+  } else {
+    source = allClues.filter(c => Number(c.UpdatedAt || 0) > lastExportedAt);
+  }
+
+  const rows = source.map(c => ({
+    clue_text: `${c.Clue} ${getEnum(c.Answer)}`,
+    answer: c.Answer,
+    letter_reveal_order: getRevealOrder(c.Answer),
+    hints: c.Hints,
+    creator_user_id: c.CreatorUserId,
+    setter_name: c.Writer,
+    setter_social_handles: c.SetterSocialHandles,
+    parent_clue_id: c.Id,
+    workshop_circle_post_url: c.WorkshopCirclePostUrl,
+    assessment: c.Assessment,
+    note: c.Note
+  }));
+
+  const csv = Papa.unparse(rows);
+  const blob = new Blob(["\ufeff" + csv], { type:"text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:]/g,"").slice(0,15);
+
+  a.href = URL.createObjectURL(blob);
+  a.download = `clues_${mode}_${stamp}.csv`;
+  a.click();
+
+  if (mode === "new"){
+    localStorage.setItem(LAST_EXPORT_KEY, String(Date.now()));
+  }
+}
+
+function resetProgress(){
+  if (!confirm("Reset assessments and notes? Stars stay.")) return;
+
+  localStorage.removeItem(PROGRESS_KEY);
+  localStorage.removeItem(LAST_EXPORT_KEY);
+
+  progress = { byId:{} };
+
+  allClues.forEach(c => {
+    c.Assessment = "";
+    c.Note = "";
+    c.UpdatedAt = 0;
+  });
+
+  applyHardFilters();
+  rebuildQueue();
+  render();
+}
+
+$("btnNo").onclick = () => record("No");
+$("btnWorkshop").onclick = () => record("Workshop");
+$("btnPerfect").onclick = () => record("Perfect");
+$("btnReveal").onclick = revealNext;
+$("btnSkip").onclick = skip;
+$("btnUndo").onclick = undo;
+$("exportBtn").onclick = exportCSV;
+$("resetBtn").onclick = resetProgress;
+
+$("noteText").addEventListener("blur", saveCurrentNote);
+
+$("searchInput").addEventListener("input", () => {
+  currentIndex = 0;
+  rebuildQueue();
+  render();
+});
+
+document.querySelectorAll(".chip[data-view]").forEach(btn => {
+  btn.onclick = () => setView(btn.dataset.view);
+});
+
+document.addEventListener("keydown", e => {
+  if (["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) return;
+
+  if (e.key === "1") record("No");
+  if (e.key === "2") record("Workshop");
+  if (e.key === "3") record("Perfect");
+
+  if (e.key === " "){
+    e.preventDefault();
+    revealNext();
+  }
+
+  if (e.key === "ArrowRight") skip();
+  if (e.key.toLowerCase() === "u") undo();
+});
+
+seedStars();
 load();
 </script>
-
 </body>
 </html>
