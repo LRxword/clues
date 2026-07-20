@@ -79,6 +79,8 @@
     color: #000;
     border: 2px solid #000;
     box-shadow: 4px 4px 0 #000;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
   }
 
   .tab.active {
@@ -231,6 +233,12 @@
   .emoji-btn {
     cursor: pointer;
     text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+
+  #btnWorkshop,
+  .tab[data-view="stars"] {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
   }
 
   /* Workshop long-press menu */
@@ -1193,6 +1201,15 @@ function saveProgressForClue(c) {
   );
 }
 
+function rememberForUndo(c) {
+  history.push({
+    Id: c.Id,
+    Assessment: c.Assessment || "",
+    Note: c.Note || "",
+    UpdatedAt: c.UpdatedAt || 0
+  });
+}
+
 function record(val) {
   if (!queue[currentIndex]) {
     return;
@@ -1201,12 +1218,12 @@ function record(val) {
   const c = queue[currentIndex];
   const now = Date.now();
 
+  rememberForUndo(c);
+
   c.Assessment = val;
   c.UpdatedAt = now;
 
   saveProgressForClue(c);
-
-  history.push(c.Id);
 
   rebuildQueue();
   render();
@@ -1246,6 +1263,8 @@ function recordWorkshopWithNote(noteLabel) {
   const c = queue[currentIndex];
   const now = Date.now();
 
+  rememberForUndo(c);
+
   c.Assessment = "Workshop";
   c.Note = appendWorkshopNote(
     c.Note,
@@ -1255,41 +1274,38 @@ function recordWorkshopWithNote(noteLabel) {
 
   saveProgressForClue(c);
 
-  history.push(c.Id);
-
   rebuildQueue();
   render();
 }
 
 function undo() {
-  const lastId = history.pop();
+  const previous = history.pop();
 
-  if (!lastId) {
+  if (!previous) {
     return;
   }
 
-  const master = allClues.find(x => {
-    return x.Id === lastId;
-  });
+  const master = allClues.find(x => x.Id === previous.Id);
 
-  if (master) {
-    master.Assessment = "";
-    master.UpdatedAt = 0;
+  if (!master) {
+    return;
   }
 
-  if (progress.byId[lastId]) {
-    delete progress.byId[lastId].Assessment;
-    delete progress.byId[lastId].UpdatedAt;
+  master.Assessment = previous.Assessment;
+  master.Note = previous.Note;
+  master.UpdatedAt = previous.UpdatedAt;
 
-    if (!progress.byId[lastId].Note) {
-      delete progress.byId[lastId];
-    }
+  if (!previous.Assessment && !previous.Note && !previous.UpdatedAt) {
+    delete progress.byId[previous.Id];
+  } else {
+    progress.byId[previous.Id] = {
+      Assessment: previous.Assessment,
+      Note: previous.Note,
+      UpdatedAt: previous.UpdatedAt
+    };
   }
 
-  localStorage.setItem(
-    PROGRESS_KEY,
-    JSON.stringify(progress)
-  );
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
   rebuildQueue();
   render();
@@ -1322,26 +1338,35 @@ function chooseWorkshopOption(noteLabel) {
   });
 }
 
-const workshopHammer =
-  new Hammer(
-    document.getElementById("btnWorkshop")
-  );
+const workshopButton =
+  document.getElementById("btnWorkshop");
 
-workshopHammer.add(
-  new Hammer.Press({
-    time: 450
-  })
-);
+let workshopPressTimer = null;
+let workshopPressActive = false;
 
-workshopHammer.on("press", () => {
-  suppressWorkshopClick = true;
-  buzz(12);
-  openWorkshopMenu();
+function startWorkshopLongPress() {
+  workshopPressActive = true;
+  clearTimeout(workshopPressTimer);
 
-  setTimeout(() => {
-    suppressWorkshopClick = false;
-  }, 500);
-});
+  workshopPressTimer = setTimeout(() => {
+    if (!workshopPressActive) return;
+
+    suppressWorkshopClick = true;
+    buzz(12);
+    openWorkshopMenu();
+  }, 450);
+}
+
+function cancelWorkshopLongPress() {
+  workshopPressActive = false;
+  clearTimeout(workshopPressTimer);
+  workshopPressTimer = null;
+}
+
+workshopButton.addEventListener("pointerdown", startWorkshopLongPress);
+workshopButton.addEventListener("pointerup", cancelWorkshopLongPress);
+workshopButton.addEventListener("pointercancel", cancelWorkshopLongPress);
+workshopButton.addEventListener("pointerleave", cancelWorkshopLongPress);
 
 document
   .getElementById("workshopDefinition")
@@ -1512,25 +1537,32 @@ const starsTab = document.querySelector(
 );
 
 let suppressStarsTabClick = false;
+let starsPressTimer = null;
+let starsPressActive = false;
 
-const starsTabHammer =
-  new Hammer(starsTab);
+function startStarsLongPress() {
+  starsPressActive = true;
+  clearTimeout(starsPressTimer);
 
-starsTabHammer.add(
-  new Hammer.Press({
-    time: 450
-  })
-);
+  starsPressTimer = setTimeout(() => {
+    if (!starsPressActive) return;
 
-starsTabHammer.on("press", () => {
-  suppressStarsTabClick = true;
-  buzz(12);
-  openStarManager();
+    suppressStarsTabClick = true;
+    buzz(12);
+    openStarManager();
+  }, 450);
+}
 
-  setTimeout(() => {
-    suppressStarsTabClick = false;
-  }, 500);
-});
+function cancelStarsLongPress() {
+  starsPressActive = false;
+  clearTimeout(starsPressTimer);
+  starsPressTimer = null;
+}
+
+starsTab.addEventListener("pointerdown", startStarsLongPress);
+starsTab.addEventListener("pointerup", cancelStarsLongPress);
+starsTab.addEventListener("pointercancel", cancelStarsLongPress);
+starsTab.addEventListener("pointerleave", cancelStarsLongPress);
 
 /* ===================== EXPORT ===================== */
 function exportCSV() {
@@ -1936,6 +1968,7 @@ document
   .getElementById("btnWorkshop")
   .addEventListener("click", event => {
     if (suppressWorkshopClick) {
+      suppressWorkshopClick = false;
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -2003,6 +2036,7 @@ document
         tab.dataset.view === "stars" &&
         suppressStarsTabClick
       ) {
+        suppressStarsTabClick = false;
         event.preventDefault();
         event.stopPropagation();
         return;
