@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -7,12 +8,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 
 <!-- iOS Web App Settings -->
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="cluesmash">
 <link rel="apple-touch-icon" href="icon.png">
 
 <!-- Embedded Manifest -->
+
 <link rel="manifest" href='data:application/manifest+json,{
   "name":"cluesmash",
   "short_name":"cluesmash",
@@ -31,7 +34,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://hammerjs.github.io/dist/hammer.min.js"></script>
-
 <style>
   /* Base */
   body {
@@ -47,206 +49,40 @@
     user-select: none;
     overflow-x: hidden;
   }
+  body.modal-open { position: fixed; width: 100%; overflow: hidden; }
 
-  body.modal-open {
-    position: fixed;
-    width: 100%;
-    overflow: hidden;
-  }
+#title-wrapper { margin-bottom: 0.5rem; }#title-wrapper img { height: 38px; }
 
-  #title-wrapper {
-    margin-bottom: 0.5rem;
-  }
+/* Tabs */#tabs { display: flex; gap: 0.75rem; margin-bottom: 0.6rem; }.tab {padding: 0.42rem 0.95rem;font-size: 0.95rem;font-weight: 700;border-radius: 18px;cursor: pointer;background: #fff;color: #000;border: 2px solid #000;box-shadow: 4px 4px 0 #000;}.tab.active { background: #fff2b3; }
 
-  #title-wrapper img {
-    height: 38px;
-  }
+/* Counts + progress */#assessmentCounts { font-size: 1rem; margin-bottom: 0.35rem; color: #222; }#progress {width: 90vw; max-width: 460px; height: 5px;background: rgba(255,255,255,0.35);border-radius: 999px;overflow: hidden;}#progressBar { height: 100%; width: 0%; background: #ffe6e6; transition: width 0.25s ease; }#progressCount { font-size: 1.05rem; margin: 0.65rem 0 0.95rem; color: #222; }
 
-  /* Tabs */
-  #tabs {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 0.6rem;
-  }
+/* Card */#card {background: white;color: #222;border: 3px solid #000;border-radius: 22px;padding: 1.55rem 1.35rem 1.65rem;font-size: 1.35rem;line-height: 1.55;box-shadow: 6px 6px 0 #000;text-align: center;width: 78vw;max-width: 360px;margin-bottom: 1.25rem;transition: transform 0.4s ease, opacity 0.4s ease;}#card.swipe-left  { transform: translateX(-150%) rotate(-20deg); opacity: 0; }#card.swipe-right { transform: translateX(150%) rotate(20deg); opacity: 0; }#card.swipe-down  { transform: translateY(150%) rotate(15deg); opacity: 0; }
 
-  .tab {
-    padding: 0.42rem 0.95rem;
-    font-size: 0.95rem;
-    font-weight: 700;
-    border-radius: 18px;
-    cursor: pointer;
-    background: #fff;
-    color: #000;
-    border: 2px solid #000;
-    box-shadow: 4px 4px 0 #000;
-    touch-action: manipulation;
-    -webkit-touch-callout: none;
-  }
+/* Pane spacing */.clueLine { margin: 0 0 1.2rem 0; font-weight: 400; }.answerLine { margin: 0 0 1.2rem 0; }
 
-  .tab.active {
-    background: #fff2b3;
-  }
+#writer {margin: 0;font-size: 1.05rem;color: #555;display: inline-flex;align-items: center;justify-content: center;gap: 0.45rem;}
 
-  /* Counts + progress */
-  #assessmentCounts {
-    font-size: 1rem;
-    margin-bottom: 0.35rem;
-    color: #222;
-  }
+/* Enumeration same font/size as clue */.enum {font: inherit;font-size: inherit;font-weight: 400;color: inherit;opacity: 0.95;white-space: nowrap;margin-left: 0.2rem;}
 
-  #progress {
-    width: 90vw;
-    max-width: 460px;
-    height: 5px;
-    background: rgba(255,255,255,0.35);
-    border-radius: 999px;
-    overflow: hidden;
-  }
+/* Answer / hint */#answer {cursor: pointer;padding: 0.45em 1.45em;border-radius: 12px;background: black;color: black;letter-spacing: 0.18em;display: inline-block;white-space: pre-wrap;font-size: 1.2rem;line-height: 1.4;}#answer.revealed { background: none; color: #222; letter-spacing: normal; }#answer.hintShown { background: #fff; color: #3366cc; letter-spacing: normal; }
 
-  #progressBar {
-    height: 100%;
-    width: 0%;
-    background: #ffe6e6;
-    transition: width 0.25s ease;
-  }
+/* Stars */.setterStar { font-size: 1.15rem; transform: translateY(1px); }.setterStar.starred { color: #f4c430; opacity: 1; }.setterStar.unstarred { color: #999; opacity: 0.35; }
 
-  #progressCount {
-    font-size: 1.05rem;
-    margin: 0.65rem 0 0.95rem;
-    color: #222;
-  }
+/* Emoji controls */#buttons { display: flex; gap: 2.4rem; font-size: 2.15rem; align-items: center; margin-bottom: 0.9rem; }.emoji-btn { cursor: pointer; text-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
 
-  /* Card */
-  #card {
-    background: white;
-    color: #222;
-    border: 3px solid #000;
-    border-radius: 22px;
-    padding: 1.55rem 1.35rem 1.65rem;
-    font-size: 1.35rem;
-    line-height: 1.55;
-    box-shadow: 6px 6px 0 #000;
-    text-align: center;
-    width: 78vw;
-    max-width: 360px;
-    margin-bottom: 1.25rem;
-    transition: transform 0.4s ease, opacity 0.4s ease;
-  }
+/* Bottom fixed buttons */#bottomButtons { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; z-index: 10; }#bottomButtons button {flex: 1;padding: 1rem;font-size: 1.05rem;font-weight: 700;color: white;border: none;cursor: pointer;}#exportBtn { background: #222; }#resetBtn { background: #e53935; }
 
-  #card.swipe-left {
-    transform: translateX(-150%) rotate(-20deg);
-    opacity: 0;
-  }
+/* Flash */#flashMessage {position: fixed;top: 40%;left: 50%;transform: translate(-50%, -50%);font-size: 4.6rem;opacity: 0;transition: opacity 0.25s ease, transform 0.25s ease;pointer-events: none;z-index: 999;}#flashMessage.show { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
 
-  #card.swipe-right {
-    transform: translateX(150%) rotate(20deg);
-    opacity: 0;
-  }
-
-  #card.swipe-down {
-    transform: translateY(150%) rotate(15deg);
-    opacity: 0;
-  }
-
-  /* Pane spacing */
-  .clueLine {
-    margin: 0 0 1.2rem 0;
-    font-weight: 400;
-  }
-
-  .answerLine {
-    margin: 0 0 1.2rem 0;
-  }
-
-  #writer {
-    margin: 0;
-    font-size: 1.05rem;
-    color: #555;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-  }
-
-  /* Enumeration same font/size as clue */
-  .enum {
-    font: inherit;
-    font-size: inherit;
-    font-weight: 400;
-    color: inherit;
-    opacity: 0.95;
-    white-space: nowrap;
-    margin-left: 0.2rem;
-  }
-
-  /* Answer / hint */
-  #answer {
-    cursor: pointer;
-    padding: 0.45em 1.45em;
-    border-radius: 12px;
-    background: black;
-    color: black;
-    letter-spacing: 0.18em;
-    display: inline-block;
-    white-space: pre-wrap;
-    font-size: 1.2rem;
-    line-height: 1.4;
-  }
-
-  #answer.revealed {
-    background: none;
-    color: #222;
-    letter-spacing: normal;
-  }
-
-  #answer.hintShown {
-    background: #fff;
-    color: #3366cc;
-    letter-spacing: normal;
-  }
-
-  /* Stars */
-  .setterStar {
-    font-size: 1.15rem;
-    transform: translateY(1px);
-  }
-
-  .setterStar.starred {
-    color: #f4c430;
-    opacity: 1;
-  }
-
-  .setterStar.unstarred {
-    color: #999;
-    opacity: 0.35;
-  }
-
-  /* Emoji controls */
-  #buttons {
-    display: flex;
-    gap: 2.4rem;
-    font-size: 2.15rem;
-    align-items: center;
-    margin-bottom: 0.9rem;
-  }
-
-  .emoji-btn {
-    cursor: pointer;
-    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-  }
-
-  #btnWorkshop,
-  .tab[data-view="stars"] {
-    touch-action: manipulation;
-    -webkit-touch-callout: none;
-  }
+/* Notes overlay */#noteOverlay {display: none;position: fixed;top: 18%;left: 50%;transform: translateX(-50%);width: 80%;max-width: 320px;background: white;color: #222;border-radius: 20px;padding: 1.2rem;box-shadow: 0 10px 25px rgba(0,0,0,0.3);z-index: 1000;border: 3px solid #000;}#noteText {width: 92%;height: 110px;font-size: 1.1rem;padding: 0.6rem;border: 2px solid #000;border-radius: 10px;resize: none;font-family: inherit;}#noteOverlay button {margin-top: 0.85rem;width: 100%;padding: 0.7rem;background: #222;color: #fff;border: none;border-radius: 10px;font-weight: 700;cursor: pointer;}
 
   /* Workshop long-press menu */
   #workshopMenu {
     display: none;
     position: fixed;
     left: 50%;
-    bottom: 6.3rem;
+    bottom: 6.4rem;
     transform: translateX(-50%);
     width: min(82vw, 320px);
     padding: 0.8rem;
@@ -257,11 +93,7 @@
     box-shadow: 6px 6px 0 #000;
     z-index: 1200;
   }
-
-  #workshopMenu.show {
-    display: block;
-  }
-
+  #workshopMenu.show { display: block; }
   .workshop-option {
     width: 100%;
     box-sizing: border-box;
@@ -269,7 +101,6 @@
     align-items: center;
     gap: 0.8rem;
     padding: 0.85rem 1rem;
-    margin: 0;
     background: white;
     color: #222;
     border: none;
@@ -280,112 +111,11 @@
     text-align: left;
     cursor: pointer;
   }
+  .workshop-option + .workshop-option { margin-top: 0.35rem; }
+  .workshop-option:active { background: #fff2b3; }
+  .workshop-symbol { width: 2rem; font-size: 1.45rem; text-align: center; }
 
-  .workshop-option + .workshop-option {
-    margin-top: 0.35rem;
-  }
-
-  .workshop-option:hover,
-  .workshop-option:active {
-    background: #fff2b3;
-  }
-
-  .workshop-symbol {
-    width: 2rem;
-    font-size: 1.45rem;
-    text-align: center;
-  }
-
-  /* Bottom fixed buttons */
-  #bottomButtons {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    z-index: 10;
-  }
-
-  #bottomButtons button {
-    flex: 1;
-    padding: 1rem;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-
-  #exportBtn {
-    background: #222;
-  }
-
-  #resetBtn {
-    background: #e53935;
-  }
-
-  /* Flash */
-  #flashMessage {
-    position: fixed;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4.6rem;
-    opacity: 0;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    pointer-events: none;
-    z-index: 999;
-  }
-
-  #flashMessage.show {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.15);
-  }
-
-  /* Notes overlay */
-  #noteOverlay {
-    display: none;
-    position: fixed;
-    top: 18%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 320px;
-    background: white;
-    color: #222;
-    border-radius: 20px;
-    padding: 1.2rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    z-index: 1300;
-    border: 3px solid #000;
-  }
-
-  #noteText {
-    box-sizing: border-box;
-    width: 100%;
-    height: 110px;
-    font-size: 1.1rem;
-    padding: 0.6rem;
-    border: 2px solid #000;
-    border-radius: 10px;
-    resize: none;
-    font-family: inherit;
-    user-select: text;
-  }
-
-  #noteOverlay button {
-    margin-top: 0.85rem;
-    width: 100%;
-    padding: 0.7rem;
-    background: #222;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  /* Star manager */
+  /* Star setter manager */
   #starManagerOverlay {
     display: none;
     position: fixed;
@@ -397,11 +127,7 @@
     align-items: center;
     justify-content: center;
   }
-
-  #starManagerOverlay.show {
-    display: flex;
-  }
-
+  #starManagerOverlay.show { display: flex; }
   #starManagerPanel {
     width: min(92vw, 420px);
     max-height: 82dvh;
@@ -414,7 +140,6 @@
     box-shadow: 7px 7px 0 #000;
     overflow: hidden;
   }
-
   #starManagerHeader {
     display: flex;
     align-items: center;
@@ -422,12 +147,7 @@
     gap: 1rem;
     padding: 1rem 1rem 0.7rem;
   }
-
-  #starManagerTitle {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
+  #starManagerTitle { margin: 0; font-size: 1.25rem; }
   #starManagerClose {
     width: 2.2rem;
     height: 2.2rem;
@@ -441,7 +161,6 @@
     font-weight: 700;
     cursor: pointer;
   }
-
   #starSearch {
     box-sizing: border-box;
     width: calc(100% - 2rem);
@@ -453,13 +172,11 @@
     font-size: 1rem;
     user-select: text;
   }
-
   #starSetterList {
     overflow-y: auto;
     padding: 0 0.75rem 1rem;
     -webkit-overflow-scrolling: touch;
   }
-
   .star-manager-row {
     width: 100%;
     box-sizing: border-box;
@@ -477,60 +194,33 @@
     text-align: left;
     cursor: pointer;
   }
-
-  .star-manager-row:last-child {
-    border-bottom: none;
-  }
-
-  .star-manager-row:active {
-    background: #fff2b3;
-  }
-
-  .star-manager-name {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .star-manager-icon {
-    flex: 0 0 auto;
-    font-size: 1.35rem;
-  }
-
-  .star-manager-icon.starred {
-    color: #f4c430;
-  }
-
-  .star-manager-icon.unstarred {
-    color: #999;
-    opacity: 0.35;
-  }
-
+  .star-manager-row:last-child { border-bottom: none; }
+  .star-manager-row:active { background: #fff2b3; }
+  .star-manager-name { min-width: 0; overflow-wrap: anywhere; }
+  .star-manager-icon { flex: 0 0 auto; font-size: 1.35rem; }
+  .star-manager-icon.starred { color: #f4c430; }
+  .star-manager-icon.unstarred { color: #999; opacity: 0.35; }
   #starManagerEmpty {
     display: none;
     padding: 1.2rem;
     text-align: center;
     color: #666;
   }
+
 </style>
+
 </head>
 
 <body>
-
-<div id="title-wrapper">
-  <img src="https://i.imgur.com/3cTvC1h.png" alt="logo">
-</div>
+<div id="title-wrapper"><img src="https://i.imgur.com/3cTvC1h.png" alt="logo"></div>
 
 <div id="tabs">
   <div class="tab" data-view="all">All</div>
-  <div class="tab" data-view="stars" title="Long-press to manage starred setters">Stars</div>
+  <div class="tab" data-view="stars">Stars</div>
 </div>
 
 <div id="assessmentCounts">No: 0 | Workshop: 0 | Perfect: 0</div>
-
-<div id="progress">
-  <div id="progressBar"></div>
-</div>
-
+<div id="progress"><div id="progressBar"></div></div>
 <div id="progressCount"></div>
 <div id="flashMessage"></div>
 
@@ -538,28 +228,35 @@
 
 <div id="buttons">
   <span class="emoji-btn" id="btnNo" aria-label="No">❌</span>
-  <span
-    class="emoji-btn"
-    id="btnWorkshop"
-    aria-label="Workshop"
-    title="Tap for Workshop. Long-press for Definition or Wordplay."
-  >💡</span>
+  <span class="emoji-btn" id="btnWorkshop" aria-label="Workshop">💡</span>
   <span class="emoji-btn" id="btnPerfect" aria-label="Perfect">⭐</span>
   <span class="emoji-btn" id="btnNote" aria-label="Note">✏️</span>
   <span class="emoji-btn" id="btnUndo" aria-label="Undo">↩️</span>
 </div>
 
-<!-- Workshop long-press choices -->
+
+
 <div id="workshopMenu" role="menu" aria-label="Workshop options">
   <button class="workshop-option" id="workshopDefinition" type="button">
     <span class="workshop-symbol">📖</span>
     <span>Definition</span>
   </button>
-
   <button class="workshop-option" id="workshopWordplay" type="button">
     <span class="workshop-symbol">🧩</span>
     <span>Wordplay</span>
   </button>
+</div>
+
+<div id="starManagerOverlay" aria-hidden="true">
+  <div id="starManagerPanel" role="dialog" aria-modal="true" aria-labelledby="starManagerTitle">
+    <div id="starManagerHeader">
+      <h2 id="starManagerTitle">Star setters</h2>
+      <button id="starManagerClose" type="button" aria-label="Close">×</button>
+    </div>
+    <input id="starSearch" type="search" placeholder="Search setters…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="starSetterList"></div>
+    <div id="starManagerEmpty">No matching setters.</div>
+  </div>
 </div>
 
 <div id="bottomButtons">
@@ -572,28 +269,6 @@
   <button id="noteSaveBtn">Save</button>
 </div>
 
-<!-- Star setter manager -->
-<div id="starManagerOverlay" aria-hidden="true">
-  <div id="starManagerPanel" role="dialog" aria-modal="true" aria-labelledby="starManagerTitle">
-    <div id="starManagerHeader">
-      <h2 id="starManagerTitle">Star setters</h2>
-      <button id="starManagerClose" type="button" aria-label="Close">×</button>
-    </div>
-
-    <input
-      id="starSearch"
-      type="search"
-      placeholder="Search setters…"
-      autocomplete="off"
-      autocapitalize="off"
-      spellcheck="false"
-    >
-
-    <div id="starSetterList"></div>
-    <div id="starManagerEmpty">No matching setters.</div>
-  </div>
-</div>
-
 <script>
 /* ===================== CONFIG ===================== */
 const SHEET_URL =
@@ -604,94 +279,7 @@ const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchSetterStars";
 const LAST_EXPORT_KEY = "cluesmash_lastExportedAt";
 
-const INITIAL_STARS = [
-  "Adam Boyd",
-  "Adrian Paris",
-  "Adrián París",
-  "Alex Ritter",
-  "Amanda C",
-  "Andrew Phelps",
-  "Annie R",
-  "Arbel Feldman",
-  "Ayylexis",
-  "B N Z",
-  "Bill Lash",
-  "Billy Frank",
-  "CactusKex",
-  "Campbell H",
-  "Campsite",
-  "Cole Baron",
-  "Dan Heath",
-  "David Hassine",
-  "Dean Harding",
-  "Doug Thompson",
-  "Dr W",
-  "Dr_H",
-  "Eamonn S",
-  "Emilia D",
-  "Emily C",
-  "Ethan R",
-  "Eulerian",
-  "Felix H :)",
-  "Gabriel K.",
-  "Gregory Lewis",
-  "hattie",
-  "hevorius",
-  "HFGO",
-  "Holypeanut",
-  "Jack Porter",
-  "jaimen",
-  "Jake Burrow",
-  "James & Ollie",
-  "Jamie T",
-  "Jasel",
-  "Jay",
-  "JimbieP",
-  "Jo J",
-  "Jo O",
-  "Jody O",
-  "Johnny Quarrie",
-  "jojo!",
-  "jvsn89",
-  "Kelly Hicks",
-  "Lee Hoe",
-  "Lucy",
-  "Luminoid",
-  "Martin",
-  "Mattasdqwe",
-  "mattLOLd",
-  "maya00",
-  "mayasibul00",
-  "NatalyBenderskyShalem",
-  "Nate Mizelle",
-  "NateMiz",
-  "Nixfriarr",
-  "null",
-  "Óin Stoch",
-  "Oren",
-  "Pete Bowdon",
-  "Pete Craw",
-  "Peter Green",
-  "Phil McLean",
-  "Rob D",
-  "Rusty",
-  "Ryan Gittins",
-  "saintmark_w",
-  "Sam Mount (Kaldar)",
-  "Schrödie’s Cat",
-  "Seivad",
-  "sngpretzel",
-  "Stevie Reed",
-  "Supware",
-  "Tanner Burton",
-  "That Observer",
-  "Tyler Hopp",
-  "Tyr",
-  "vaughn",
-  "ventimony",
-  "Bluejay",
-  "hurblub"
-];
+const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
 
 /* ===================== STATE ===================== */
 let allClues = [];
@@ -701,30 +289,14 @@ let currentIndex = 0;
 let viewMode = localStorage.getItem(VIEW_KEY) || "all";
 
 let progress = {};
-try {
-  progress = JSON.parse(
-    localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}'
-  );
-} catch {
-  progress = { byId: {} };
-}
-
-if (!progress.byId) {
-  progress.byId = {};
-}
+try { progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{"byId":{}}'); }
+catch { progress = { byId:{} }; }
+if (!progress.byId) progress.byId = {};
 
 let setterStars = {};
-try {
-  setterStars = JSON.parse(
-    localStorage.getItem(STARS_KEY) || "{}"
-  );
-} catch {
-  setterStars = {};
-}
-
-if (!setterStars || typeof setterStars !== "object") {
-  setterStars = {};
-}
+try { setterStars = JSON.parse(localStorage.getItem(STARS_KEY) || "{}"); }
+catch { setterStars = {}; }
+if (!setterStars || typeof setterStars !== "object") setterStars = {};
 
 const history = [];
 
@@ -735,125 +307,77 @@ const flash = document.getElementById("flashMessage");
 const assessmentCounts = document.getElementById("assessmentCounts");
 const progressBar = document.getElementById("progressBar");
 const progressCount = document.getElementById("progressCount");
-
 const workshopMenu = document.getElementById("workshopMenu");
-
 const starManagerOverlay = document.getElementById("starManagerOverlay");
 const starSetterList = document.getElementById("starSetterList");
 const starManagerEmpty = document.getElementById("starManagerEmpty");
 const starSearch = document.getElementById("starSearch");
 
-/* ===================== GENERAL HELPERS ===================== */
-function buzz(ms = 20) {
-  if (navigator.vibrate) {
-    navigator.vibrate(ms);
-  }
-}
-
-function flashEmoji(e) {
+function buzz(ms=20){ if (navigator.vibrate) navigator.vibrate(ms); }
+function flashEmoji(e){
   flash.textContent = e;
   flash.classList.add("show");
-
-  setTimeout(() => {
-    flash.classList.remove("show");
-  }, 450);
+  setTimeout(()=>flash.classList.remove("show"), 450);
 }
 
-function writerKey(name) {
-  return String(name || "")
-    .normalize("NFKC")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
+function writerKey(name){
+  return String(name||"").normalize("NFKC").trim().toLowerCase().replace(/\s+/g,' ');
 }
 
-/* ===================== SETTER STARS ===================== */
-/* Adds initial stars only when a key does not already exist.
-   A saved false value therefore remains false. */
-(function seedStarsOnce() {
+/* Seed stars once (only adds missing keys) */
+(function seedStarsOnce(){
   let changed = false;
-
-  for (const n of INITIAL_STARS) {
+  for (const n of INITIAL_STARS){
     const k = writerKey(n);
-
-    if (k && !(k in setterStars)) {
+    if (k && !(k in setterStars)){
       setterStars[k] = true;
       changed = true;
     }
   }
-
-  if (changed) {
-    localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
-  }
+  if (changed) localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
 })();
 
-function isStarSetter(name) {
+function isStarSetter(name){
   return !!setterStars[writerKey(name)];
 }
-
-function toggleStarSetter(name) {
+function toggleStarSetter(name){
   const k = writerKey(name);
-
-  if (!k) {
-    return false;
-  }
-
+  if (!k) return false;
   setterStars[k] = !setterStars[k];
   localStorage.setItem(STARS_KEY, JSON.stringify(setterStars));
-
   return setterStars[k];
 }
 
-/* ===================== ENUMERATION / ANSWER HELPERS ===================== */
-function getEnum(ans) {
-  const s = String(ans || "").trim();
-
-  if (!s) {
-    return "";
-  }
-
-  const parts = s
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(word => {
-      const hyphenatedParts = word
-        .split("-")
-        .filter(Boolean)
-        .map(part => {
-          return (part.match(/[A-Za-z]/g) || []).length;
-        });
-
-      return hyphenatedParts.join("-");
-    });
-
-  return parts.length ? `(${parts.join(",")})` : "";
+/* Enumeration from answer incl hyphens (6-2-3) */
+function getEnum(ans){
+  const s = String(ans||"").trim();
+  if (!s) return "";
+  const parts = s.split(/\s+/).filter(Boolean).map(word=>{
+    const hy = word.split('-').filter(Boolean).map(p => (p.match(/[A-Za-z]/g)||[]).length);
+    return hy.join('-');
+  });
+  return parts.length ? `(${parts.join(',')})` : "";
 }
 
-function getLetterCount(ans) {
-  const enumeration = getEnum(ans);
-  return enumeration ? enumeration.replace(/[()]/g, "") : "";
+function getLetterCount(ans){
+  const e = getEnum(ans);
+  return e ? e.replace(/[()]/g, "") : "";
 }
 
-function getAnswerMask(ans) {
+/* Correct-length answer mask */
+function getAnswerMask(ans){
   return String(ans || "").replace(/[A-Za-z]/g, "█");
 }
 
 /* Safe hint display */
-function getHintText(raw) {
-  if (!raw) {
-    return "";
-  }
+function getHintText(raw){
+  if (!raw) return "";
 
-  try {
+  try{
     const parsed = JSON.parse(raw);
-
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed)){
       return parsed
-        .map(h => {
-          return h && h.text
-            ? String(h.text).trim()
-            : "";
-        })
+        .map(h => h && h.text ? String(h.text).trim() : "")
         .filter(Boolean)
         .join("\n\n");
     }
@@ -863,66 +387,52 @@ function getHintText(raw) {
 }
 
 /* Reveal order for output */
-function getRevealOrder(ans) {
+function getRevealOrder(ans){
   const n = answerLetterCount(ans);
-
   const orders = {
-    3: "2,1,0",
-    4: "2,1,0,3",
-    5: "2,1,0,3,4",
-    6: "2,1,5,0,3,4",
-    7: "2,1,5,0,3,6,4",
-    8: "7,2,1,5,0,3,6,4",
-    9: "7,2,1,5,8,0,3,6,4",
+    3:  "2,1,0",
+    4:  "2,1,0,3",
+    5:  "2,1,0,3,4",
+    6:  "2,1,5,0,3,4",
+    7:  "2,1,5,0,3,6,4",
+    8:  "7,2,1,5,0,3,6,4",
+    9:  "7,2,1,5,8,0,3,6,4",
     10: "7,9,2,1,5,8,0,3,6,4"
   };
-
   return orders[n] || "";
 }
 
 /* ===================== HARD FILTERS ===================== */
-function answerLetterCount(ans) {
+function answerLetterCount(ans){
   return String(ans || "").match(/[A-Za-z]/g)?.length || 0;
 }
-
-function answerHasOnlyLettersAndSpaces(ans) {
-  return /^[A-Za-z ]+$/.test(
-    String(ans || "").trim()
-  );
+function answerHasOnlyLettersAndSpaces(ans){
+  return /^[A-Za-z ]+$/.test(String(ans || "").trim());
 }
-
-function applyHardFilters(list) {
-  for (const c of list) {
-    if (!c || c.Assessment) {
-      continue;
-    }
+function applyHardFilters(list){
+  for (const c of list){
+    if (!c || c.Assessment) continue;
 
     const clueText = String(c.Clue || "").trim();
-
-    if (clueText.length >= 80) {
+    if (clueText.length >= 80){
       c.Assessment = "Filtered";
       continue;
     }
 
     const ans = String(c.Answer || "").trim();
+    if (!ans) continue;
 
-    if (!ans) {
-      continue;
-    }
-
-    if (!answerHasOnlyLettersAndSpaces(ans)) {
+    if (!answerHasOnlyLettersAndSpaces(ans)){
       c.Assessment = "Filtered";
       continue;
     }
 
     const n = answerLetterCount(ans);
-
-    if (n > 0 && n < 3) {
+    if (n > 0 && n < 3){
       c.Assessment = "Filtered";
       continue;
     }
-
-    if (n > 10) {
+    if (n > 10){
       c.Assessment = "Filtered";
       continue;
     }
@@ -930,199 +440,103 @@ function applyHardFilters(list) {
 }
 
 /* ===================== DATA LOAD ===================== */
-async function fetchCSVText() {
+async function fetchCSVText(){
   const bust = `&_=${Date.now()}`;
-
-  const direct =
-    `${SHEET_URL}${SHEET_URL.includes("?") ? "&" : "?"}` +
-    `${bust.replace(/^&/, "")}`;
-
-  const fall1 =
-    "https://r.jina.ai/http://" +
-    direct.replace(/^https?:\/\//, "");
-
-  const fall2 =
-    "https://r.jina.ai/https://" +
-    direct.replace(/^https?:\/\//, "");
+  const direct = `${SHEET_URL}${SHEET_URL.includes('?') ? '&' : '?'}${bust.replace(/^&/,'')}`;
+  const fall1 = "https://r.jina.ai/http://" + direct.replace(/^https?:\/\//,'');
+  const fall2 = "https://r.jina.ai/https://" + direct.replace(/^https?:\/\//,'');
 
   const tries = [direct, fall2, fall1];
 
   let lastErr = null;
-
-  for (const url of tries) {
-    try {
-      const res = await fetch(url, {
-        cache: "no-store"
-      });
-
+  for (const url of tries){
+    try{
+      const res = await fetch(url, { cache: "no-store" });
       const text = await res.text();
-
-      if (text && text.length > 20) {
-        return text;
-      }
-    } catch (e) {
-      lastErr = e;
-    }
+      if (text && text.length > 20) return text;
+    }catch(e){ lastErr = e; }
   }
-
   throw lastErr || new Error("Unable to fetch CSV");
 }
 
-async function loadSheet() {
+async function loadSheet(){
   card.style.display = "block";
   card.innerHTML = "<p class='clueLine'>Loading…</p>";
 
-  try {
+  try{
     const text = await fetchCSVText();
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
 
-    const parsed = Papa.parse(text, {
-      header: true,
-      skipEmptyLines: true
-    });
-
-    const rows = Array.isArray(parsed.data)
-      ? parsed.data
-      : [];
-
-    if (!rows.length) {
-      card.innerHTML =
-        "<p class='clueLine'>No rows parsed.</p>";
+    const rows = Array.isArray(parsed.data) ? parsed.data : [];
+    if (!rows.length){
+      card.innerHTML = "<p class='clueLine'>No rows parsed.</p>";
       return;
     }
 
-    allClues = rows
-      .map(r => {
-        const id =
-          r.id ||
-          r.Id ||
-          r.ID ||
-          "";
+    allClues = rows.map(r=>{
+      const id = r.id || r.Id || r.ID || "";
+      const clue = r.clue || r.Clue || "";
+      const ans  = r.answer || r.Answer || "";
+      const writer = r.setter_name || r.Writer || r.setter || "";
 
-        const clue =
-          r.clue ||
-          r.Clue ||
-          "";
+      const saved = progress.byId[id] || {};
+      return {
+        Id: String(id).trim(),
+        Clue: String(clue).trim(),
+        Answer: String(ans).trim(),
+        Writer: String(writer).trim(),
 
-        const ans =
-          r.answer ||
-          r.Answer ||
-          "";
+        Hints: String(r.hints || r.Hints || "").trim(),
+        CreatorUserId: String(r.creator_user_id || r.CreatorUserId || r["Creator User ID"] || "").trim(),
+        SetterSocialHandles: String(r.setter_social_handles || r["Social Handles"] || r.social_handles || "").trim(),
+        WorkshopCirclePostUrl: String(r.workshop_circle_post_url || r["Play Link"] || r.play_link || "").trim(),
 
-        const writer =
-          r.setter_name ||
-          r.Writer ||
-          r.setter ||
-          "";
-
-        const saved =
-          progress.byId[id] ||
-          {};
-
-        return {
-          Id: String(id).trim(),
-          Clue: String(clue).trim(),
-          Answer: String(ans).trim(),
-          Writer: String(writer).trim(),
-
-          Hints: String(
-            r.hints ||
-            r.Hints ||
-            ""
-          ).trim(),
-
-          CreatorUserId: String(
-            r.creator_user_id ||
-            r.CreatorUserId ||
-            r["Creator User ID"] ||
-            ""
-          ).trim(),
-
-          SetterSocialHandles: String(
-            r.setter_social_handles ||
-            r["Social Handles"] ||
-            r.social_handles ||
-            ""
-          ).trim(),
-
-          WorkshopCirclePostUrl: String(
-            r.workshop_circle_post_url ||
-            r["Play Link"] ||
-            r.play_link ||
-            ""
-          ).trim(),
-
-          Assessment: String(
-            saved.Assessment ||
-            ""
-          ).trim(),
-
-          Note: String(
-            saved.Note ||
-            ""
-          ).trim(),
-
-          UpdatedAt:
-            Number(saved.UpdatedAt || 0) ||
-            0
-        };
-      })
-      .filter(r => {
-        return r.Id && r.Clue && r.Answer;
-      });
+        Assessment: String(saved.Assessment || "").trim(),
+        Note: String(saved.Note || "").trim(),
+        UpdatedAt: Number(saved.UpdatedAt || 0) || 0
+      };
+    }).filter(r => r.Id && r.Clue && r.Answer);
 
     applyHardFilters(allClues);
 
     syncTabs();
     rebuildQueue();
     render();
-  } catch (e) {
-    card.innerHTML =
-      "<p class='clueLine'>Load error.</p>";
-
+  }catch(e){
+    card.innerHTML = "<p class='clueLine'>Load error.</p>";
     console.error(e);
   }
 }
 
 /* ===================== QUEUE / RENDER ===================== */
-function rebuildQueue() {
+function rebuildQueue(){
   queue = allClues.filter(c => !c.Assessment);
-
-  if (viewMode === "stars") {
-    queue = queue.filter(c => {
-      return isStarSetter(c.Writer);
-    });
+  if (viewMode === "stars"){
+    queue = queue.filter(c => isStarSetter(c.Writer));
   }
-
   currentIndex = 0;
   updateUI();
 }
 
-function render() {
-  if (!queue.length) {
+function render(){
+  if (!queue.length){
     card.style.display = "block";
-
-    card.innerHTML =
-      viewMode === "stars"
-        ? "<p class='clueLine'><strong>No starred clues left.</strong></p>"
-        : "<p class='clueLine'><strong>No clues left.</strong></p>";
-
+    card.innerHTML = (viewMode === "stars")
+      ? "<p class='clueLine'><strong>No starred clues left.</strong></p>"
+      : "<p class='clueLine'><strong>No clues left.</strong></p>";
     return;
   }
 
   const c = queue[currentIndex];
-
   const enumText = getEnum(c.Answer);
   const maskText = getAnswerMask(c.Answer);
   const hintText = getHintText(c.Hints);
 
   const starred = isStarSetter(c.Writer);
   const starChar = starred ? "★" : "☆";
-  const starClass = starred
-    ? "starred"
-    : "unstarred";
+  const starClass = starred ? "starred" : "unstarred";
 
   card.style.display = "block";
-
   card.innerHTML = `
     <p class="clueLine">
       ${escapeHTML(c.Clue)}
@@ -1130,36 +544,23 @@ function render() {
     </p>
 
     <p class="answerLine">
-      <span
-        id="answer"
-        data-answer="${escapeHTMLAttr(c.Answer)}"
-      >${escapeHTML(maskText)}</span>
+      <span id="answer" data-answer="${escapeHTMLAttr(c.Answer)}">${escapeHTML(maskText)}</span>
     </p>
 
-    <p
-      id="writer"
-      title="Long-press to star/unstar setter"
-    >
+    <p id="writer" title="Long-press to star/unstar setter">
       ${escapeHTML(c.Writer)}
-      <span
-        class="setterStar ${starClass}"
-        id="writerStar"
-      >${starChar}</span>
+      <span class="setterStar ${starClass}" id="writerStar">${starChar}</span>
     </p>
   `;
 
   const ansEl = document.getElementById("answer");
+  let revealState = 0; // 0 = masked, 1 = hint, 2 = answer
 
-  let revealState = 0;
-  // 0 = masked
-  // 1 = hint
-  // 2 = answer
-
-  ansEl.addEventListener("click", () => {
+  ansEl.addEventListener("click", ()=>{
     buzz(10);
 
-    if (revealState === 0) {
-      if (hintText) {
+    if (revealState === 0){
+      if (hintText){
         ansEl.classList.remove("revealed");
         ansEl.classList.add("hintShown");
         ansEl.textContent = hintText;
@@ -1170,11 +571,13 @@ function render() {
         ansEl.textContent = c.Answer;
         revealState = 2;
       }
-    } else if (revealState === 1) {
+
+    } else if (revealState === 1){
       ansEl.classList.remove("hintShown");
       ansEl.classList.add("revealed");
       ansEl.textContent = c.Answer;
       revealState = 2;
+
     } else {
       ansEl.classList.remove("revealed");
       ansEl.classList.remove("hintShown");
@@ -1187,21 +590,8 @@ function render() {
   updateUI();
 }
 
-/* ===================== ASSESSMENT ACTIONS ===================== */
-function saveProgressForClue(c) {
-  progress.byId[c.Id] = {
-    Assessment: c.Assessment || "",
-    Note: c.Note || "",
-    UpdatedAt: c.UpdatedAt || 0
-  };
-
-  localStorage.setItem(
-    PROGRESS_KEY,
-    JSON.stringify(progress)
-  );
-}
-
-function rememberForUndo(c) {
+/* ===================== ACTIONS ===================== */
+function rememberForUndo(c){
   history.push({
     Id: c.Id,
     Assessment: c.Assessment || "",
@@ -1210,92 +600,68 @@ function rememberForUndo(c) {
   });
 }
 
-function record(val) {
-  if (!queue[currentIndex]) {
-    return;
-  }
+function saveProgressForClue(c){
+  progress.byId[c.Id] = {
+    Assessment: c.Assessment || "",
+    Note: c.Note || "",
+    UpdatedAt: c.UpdatedAt || 0
+  };
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+}
 
+function record(val){
+  if (!queue[currentIndex]) return;
   const c = queue[currentIndex];
-  const now = Date.now();
 
   rememberForUndo(c);
-
   c.Assessment = val;
-  c.UpdatedAt = now;
-
+  c.UpdatedAt = Date.now();
   saveProgressForClue(c);
 
   rebuildQueue();
   render();
 }
 
-function appendWorkshopNote(existingNote, workshopNote) {
+function appendWorkshopNote(existingNote, noteLabel){
   const existing = String(existingNote || "").trim();
-  const addition = String(workshopNote || "").trim();
+  const addition = String(noteLabel || "").trim();
+  if (!addition) return existing;
 
-  if (!addition) {
-    return existing;
-  }
-
-  const existingLines = existing
+  const alreadyIncluded = existing
     .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean);
+    .map(line => line.trim().toLowerCase())
+    .includes(addition.toLowerCase());
 
-  const alreadyIncluded = existingLines.some(line => {
-    return line.toLowerCase() === addition.toLowerCase();
-  });
-
-  if (alreadyIncluded) {
-    return existing;
-  }
-
-  return existing
-    ? `${existing}\n${addition}`
-    : addition;
+  if (alreadyIncluded) return existing;
+  return existing ? `${existing}\n${addition}` : addition;
 }
 
-function recordWorkshopWithNote(noteLabel) {
-  if (!queue[currentIndex]) {
-    return;
-  }
-
+function recordWorkshopWithNote(noteLabel){
+  if (!queue[currentIndex]) return;
   const c = queue[currentIndex];
-  const now = Date.now();
 
   rememberForUndo(c);
-
   c.Assessment = "Workshop";
-  c.Note = appendWorkshopNote(
-    c.Note,
-    noteLabel
-  );
-  c.UpdatedAt = now;
-
+  c.Note = appendWorkshopNote(c.Note, noteLabel);
+  c.UpdatedAt = Date.now();
   saveProgressForClue(c);
 
   rebuildQueue();
   render();
 }
 
-function undo() {
+function undo(){
   const previous = history.pop();
-
-  if (!previous) {
-    return;
-  }
+  if (!previous) return;
 
   const master = allClues.find(x => x.Id === previous.Id);
-
-  if (!master) {
-    return;
-  }
+  if (!master) return;
 
   master.Assessment = previous.Assessment;
   master.Note = previous.Note;
   master.UpdatedAt = previous.UpdatedAt;
 
-  if (!previous.Assessment && !previous.Note && !previous.UpdatedAt) {
+  if (!previous.Assessment && !previous.Note && !previous.UpdatedAt){
     delete progress.byId[previous.Id];
   } else {
     progress.byId[previous.Id] = {
@@ -1306,136 +672,69 @@ function undo() {
   }
 
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-
   rebuildQueue();
   render();
 }
 
-/* ===================== WORKSHOP LONG-PRESS MENU ===================== */
-let workshopMenuOpen = false;
+/* ===================== WORKSHOP LONG PRESS ===================== */
 let suppressWorkshopClick = false;
+let workshopPressHammer = null;
 
-function openWorkshopMenu() {
-  if (!queue[currentIndex]) {
-    return;
-  }
-
+function openWorkshopMenu(){
+  if (!queue[currentIndex]) return;
   closeStarManager();
-  workshopMenuOpen = true;
   workshopMenu.classList.add("show");
 }
 
-function closeWorkshopMenu() {
-  workshopMenuOpen = false;
+function closeWorkshopMenu(){
   workshopMenu.classList.remove("show");
 }
 
-function chooseWorkshopOption(noteLabel) {
+function chooseWorkshopOption(noteLabel){
   closeWorkshopMenu();
-
-  animateSwipe("right", () => {
-    recordWorkshopWithNote(noteLabel);
-  });
+  animateSwipe("right", ()=>recordWorkshopWithNote(noteLabel));
 }
 
-const workshopButton =
-  document.getElementById("btnWorkshop");
+function attachWorkshopLongPress(){
+  const button = document.getElementById("btnWorkshop");
+  if (!button) return;
 
-let workshopPressTimer = null;
-let workshopPressActive = false;
+  try { workshopPressHammer && workshopPressHammer.destroy(); } catch {}
+  workshopPressHammer = new Hammer(button);
+  workshopPressHammer.add(new Hammer.Press({ time: 450 }));
 
-function startWorkshopLongPress() {
-  workshopPressActive = true;
-  clearTimeout(workshopPressTimer);
-
-  workshopPressTimer = setTimeout(() => {
-    if (!workshopPressActive) return;
-
+  workshopPressHammer.on("press", ()=>{
     suppressWorkshopClick = true;
     buzz(12);
     openWorkshopMenu();
-  }, 450);
-}
-
-function cancelWorkshopLongPress() {
-  workshopPressActive = false;
-  clearTimeout(workshopPressTimer);
-  workshopPressTimer = null;
-}
-
-workshopButton.addEventListener("pointerdown", startWorkshopLongPress);
-workshopButton.addEventListener("pointerup", cancelWorkshopLongPress);
-workshopButton.addEventListener("pointercancel", cancelWorkshopLongPress);
-workshopButton.addEventListener("pointerleave", cancelWorkshopLongPress);
-
-document
-  .getElementById("workshopDefinition")
-  .addEventListener("click", event => {
-    event.stopPropagation();
-    chooseWorkshopOption("Definition");
   });
-
-document
-  .getElementById("workshopWordplay")
-  .addEventListener("click", event => {
-    event.stopPropagation();
-    chooseWorkshopOption("Wordplay");
-  });
+}
 
 /* ===================== STAR MANAGER ===================== */
-function getUniqueSetterNames() {
+function getUniqueSetterNames(){
   const namesByKey = new Map();
-
-  for (const clue of allClues) {
+  for (const clue of allClues){
     const name = String(clue.Writer || "").trim();
     const key = writerKey(name);
-
-    if (key && !namesByKey.has(key)) {
-      namesByKey.set(key, name);
-    }
+    if (key && !namesByKey.has(key)) namesByKey.set(key, name);
   }
 
-  return Array.from(namesByKey.values())
-    .sort((a, b) => {
-      const aStarred = isStarSetter(a);
-      const bStarred = isStarSetter(b);
-
-      if (aStarred !== bStarred) {
-        return aStarred ? -1 : 1;
-      }
-
-      return a.localeCompare(
-        b,
-        undefined,
-        {
-          sensitivity: "base"
-        }
-      );
-    });
+  return Array.from(namesByKey.values()).sort((a,b)=>{
+    const aStarred = isStarSetter(a);
+    const bStarred = isStarSetter(b);
+    if (aStarred !== bStarred) return aStarred ? -1 : 1;
+    return a.localeCompare(b, undefined, { sensitivity:"base" });
+  });
 }
 
-function renderStarManager(filterText = "") {
-  const searchTerm = String(filterText || "")
-    .trim()
-    .toLowerCase();
-
-  const setters = getUniqueSetterNames()
-    .filter(name => {
-      return name
-        .toLowerCase()
-        .includes(searchTerm);
-    });
+function renderStarManager(filterText=""){
+  const searchTerm = String(filterText || "").trim().toLowerCase();
+  const setters = getUniqueSetterNames().filter(name => name.toLowerCase().includes(searchTerm));
 
   starSetterList.innerHTML = "";
+  starManagerEmpty.style.display = setters.length ? "none" : "block";
 
-  if (!setters.length) {
-    starManagerEmpty.style.display = "block";
-    return;
-  }
-
-  starManagerEmpty.style.display = "none";
-
-  for (const name of setters) {
+  for (const name of setters){
     const row = document.createElement("button");
     row.type = "button";
     row.className = "star-manager-row";
@@ -1445,33 +744,18 @@ function renderStarManager(filterText = "") {
     nameSpan.textContent = name;
 
     const iconSpan = document.createElement("span");
-
     const starred = isStarSetter(name);
-
-    iconSpan.className =
-      `star-manager-icon ${starred ? "starred" : "unstarred"}`;
-
-    iconSpan.textContent =
-      starred ? "★" : "☆";
+    iconSpan.className = `star-manager-icon ${starred ? "starred" : "unstarred"}`;
+    iconSpan.textContent = starred ? "★" : "☆";
 
     row.appendChild(nameSpan);
     row.appendChild(iconSpan);
 
-    row.addEventListener("click", () => {
-      const nowStarred =
-        toggleStarSetter(name);
-
-      iconSpan.textContent =
-        nowStarred ? "★" : "☆";
-
-      iconSpan.className =
-        `star-manager-icon ${nowStarred ? "starred" : "unstarred"}`;
-
-      flashEmoji(
-        nowStarred ? "★" : "☆"
-      );
-
-      if (viewMode === "stars") {
+    row.addEventListener("click", ()=>{
+      const nowStarred = toggleStarSetter(name);
+      flashEmoji(nowStarred ? "★" : "☆");
+      renderStarManager(starSearch.value);
+      if (viewMode === "stars"){
         rebuildQueue();
         render();
       }
@@ -1481,91 +765,42 @@ function renderStarManager(filterText = "") {
   }
 }
 
-function openStarManager() {
+function openStarManager(){
   closeWorkshopMenu();
-
   starSearch.value = "";
   renderStarManager("");
-
   starManagerOverlay.classList.add("show");
-  starManagerOverlay.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
+  starManagerOverlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
-
-  setTimeout(() => {
-    starSearch.focus();
-  }, 50);
+  setTimeout(()=>starSearch.focus(), 50);
 }
 
-function closeStarManager() {
+function closeStarManager(){
   starManagerOverlay.classList.remove("show");
-  starManagerOverlay.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
+  starManagerOverlay.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-open");
 }
 
-starSearch.addEventListener("input", () => {
-  renderStarManager(starSearch.value);
-});
-
-document
-  .getElementById("starManagerClose")
-  .addEventListener("click", closeStarManager);
-
-starManagerOverlay.addEventListener("click", event => {
-  if (event.target === starManagerOverlay) {
-    closeStarManager();
-  }
-});
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    closeWorkshopMenu();
-    closeStarManager();
-  }
-});
-
-/* Long-press Stars tab to manage setters */
-const starsTab = document.querySelector(
-  '.tab[data-view="stars"]'
-);
-
 let suppressStarsTabClick = false;
-let starsPressTimer = null;
-let starsPressActive = false;
+let starsTabPressHammer = null;
 
-function startStarsLongPress() {
-  starsPressActive = true;
-  clearTimeout(starsPressTimer);
+function attachStarsTabLongPress(){
+  const starsTab = document.querySelector('.tab[data-view="stars"]');
+  if (!starsTab) return;
 
-  starsPressTimer = setTimeout(() => {
-    if (!starsPressActive) return;
+  try { starsTabPressHammer && starsTabPressHammer.destroy(); } catch {}
+  starsTabPressHammer = new Hammer(starsTab);
+  starsTabPressHammer.add(new Hammer.Press({ time: 450 }));
 
+  starsTabPressHammer.on("press", ()=>{
     suppressStarsTabClick = true;
     buzz(12);
     openStarManager();
-  }, 450);
+  });
 }
-
-function cancelStarsLongPress() {
-  starsPressActive = false;
-  clearTimeout(starsPressTimer);
-  starsPressTimer = null;
-}
-
-starsTab.addEventListener("pointerdown", startStarsLongPress);
-starsTab.addEventListener("pointerup", cancelStarsLongPress);
-starsTab.addEventListener("pointercancel", cancelStarsLongPress);
-starsTab.addEventListener("pointerleave", cancelStarsLongPress);
 
 /* ===================== EXPORT ===================== */
-function exportCSV() {
+function exportCSV(){
   const choice = prompt(
     "Export options:\n\n" +
     "• Press Enter for NEW (since last export)\n" +
@@ -1574,135 +809,63 @@ function exportCSV() {
     ""
   );
 
-  const raw = String(choice || "")
-    .trim()
-    .toLowerCase();
-
+  const raw = String(choice || "").trim().toLowerCase();
   const mode =
-    raw === "all"
-      ? "all"
-      : raw === "assessed"
-        ? "assessed"
-        : "new";
+    raw === "all" ? "all" :
+    raw === "assessed" ? "assessed" :
+    "new";
 
-  const lastExportedAt =
-    Number(
-      localStorage.getItem(LAST_EXPORT_KEY) ||
-      0
-    ) || 0;
+  const lastExportedAt = Number(localStorage.getItem(LAST_EXPORT_KEY) || 0) || 0;
 
   let rowsSource = [];
-
-  if (mode === "all") {
+  if (mode === "all"){
     rowsSource = allClues;
-  } else if (mode === "assessed") {
-    rowsSource = allClues.filter(c => {
-      return c.Assessment || c.Note;
-    });
+  } else if (mode === "assessed"){
+    rowsSource = allClues.filter(c => c.Assessment || c.Note);
   } else {
-    rowsSource = allClues.filter(c => {
-      return Number(c.UpdatedAt || 0) >
-        lastExportedAt;
-    });
+    rowsSource = allClues.filter(c => (Number(c.UpdatedAt || 0) > lastExportedAt));
   }
 
   const rows = rowsSource.map(c => ({
-    clue_text:
-      `${c.Clue} ${getEnum(c.Answer)}`,
-
-    answer:
-      c.Answer,
-
-    letter_reveal_order:
-      getRevealOrder(c.Answer),
-
-    hints:
-      c.Hints,
-
-    creator_user_id:
-      c.CreatorUserId,
-
-    setter_name:
-      c.Writer,
-
-    setter_social_handles:
-      c.SetterSocialHandles,
-
-    parent_clue_id:
-      c.Id,
-
-    workshop_circle_post_url:
-      c.WorkshopCirclePostUrl,
-
-    assessment:
-      c.Assessment,
-
-    note:
-      c.Note
+    clue_text: `${c.Clue} ${getEnum(c.Answer)}`,
+    answer: c.Answer,
+    letter_reveal_order: getRevealOrder(c.Answer),
+    hints: c.Hints,
+    creator_user_id: c.CreatorUserId,
+    setter_name: c.Writer,
+    setter_social_handles: c.SetterSocialHandles,
+    parent_clue_id: c.Id,
+    workshop_circle_post_url: c.WorkshopCirclePostUrl,
+    assessment: c.Assessment,
+    note: c.Note
   }));
 
   const csv = Papa.unparse(rows);
-
-  const blob = new Blob(
-    ["\ufeff" + csv],
-    {
-      type: "text/csv;charset=utf-8;"
-    }
-  );
-
+  const blob = new Blob(['\ufeff' + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
 
-  const objectUrl =
-    URL.createObjectURL(blob);
-
-  a.href = objectUrl;
-
-  const stamp = new Date()
-    .toISOString()
-    .replace(/[:]/g, "")
-    .slice(0, 15);
-
+  const stamp = new Date().toISOString().replace(/[:]/g,"").slice(0,15);
   a.download =
-    mode === "all"
-      ? `clues_all_${stamp}.csv`
-      : mode === "assessed"
-        ? `clues_assessed_${stamp}.csv`
-        : `clues_new_${stamp}.csv`;
+    mode === "all" ? `clues_all_${stamp}.csv` :
+    mode === "assessed" ? `clues_assessed_${stamp}.csv` :
+    `clues_new_${stamp}.csv`;
 
-  document.body.appendChild(a);
   a.click();
-  a.remove();
 
-  setTimeout(() => {
-    URL.revokeObjectURL(objectUrl);
-  }, 1000);
-
-  if (mode === "new") {
-    localStorage.setItem(
-      LAST_EXPORT_KEY,
-      String(Date.now())
-    );
+  if (mode === "new"){
+    localStorage.setItem(LAST_EXPORT_KEY, String(Date.now()));
   }
 }
 
-/* ===================== RESET ===================== */
-function resetProgress() {
-  if (
-    !confirm(
-      "Reset assessments/notes? (Stars stay)"
-    )
-  ) {
-    return;
-  }
+function resetProgress(){
+  if (!confirm("Reset assessments/notes? (Stars stay)")) return;
 
   localStorage.removeItem(PROGRESS_KEY);
   localStorage.removeItem(VIEW_KEY);
   localStorage.removeItem(LAST_EXPORT_KEY);
 
-  progress = {
-    byId: {}
-  };
-
+  progress = { byId:{} };
   viewMode = "all";
 
   syncTabs();
@@ -1710,370 +873,197 @@ function resetProgress() {
 }
 
 /* ===================== NOTES ===================== */
-function openNote() {
-  if (!queue[currentIndex]) {
-    return;
-  }
-
-  closeWorkshopMenu();
-
-  document.getElementById("noteText").value =
-    queue[currentIndex].Note || "";
-
-  document.getElementById("noteOverlay").style.display =
-    "block";
-
+function openNote(){
+  if (!queue[currentIndex]) return;
+  document.getElementById("noteText").value = queue[currentIndex].Note || "";
+  document.getElementById("noteOverlay").style.display = "block";
   document.body.classList.add("modal-open");
 }
 
-function saveNote() {
-  if (!queue[currentIndex]) {
-    return;
-  }
-
+function saveNote(){
+  if (!queue[currentIndex]) return;
   const c = queue[currentIndex];
 
-  c.Note =
-    document.getElementById("noteText").value ||
-    "";
+  c.Note = document.getElementById("noteText").value || "";
 
   const now = Date.now();
   c.UpdatedAt = now;
 
-  if (!progress.byId[c.Id]) {
-    progress.byId[c.Id] = {};
-  }
-
+  if (!progress.byId[c.Id]) progress.byId[c.Id] = {};
   progress.byId[c.Id].Note = c.Note;
   progress.byId[c.Id].UpdatedAt = now;
 
-  localStorage.setItem(
-    PROGRESS_KEY,
-    JSON.stringify(progress)
-  );
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 
-  document.getElementById("noteOverlay").style.display =
-    "none";
-
+  document.getElementById("noteOverlay").style.display = "none";
   document.body.classList.remove("modal-open");
 }
 
 /* ===================== UI UPDATES ===================== */
-function updateUI() {
-  const counts = {
-    No: 0,
-    Workshop: 0,
-    Perfect: 0
-  };
-
-  allClues.forEach(c => {
-    if (
-      counts[c.Assessment] !== undefined
-    ) {
-      counts[c.Assessment]++;
-    }
+function updateUI(){
+  const counts = { No:0, Workshop:0, Perfect:0 };
+  allClues.forEach(c=>{
+    if (counts[c.Assessment] !== undefined) counts[c.Assessment]++;
   });
 
-  assessmentCounts.textContent =
-    `No: ${counts.No} | ` +
-    `Workshop: ${counts.Workshop} | ` +
-    `Perfect: ${counts.Perfect}`;
+  assessmentCounts.textContent = `No: ${counts.No} | Workshop: ${counts.Workshop} | Perfect: ${counts.Perfect}`;
 
   const remaining = queue.length;
+  progressCount.textContent = remaining === 1 ? "1 left" : `${remaining} left`;
 
-  progressCount.textContent =
-    remaining === 1
-      ? "1 left"
-      : `${remaining} left`;
-
-  const total =
-    allClues.length || 1;
-
-  const done =
-    total - remaining;
-
-  const pct = Math.max(
-    0,
-    Math.min(
-      100,
-      (done / total) * 100
-    )
-  );
-
-  progressBar.style.width =
-    pct + "%";
+  const total = allClues.length || 1;
+  const done = total - remaining;
+  const pct = Math.max(0, Math.min(100, (done / total) * 100));
+  progressBar.style.width = pct + "%";
 }
 
-function syncTabs() {
-  document
-    .querySelectorAll(".tab")
-    .forEach(tab => {
-      tab.classList.toggle(
-        "active",
-        tab.dataset.view === viewMode
-      );
-    });
+function syncTabs(){
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.classList.toggle("active", t.dataset.view === viewMode);
+  });
 }
 
 /* ===================== ANIMATION + SWIPES ===================== */
-function animateSwipe(dir, cb) {
+function animateSwipe(dir, cb){
   buzz(20);
-
-  card.classList.add(
-    `swipe-${dir}`
-  );
-
-  flashEmoji(
-    {
-      left: "❌",
-      right: "💡",
-      down: "⭐"
-    }[dir] || ""
-  );
-
-  setTimeout(() => {
+  card.classList.add(`swipe-${dir}`);
+  flashEmoji({left:"❌", right:"💡", down:"⭐"}[dir] || "");
+  setTimeout(()=>{
     card.className = "";
     cb();
   }, 380);
 }
 
-const pageHammer =
-  new Hammer(document.body);
+const mc = new Hammer(document.body);
+mc.get("swipe").set({ direction: Hammer.DIRECTION_ALL });
+mc.on("swipeleft",  ()=> animateSwipe("left",  ()=>record("No")));
+mc.on("swiperight", ()=> animateSwipe("right", ()=>record("Workshop")));
+mc.on("swipedown",  ()=> animateSwipe("down",  ()=>record("Perfect")));
 
-pageHammer
-  .get("swipe")
-  .set({
-    direction: Hammer.DIRECTION_ALL
-  });
-
-pageHammer.on("swipeleft", () => {
-  if (
-    workshopMenuOpen ||
-    starManagerOverlay.classList.contains("show")
-  ) {
-    return;
-  }
-
-  animateSwipe(
-    "left",
-    () => record("No")
-  );
-});
-
-pageHammer.on("swiperight", () => {
-  if (
-    workshopMenuOpen ||
-    starManagerOverlay.classList.contains("show")
-  ) {
-    return;
-  }
-
-  animateSwipe(
-    "right",
-    () => record("Workshop")
-  );
-});
-
-pageHammer.on("swipedown", () => {
-  if (
-    workshopMenuOpen ||
-    starManagerOverlay.classList.contains("show")
-  ) {
-    return;
-  }
-
-  animateSwipe(
-    "down",
-    () => record("Perfect")
-  );
-});
-
-/* ===================== LONG PRESS: TOGGLE CURRENT SETTER ===================== */
+/* ===================== LONG PRESS: TOGGLE SETTER STAR ===================== */
 let writerPressHammer = null;
+function attachWriterLongPress(){
+  const wEl = document.getElementById("writer");
+  if (!wEl) return;
 
-function attachWriterLongPress() {
-  const writerElement =
-    document.getElementById("writer");
-
-  if (!writerElement) {
-    return;
-  }
-
-  try {
-    if (writerPressHammer) {
-      writerPressHammer.destroy();
-    }
-  } catch {}
-
-  writerPressHammer =
-    new Hammer(writerElement);
-
-  writerPressHammer.add(
-    new Hammer.Press({
-      time: 450
-    })
-  );
+  try { writerPressHammer && writerPressHammer.destroy(); } catch {}
+  writerPressHammer = new Hammer(wEl);
+  writerPressHammer.add(new Hammer.Press({ time: 450 }));
 
   let pressed = false;
-
-  writerPressHammer.on("press", () => {
+  writerPressHammer.on("press", ()=>{
     pressed = true;
     buzz(12);
 
     const c = queue[currentIndex];
+    if (!c) return;
 
-    if (!c) {
-      return;
-    }
+    const nowStarred = toggleStarSetter(c.Writer);
 
-    const nowStarred =
-      toggleStarSetter(c.Writer);
-
-    flashEmoji(
-      nowStarred ? "★" : "☆"
-    );
+    flashEmoji(nowStarred ? "★" : "☆");
 
     rebuildQueue();
     render();
 
-    setTimeout(() => {
-      pressed = false;
-    }, 0);
+    setTimeout(()=>{ pressed = false; }, 0);
   });
 
-  writerElement.addEventListener(
-    "click",
-    event => {
-      if (pressed) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+  wEl.addEventListener("click", (e)=>{
+    if (pressed){
+      e.preventDefault();
+      e.stopPropagation();
     }
-  );
+  });
 }
 
 /* ===================== BUTTON WIRING ===================== */
-document
-  .getElementById("btnNo")
-  .addEventListener("click", () => {
+document.getElementById("btnNo").addEventListener("click", ()=>{ closeWorkshopMenu(); animateSwipe("left", ()=>record("No")); });
+document.getElementById("btnWorkshop").addEventListener("click", (event)=>{
+  if (suppressWorkshopClick){
+    suppressWorkshopClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  closeWorkshopMenu();
+  animateSwipe("right", ()=>record("Workshop"));
+});
+document.getElementById("btnPerfect").addEventListener("click", ()=>{ closeWorkshopMenu(); animateSwipe("down", ()=>record("Perfect")); });
+document.getElementById("btnNote").addEventListener("click", openNote);
+document.getElementById("btnUndo").addEventListener("click", ()=>{ closeWorkshopMenu(); undo(); });
+
+document.getElementById("exportBtn").addEventListener("click", exportCSV);
+document.getElementById("resetBtn").addEventListener("click", resetProgress);
+
+document.getElementById("noteSaveBtn").addEventListener("click", saveNote);
+
+document.getElementById("workshopDefinition").addEventListener("click", (event)=>{
+  event.stopPropagation();
+  chooseWorkshopOption("Definition");
+});
+document.getElementById("workshopWordplay").addEventListener("click", (event)=>{
+  event.stopPropagation();
+  chooseWorkshopOption("Wordplay");
+});
+
+starSearch.addEventListener("input", ()=>renderStarManager(starSearch.value));
+document.getElementById("starManagerClose").addEventListener("click", closeStarManager);
+starManagerOverlay.addEventListener("click", (event)=>{
+  if (event.target === starManagerOverlay) closeStarManager();
+});
+
+document.addEventListener("click", (event)=>{
+  if (workshopMenu.classList.contains("show") &&
+      !workshopMenu.contains(event.target) &&
+      event.target.id !== "btnWorkshop"){
     closeWorkshopMenu();
+  }
+});
 
-    animateSwipe(
-      "left",
-      () => record("No")
-    );
-  });
+document.addEventListener("keydown", (event)=>{
+  if (event.key === "Escape"){
+    closeWorkshopMenu();
+    closeStarManager();
+  }
+});
 
-document
-  .getElementById("btnWorkshop")
-  .addEventListener("click", event => {
-    if (suppressWorkshopClick) {
-      suppressWorkshopClick = false;
+
+/* Tabs */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", (event)=>{
+    if (t.dataset.view === "stars" && suppressStarsTabClick){
+      suppressStarsTabClick = false;
       event.preventDefault();
       event.stopPropagation();
       return;
     }
 
     closeWorkshopMenu();
-
-    animateSwipe(
-      "right",
-      () => record("Workshop")
-    );
+    viewMode = t.dataset.view;
+    localStorage.setItem(VIEW_KEY, viewMode);
+    syncTabs();
+    rebuildQueue();
+    render();
   });
-
-document
-  .getElementById("btnPerfect")
-  .addEventListener("click", () => {
-    closeWorkshopMenu();
-
-    animateSwipe(
-      "down",
-      () => record("Perfect")
-    );
-  });
-
-document
-  .getElementById("btnNote")
-  .addEventListener("click", openNote);
-
-document
-  .getElementById("btnUndo")
-  .addEventListener("click", () => {
-    closeWorkshopMenu();
-    undo();
-  });
-
-document
-  .getElementById("exportBtn")
-  .addEventListener("click", exportCSV);
-
-document
-  .getElementById("resetBtn")
-  .addEventListener("click", resetProgress);
-
-document
-  .getElementById("noteSaveBtn")
-  .addEventListener("click", saveNote);
-
-/* Close Workshop menu when tapping outside it */
-document.addEventListener("click", event => {
-  if (
-    workshopMenuOpen &&
-    !workshopMenu.contains(event.target) &&
-    event.target.id !== "btnWorkshop"
-  ) {
-    closeWorkshopMenu();
-  }
 });
 
-/* Tabs */
-document
-  .querySelectorAll(".tab")
-  .forEach(tab => {
-    tab.addEventListener("click", event => {
-      if (
-        tab.dataset.view === "stars" &&
-        suppressStarsTabClick
-      ) {
-        suppressStarsTabClick = false;
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      closeWorkshopMenu();
-
-      viewMode = tab.dataset.view;
-
-      localStorage.setItem(
-        VIEW_KEY,
-        viewMode
-      );
-
-      syncTabs();
-      rebuildQueue();
-      render();
-    });
-  });
-
 /* ===================== SAFE HTML ESCAPES ===================== */
-function escapeHTML(s) {
-  return String(s || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function escapeHTML(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+function escapeHTMLAttr(s){
+  return escapeHTML(s).replaceAll("`","&#096;");
 }
 
-function escapeHTMLAttr(s) {
-  return escapeHTML(s)
-    .replaceAll("`", "&#096;");
-}
-
-/* ===================== INIT ===================== */
+/* Init */
 syncTabs();
+attachWorkshopLongPress();
+attachStarsTabLongPress();
 window.onload = loadSheet;
 </script>
 
