@@ -452,7 +452,7 @@ async function loadSheet(){
       const id = r.id || r.Id || r.ID || "";
       const clue = r.clue || r.Clue || "";
       const ans  = r.answer || r.Answer || "";
-      const writer = r.setter_name || r.Writer || r.setter || "";
+      const writer = r["Setter Name"] || r.setter_name || r.Writer || r.setter || "";
 
       const saved = progress.byId[id] || {};
       return {
