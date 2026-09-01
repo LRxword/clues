@@ -159,7 +159,7 @@
     cursor: pointer;
   }
   #exportBtn { background: #222; }
-  #resetBtn { background: #e53935; }
+  #loadBtn { background: #e53935; }
 
   /* Flash */
   #flashMessage {
@@ -241,7 +241,8 @@
 
 <div id="bottomButtons">
   <button id="exportBtn">Download CSV</button>
-  <button id="resetBtn">Reset</button>
+  <button id="loadBtn">Load CSV</button>
+  <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none;">
 </div>
 
 <div id="noteOverlay">
@@ -251,13 +252,12 @@
 
 <script>
 /* ===================== CONFIG ===================== */
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsSUD7PgliCuhNkFFA3nyjes14LHlg1Gp2wuLlG5DU6FIp4CwP0lbrmGLuGe_DlhlbdM6fh_xwb2sZ/pub?output=csv";
-
 const PROGRESS_KEY = "clueMatch_simple_v1";
 const VIEW_KEY = "clueMatchView";
 const STARS_KEY = "clueMatchSetterStars";
 const LAST_EXPORT_KEY = "cluesmash_lastExportedAt";
+const BATCH_CSV_KEY = "cluesmash_loadedCSV_v1";
+const BATCH_NAME_KEY = "cluesmash_loadedCSVName_v1";
 
 const INITIAL_STARS = ["Adam Boyd","Adrian Paris","Adrián París","Alex Ritter","Amanda C","Andrew Phelps","Annie R","Arbel Feldman","Ayylexis","B N Z","Bill Lash","Billy Frank","CactusKex","Campbell H","Campsite","Cole Baron","Dan Heath","David Hassine","Dean Harding","Doug Thompson","Dr W","Dr_H","Eamonn S","Emilia D","Emily C","Ethan R","Eulerian","Felix H :)","Gabriel K.","Gregory Lewis","hattie","hevorius","HFGO","Holypeanut","Jack Porter","jaimen","Jake Burrow","James & Ollie","Jamie T","Jasel","Jay","JimbieP","Jo J","Jo O","Jody O","Johnny Quarrie","jojo!","jvsn89","Kelly Hicks","Lee Hoe","Lucy","Luminoid","Martin","Mattasdqwe","mattLOLd","maya00","mayasibul00","NatalyBenderskyShalem","Nate Mizelle","NateMiz","Nixfriarr","null","Óin Stoch","Oren","Pete Bowdon","Pete Craw","Peter Green","Phil McLean","Rob D","Rusty","Ryan Gittins","saintmark_w","Sam Mount (Kaldar)","Schrödie’s Cat","Seivad","sngpretzel","Stevie Reed","Supware","Tanner Burton","That Observer","Tyler Hopp","Tyr","vaughn","ventimony","Bluejay","hurblub"];
 
@@ -415,72 +415,133 @@ function applyHardFilters(list){
 }
 
 /* ===================== DATA LOAD ===================== */
-async function fetchCSVText(){
-  const bust = `&_=${Date.now()}`;
-  const direct = `${SHEET_URL}${SHEET_URL.includes('?') ? '&' : '?'}${bust.replace(/^&/,'')}`;
-  const fall1 = "https://r.jina.ai/http://" + direct.replace(/^https?:\/\//,'');
-  const fall2 = "https://r.jina.ai/https://" + direct.replace(/^https?:\/\//,'');
-
-  const tries = [direct, fall2, fall1];
-
-  let lastErr = null;
-  for (const url of tries){
-    try{
-      const res = await fetch(url, { cache: "no-store" });
-      const text = await res.text();
-      if (text && text.length > 20) return text;
-    }catch(e){ lastErr = e; }
-  }
-  throw lastErr || new Error("Unable to fetch CSV");
+function updateLoadButton(){
+  const hasBatch = !!localStorage.getItem(BATCH_CSV_KEY);
+  document.getElementById("loadBtn").textContent = hasBatch ? "Replace CSV" : "Load CSV";
 }
 
-async function loadSheet(){
+function showNoBatch(){
+  allClues = [];
+  queue = [];
+  currentIndex = 0;
+  card.style.display = "block";
+  card.innerHTML = "<p class='clueLine'><strong>No CSV loaded.</strong><br><br>Tap Load CSV below to choose a clue file.</p>";
+  updateUI();
+  updateLoadButton();
+}
+
+function rowsToClues(rows){
+  return rows.map(r=>{
+    const id = r.id || r.Id || r.ID || "";
+    const clue = r.clue || r.Clue || "";
+    const ans  = r.answer || r.Answer || "";
+    const writer = r["Setter Name"] || r.setter_name || r.Writer || r.setter || "";
+
+    const saved = progress.byId[id] || {};
+    return {
+      Id: String(id).trim(),
+      Clue: String(clue).trim(),
+      Answer: String(ans).trim(),
+      Writer: String(writer).trim(),
+
+      Hints: String(r.hints || r.Hints || "").trim(),
+      CreatorUserId: String(r.creator_user_id || r.CreatorUserId || r["Creator User ID"] || "").trim(),
+      SetterSocialHandles: String(r.setter_social_handles || r["Social Handles"] || r.social_handles || "").trim(),
+      WorkshopCirclePostUrl: String(r.workshop_circle_post_url || r["Play Link"] || r.play_link || "").trim(),
+
+      Assessment: String(saved.Assessment || "").trim(),
+      Note: String(saved.Note || "").trim(),
+      UpdatedAt: Number(saved.UpdatedAt || 0) || 0
+    };
+  }).filter(r => r.Id && r.Clue && r.Answer);
+}
+
+function parseCSVText(text){
+  const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+  const rows = Array.isArray(parsed.data) ? parsed.data : [];
+  const clues = rowsToClues(rows);
+  return { rows, clues, errors: parsed.errors || [] };
+}
+
+function loadCSVText(text){
   card.style.display = "block";
   card.innerHTML = "<p class='clueLine'>Loading…</p>";
 
-  try{
-    const text = await fetchCSVText();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+  const result = parseCSVText(text);
+  if (!result.rows.length || !result.clues.length){
+    card.innerHTML = "<p class='clueLine'>No valid clue rows found.</p>";
+    return false;
+  }
 
-    const rows = Array.isArray(parsed.data) ? parsed.data : [];
-    if (!rows.length){
-      card.innerHTML = "<p class='clueLine'>No rows parsed.</p>";
+  allClues = result.clues;
+  applyHardFilters(allClues);
+
+  syncTabs();
+  rebuildQueue();
+  render();
+  updateLoadButton();
+  return true;
+}
+
+function loadSavedBatch(){
+  const text = localStorage.getItem(BATCH_CSV_KEY);
+  if (!text){
+    showNoBatch();
+    return;
+  }
+
+  if (!loadCSVText(text)){
+    showNoBatch();
+  }
+}
+
+function chooseCSV(){
+  document.getElementById("csvFileInput").click();
+}
+
+function handleCSVFile(file){
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const text = String(reader.result || "");
+    const parsed = parseCSVText(text);
+
+    if (!parsed.rows.length || !parsed.clues.length){
+      alert("That CSV does not contain any valid clue rows. The current batch has not been changed.");
       return;
     }
 
-    allClues = rows.map(r=>{
-      const id = r.id || r.Id || r.ID || "";
-      const clue = r.clue || r.Clue || "";
-      const ans  = r.answer || r.Answer || "";
-      const writer = r["Setter Name"] || r.setter_name || r.Writer || r.setter || "";
+    const hasBatch = !!localStorage.getItem(BATCH_CSV_KEY);
+    if (hasBatch && !confirm("Replace the current CSV? This will clear the current assessments and notes. Setter stars will stay.")){
+      return;
+    }
 
-      const saved = progress.byId[id] || {};
-      return {
-        Id: String(id).trim(),
-        Clue: String(clue).trim(),
-        Answer: String(ans).trim(),
-        Writer: String(writer).trim(),
+    /* New file = new review batch. Clear old batch progress, keep setter stars. */
+    localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(VIEW_KEY);
+    localStorage.removeItem(LAST_EXPORT_KEY);
+    progress = { byId:{} };
+    viewMode = "all";
+    history.length = 0;
 
-        Hints: String(r.hints || r.Hints || "").trim(),
-        CreatorUserId: String(r.creator_user_id || r.CreatorUserId || r["Creator User ID"] || "").trim(),
-        SetterSocialHandles: String(r.setter_social_handles || r["Social Handles"] || r.social_handles || "").trim(),
-        WorkshopCirclePostUrl: String(r.workshop_circle_post_url || r["Play Link"] || r.play_link || "").trim(),
-
-        Assessment: String(saved.Assessment || "").trim(),
-        Note: String(saved.Note || "").trim(),
-        UpdatedAt: Number(saved.UpdatedAt || 0) || 0
-      };
-    }).filter(r => r.Id && r.Clue && r.Answer);
-
-    applyHardFilters(allClues);
+    try{
+      localStorage.setItem(BATCH_CSV_KEY, text);
+      localStorage.setItem(BATCH_NAME_KEY, file.name || "clues.csv");
+    }catch(e){
+      console.error(e);
+      alert("The CSV loaded, but your browser could not save it for next time. It may need to be loaded again after closing the app.");
+    }
 
     syncTabs();
-    rebuildQueue();
-    render();
-  }catch(e){
-    card.innerHTML = "<p class='clueLine'>Load error.</p>";
-    console.error(e);
-  }
+    loadCSVText(text);
+  };
+
+  reader.onerror = ()=>{
+    alert("Unable to read that CSV file. The current batch has not been changed.");
+  };
+
+  reader.readAsText(file);
 }
 
 /* ===================== QUEUE / RENDER ===================== */
@@ -667,20 +728,6 @@ function exportCSV(){
   }
 }
 
-function resetProgress(){
-  if (!confirm("Reset assessments/notes? (Stars stay)")) return;
-
-  localStorage.removeItem(PROGRESS_KEY);
-  localStorage.removeItem(VIEW_KEY);
-  localStorage.removeItem(LAST_EXPORT_KEY);
-
-  progress = { byId:{} };
-  viewMode = "all";
-
-  syncTabs();
-  loadSheet();
-}
-
 /* ===================== NOTES ===================== */
 function openNote(){
   if (!queue[currentIndex]) return;
@@ -793,7 +840,12 @@ document.getElementById("btnNote").addEventListener("click", openNote);
 document.getElementById("btnUndo").addEventListener("click", undo);
 
 document.getElementById("exportBtn").addEventListener("click", exportCSV);
-document.getElementById("resetBtn").addEventListener("click", resetProgress);
+document.getElementById("loadBtn").addEventListener("click", chooseCSV);
+document.getElementById("csvFileInput").addEventListener("change", (e)=>{
+  const file = e.target.files && e.target.files[0];
+  handleCSVFile(file);
+  e.target.value = "";
+});
 
 document.getElementById("noteSaveBtn").addEventListener("click", saveNote);
 
@@ -823,7 +875,7 @@ function escapeHTMLAttr(s){
 
 /* Init */
 syncTabs();
-window.onload = loadSheet;
+window.onload = loadSavedBatch;
 </script>
 </body>
 </html>
